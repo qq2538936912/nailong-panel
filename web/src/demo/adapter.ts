@@ -1864,6 +1864,26 @@ route('POST', '/security/2fa/verify', () => blocked('演示环境无法校验动
 route('DELETE', '/security/2fa', () => ({ message: '已关闭两步验证' }))
 
 // ===========================================================================
+// 网页终端
+// ===========================================================================
+
+route('GET', '/terminal/info', () => ({
+  data: {
+    available: true,
+    work_dir: '/opt/daidai/scripts',
+    shell: '/bin/bash',
+    python: '/opt/daidai/data/deps/python/3.12/bin/python',
+    message: '演示环境不会在真实机器上执行命令',
+  },
+}))
+
+route('POST', '/terminal/ticket', () => ({
+  ticket: 'demo-terminal-ticket',
+  expires_at: new Date(Date.now() + 60_000).toISOString(),
+  ws_path: '/api/v1/terminal/ws',
+}))
+
+// ===========================================================================
 // 依赖管理 / Android 运行时
 // ===========================================================================
 
@@ -1895,6 +1915,7 @@ route('PUT', '/deps/python-runtime-default', (ctx) => ({
 route('GET', '/deps/mirrors', () => ({
   pip_mirror: 'https://pypi.tuna.tsinghua.edu.cn/simple',
   npm_mirror: 'https://registry.npmmirror.com',
+  playwright_download_host: 'https://cdn.npmmirror.com/binaries/playwright',
   linux_mirror: 'https://mirrors.tuna.tsinghua.edu.cn/debian',
   linux_package_manager: 'apt',
   linux_distribution: 'debian',
@@ -1955,11 +1976,6 @@ route('POST', '/android-runtime/uninstall', () => blocked())
 // ===========================================================================
 // 其它
 // ===========================================================================
-
-// 赞助名单要联网拉，演示环境直接给 unavailable，页面会显示「暂时无法获取」而不是空白
-route('GET', '/sponsors', () => ({
-  data: { sponsors: [], count: 0, total_amount: 0, updated_at: null, unavailable: true },
-}))
 
 route('GET', '/platform-tokens/platforms', () => ({ data: [] }))
 route('GET', '/platform-tokens', () => ({ data: [] }))

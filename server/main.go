@@ -293,7 +293,7 @@ func setupStaticFrontend(engine *gin.Engine, webDir string) {
 	//
 	// "fonts" 是自托管 Web 字体（web/public/fonts/），Docker 部署走 nginx 的
 	// try_files 不受影响，但内嵌二进制部署（无 nginx）依赖这一条。
-	for _, sub := range []string{"assets", "fonts", "monaco", "sponsor-portal"} {
+	for _, sub := range []string{"assets", "fonts", "monaco"} {
 		subDir := filepath.Join(absDir, sub)
 		if info, err := os.Stat(subDir); err == nil && info.IsDir() {
 			engine.Static("/"+sub, subDir)

@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	DefaultPipMirror = "https://mirrors.aliyun.com/pypi/simple"
-	DefaultNpmMirror = "https://registry.npmmirror.com"
+	DefaultPipMirror              = "https://mirrors.aliyun.com/pypi/simple"
+	DefaultNpmMirror              = "https://registry.npmmirror.com"
+	DefaultPlaywrightDownloadHost = "https://cdn.npmmirror.com/binaries/playwright"
+	DefaultGoProxy                = "https://goproxy.cn,direct"
 )
 
 type DependencyMirrorSettings struct {
@@ -46,7 +48,7 @@ func PipInstallEnv(base []string, configured string) []string {
 	if host := extractMirrorHost(mirror); host != "" {
 		env = append(env, "PIP_TRUSTED_HOST="+host)
 	}
-	return env
+	return AppendBuiltinDownloadMirrors(env)
 }
 
 // pipConflictingEnvKeys 列出会与面板内部 pip 调用相冲突的环境变量：
@@ -103,7 +105,71 @@ func NpmInstallEnv(base []string, configured string) []string {
 
 	env = append(env, "npm_config_registry="+mirror)
 	env = append(env, "NPM_CONFIG_REGISTRY="+mirror)
-	return env
+	return AppendBuiltinDownloadMirrors(env)
+}
+
+// ApplyBuiltinDownloadMirrors 给终端、任务、ddp shell 补国内加速源。
+// 只填空位：环境变量页、config.sh 里已经写过的值一律不改。
+func ApplyBuiltinDownloadMirrors(envMap map[string]string) {
+	if envMap == nil {
+		return
+	}
+	setIfEmpty := func(key, value string) {
+		if strings.TrimSpace(envMap[key]) == "" && strings.TrimSpace(value) != "" {
+			envMap[key] = value
+		}
+	}
+
+	pip := CurrentEffectivePipMirror()
+	setIfEmpty("PIP_INDEX_URL", pip)
+	if host := extractMirrorHost(pip); host != "" {
+		setIfEmpty("PIP_TRUSTED_HOST", host)
+	}
+
+	npm := CurrentEffectiveNpmMirror()
+	setIfEmpty("npm_config_registry", npm)
+	setIfEmpty("NPM_CONFIG_REGISTRY", npm)
+	setIfEmpty("PLAYWRIGHT_DOWNLOAD_HOST", DefaultPlaywrightDownloadHost)
+	setIfEmpty("GOPROXY", DefaultGoProxy)
+}
+
+func AppendBuiltinDownloadMirrors(env []string) []string {
+	envMap := make(map[string]string)
+	for _, entry := range env {
+		idx := strings.IndexByte(entry, '=')
+		if idx <= 0 {
+			continue
+		}
+		if _, exists := envMap[entry[:idx]]; !exists {
+			envMap[entry[:idx]] = entry[idx+1:]
+		}
+	}
+	ApplyBuiltinDownloadMirrors(envMap)
+
+	seen := make(map[string]struct{}, len(env))
+	result := append([]string{}, env...)
+	for _, entry := range result {
+		idx := strings.IndexByte(entry, '=')
+		if idx > 0 {
+			seen[entry[:idx]] = struct{}{}
+		}
+	}
+	for _, key := range []string{
+		"PIP_INDEX_URL",
+		"PIP_TRUSTED_HOST",
+		"npm_config_registry",
+		"NPM_CONFIG_REGISTRY",
+		"PLAYWRIGHT_DOWNLOAD_HOST",
+		"GOPROXY",
+	} {
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		if value := strings.TrimSpace(envMap[key]); value != "" {
+			result = append(result, key+"="+value)
+		}
+	}
+	return result
 }
 
 func CurrentDependencyMirrorSettings() DependencyMirrorSettings {

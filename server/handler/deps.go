@@ -628,14 +628,15 @@ func (h *DepsHandler) NpmList(c *gin.Context) {
 
 func (h *DepsHandler) GetMirrors(c *gin.Context) {
 	result := gin.H{
-		"pip_mirror":             service.CurrentEffectivePipMirror(),
-		"npm_mirror":             service.CurrentEffectiveNpmMirror(),
-		"linux_mirror":           "",
-		"linux_package_manager":  "",
-		"linux_distribution":     "",
-		"linux_mirror_supported": false,
-		"linux_mirror_label":     "Linux",
-		"linux_mirror_message":   "",
+		"pip_mirror":               service.CurrentEffectivePipMirror(),
+		"npm_mirror":               service.CurrentEffectiveNpmMirror(),
+		"playwright_download_host": service.DefaultPlaywrightDownloadHost,
+		"linux_mirror":             "",
+		"linux_package_manager":    "",
+		"linux_distribution":       "",
+		"linux_mirror_supported":   false,
+		"linux_mirror_label":       "Linux",
+		"linux_mirror_message":     "",
 	}
 
 	linuxMirrorInfo := getLinuxMirrorInfo()

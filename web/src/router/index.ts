@@ -33,6 +33,7 @@ const routeComponents = {
   subscriptions: () => import('@/views/subscriptions/index.vue'),
   logs: () => import('@/views/logs/index.vue'),
   deps: () => import('@/views/deps/index.vue'),
+  terminal: () => import('@/views/terminal/index.vue'),
   notifications: () => import('@/views/notifications/index.vue'),
   users: () => import('@/views/users/index.vue'),
   profile: () => import('@/views/profile/index.vue'),
@@ -50,6 +51,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   '/subscriptions': routeComponents.subscriptions,
   '/logs': routeComponents.logs,
   '/deps': routeComponents.deps,
+  '/terminal': routeComponents.terminal,
   '/notifications': routeComponents.notifications,
   '/users': routeComponents.users,
   '/profile': routeComponents.profile,
@@ -182,6 +184,12 @@ const router = createRouter({
           name: 'Logs',
           component: routeComponents.logs,
           meta: { title: '执行日志', icon: 'Tickets', minRole: 'viewer' }
+        },
+        {
+          path: 'terminal',
+          name: 'Terminal',
+          component: routeComponents.terminal,
+          meta: { title: '终端管理', icon: 'Monitor', minRole: 'admin' }
         },
         {
           path: 'deps',

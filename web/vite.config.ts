@@ -198,6 +198,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/zrender')) return 'zrender'
             if (id.includes('node_modules/qrcode')) return 'qrcode'
             if (id.includes('node_modules/sortablejs')) return 'sortablejs'
+            if (id.includes('node_modules/@xterm')) return 'xterm'
             if (id.includes('node_modules/element-plus')) return undefined
             if (
               id.includes('node_modules/vue') ||
@@ -217,7 +218,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: 'http://localhost:5701',
-          changeOrigin: true
+          changeOrigin: true,
+          ws: true
         }
       }
     }

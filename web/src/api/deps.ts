@@ -3,6 +3,7 @@ import request from './request'
 export interface MirrorsResponse {
   pip_mirror: string
   npm_mirror: string
+  playwright_download_host?: string
   linux_mirror: string
   linux_package_manager: string
   linux_distribution: string

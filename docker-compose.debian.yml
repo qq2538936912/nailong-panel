@@ -2,11 +2,16 @@ name: daidai-panel
 
 services:
   daidai-panel:
+    # 没有 build 时 `docker compose up --build` 是空操作，容器会继续跑仓库里的现成镜像。
+    # 改过前端/后端源码后必须在这台机器上用当前目录重新编一次，才会看到终端页等本地改动。
+    build:
+      context: .
+      dockerfile: Dockerfile.debian
     image: ${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:debian}
     container_name: daidai-panel
     restart: unless-stopped
     ports:
-      - "5700:5700" # 宿主机端口:容器内 Nginx 端口
+      - "15700:5700" # 宿主机端口:容器内 Nginx 端口
     volumes:
       - ./Dumb-Panel:/app/Dumb-Panel
     environment:

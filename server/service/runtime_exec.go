@@ -228,6 +228,7 @@ func BuildManagedRuntimeEnvMapWithScriptToken(workDir, scriptsDir string, defaul
 	}
 
 	loadConfigShellVars(envMap)
+	ApplyBuiltinDownloadMirrors(envMap)
 	// 面板时区是全局运行时配置，优先级高于普通环境变量，避免任务脚本继续继承 UTC。
 	envMap["TZ"] = CurrentPanelTimezone()
 

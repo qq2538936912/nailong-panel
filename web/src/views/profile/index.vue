@@ -1,34 +1,26 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   CircleCheck,
   Key,
   Lock,
-  RefreshRight,
   User,
   Clock,
   Avatar,
-  Star,
   InfoFilled,
   Camera,
   Delete,
 } from "@element-plus/icons-vue";
 import { authApi } from "@/api/auth";
 import { securityApi } from "@/api/security";
-import {
-  sponsorApi,
-  type SponsorRecord,
-  type SponsorSummary,
-} from "@/api/sponsor";
 import { useAuthStore } from "@/stores/auth";
 import { createQrCodeDataUrl } from "@/utils/qrcode";
 import { useResponsive } from "@/composables/useResponsive";
-import SponsorWall from "./components/SponsorWall.vue";
 
 const authStore = useAuthStore();
 const { dialogFullscreen } = useResponsive();
-const activeTab = ref<"profile" | "security" | "sponsors">("profile");
+const activeTab = ref<"profile" | "security">("profile");
 
 const passwordForm = ref({
   oldPassword: "",
@@ -45,15 +37,6 @@ const twoFACode = ref("");
 const showSetup2FA = ref(false);
 const twoFALoading = ref(false);
 const twoFADisabling = ref(false);
-
-const sponsors = ref<SponsorRecord[]>([]);
-const sponsorSummary = ref<SponsorSummary | null>(null);
-const sponsorLoading = ref(false);
-const sponsorRefreshing = ref(false);
-const sponsorFetchedOnce = ref(false);
-let sponsorRefreshTimer: ReturnType<typeof setInterval> | null = null;
-
-const sponsorRefreshInterval = 24 * 60 * 60 * 1000;
 
 const roleLabel = computed(() => {
   const role = authStore.user?.role;
@@ -73,104 +56,6 @@ function formatTime(value?: string | null) {
   if (!value) return "-";
   return new Date(value).toLocaleString();
 }
-
-function buildEmptySponsorSummary(unavailable = false): SponsorSummary {
-  return {
-    sponsors: [],
-    count: 0,
-    total_amount: 0,
-    updated_at: null,
-    unavailable,
-  };
-}
-
-function applySponsorSummary(summary: SponsorSummary) {
-  const normalizedSponsors = Array.isArray(summary.sponsors)
-    ? summary.sponsors
-    : [];
-  sponsors.value = normalizedSponsors;
-  sponsorSummary.value = {
-    ...buildEmptySponsorSummary(),
-    ...summary,
-    sponsors: normalizedSponsors,
-    count: summary.count || normalizedSponsors.length,
-  };
-}
-
-async function loadSponsors(options: { silent?: boolean } = {}) {
-  const useSilentRefresh = options.silent === true && sponsorFetchedOnce.value;
-  if (useSilentRefresh) {
-    sponsorRefreshing.value = true;
-  } else {
-    sponsorLoading.value = true;
-  }
-
-  try {
-    const res = (await sponsorApi.list()) as any;
-    applySponsorSummary({
-      ...buildEmptySponsorSummary(),
-      ...(res.data || {}),
-      sponsors: res.data?.sponsors || [],
-    });
-  } catch {
-    if (!sponsorFetchedOnce.value) {
-      applySponsorSummary(buildEmptySponsorSummary(true));
-    } else {
-      sponsorSummary.value = {
-        ...(sponsorSummary.value || buildEmptySponsorSummary()),
-        unavailable: true,
-      };
-    }
-  } finally {
-    sponsorFetchedOnce.value = true;
-    sponsorLoading.value = false;
-    sponsorRefreshing.value = false;
-  }
-}
-
-function stopSponsorRefreshTimer() {
-  if (sponsorRefreshTimer) {
-    clearInterval(sponsorRefreshTimer);
-    sponsorRefreshTimer = null;
-  }
-}
-
-function startSponsorRefreshTimer() {
-  stopSponsorRefreshTimer();
-  sponsorRefreshTimer = setInterval(() => {
-    void loadSponsors({ silent: true });
-  }, sponsorRefreshInterval);
-}
-
-async function activateSponsorTab() {
-  if (!sponsorFetchedOnce.value) {
-    await loadSponsors();
-  }
-  startSponsorRefreshTimer();
-}
-
-async function handleManualSponsorRefresh() {
-  await loadSponsors({ silent: sponsorFetchedOnce.value });
-}
-
-const sponsorTabHint = computed(() => {
-  if (sponsorLoading.value && !sponsorFetchedOnce.value) {
-    return "正在同步赞助名单";
-  }
-  if (sponsorRefreshing.value) {
-    return "后台同步中";
-  }
-  if (sponsorSummary.value?.unavailable && sponsors.value.length > 0) {
-    return "当前展示最近一次同步结果";
-  }
-  if (sponsorSummary.value?.unavailable) {
-    return "服务暂不可用，页面会自动重试";
-  }
-  if (sponsorSummary.value?.updated_at) {
-    return `更新于 ${formatTime(sponsorSummary.value.updated_at)}`;
-  }
-  return "本页每 24 小时静默同步一次";
-});
 
 const editingUsername = ref(false);
 const newUsername = ref("");
@@ -414,18 +299,6 @@ onMounted(async () => {
   }
   load2FAStatus();
 });
-
-watch(activeTab, (tab) => {
-  if (tab === "sponsors") {
-    void activateSponsorTab();
-    return;
-  }
-  stopSponsorRefreshTimer();
-});
-
-onUnmounted(() => {
-  stopSponsorRefreshTimer();
-});
 </script>
 
 <template>
@@ -553,14 +426,6 @@ onUnmounted(() => {
         >
           <el-icon :size="15"><Lock /></el-icon>
           <span>安全设置</span>
-        </button>
-        <button
-          class="sidebar-tab"
-          :class="{ active: activeTab === 'sponsors' }"
-          @click="activeTab = 'sponsors'"
-        >
-          <el-icon :size="15"><Star /></el-icon>
-          <span>赞助信息</span>
         </button>
       </nav>
 
@@ -767,37 +632,6 @@ onUnmounted(() => {
             </div>
           </section>
         </template>
-
-        <!-- ===== 赞助信息 ===== -->
-        <template v-if="activeTab === 'sponsors'">
-          <section class="sponsor-panel">
-            <div class="sponsor-toolbar">
-              <div class="sponsor-toolbar-copy">
-                <div class="sponsor-toolbar-title-row">
-                  <h3>赞助名单</h3>
-                  <span class="sponsor-toolbar-hint">{{ sponsorTabHint }}</span>
-                </div>
-                <p class="sponsor-toolbar-intro">
-                  本项目长期以公益方式维护，感谢以下赞助人员对持续开发、服务开销与后续迭代的支持。
-                </p>
-              </div>
-              <el-button
-                class="sponsor-refresh-btn"
-                :loading="sponsorLoading || sponsorRefreshing"
-                @click="handleManualSponsorRefresh"
-              >
-                <el-icon><RefreshRight /></el-icon>
-                <span>立即刷新</span>
-              </el-button>
-            </div>
-
-            <SponsorWall
-              :sponsors="sponsors"
-              :summary="sponsorSummary"
-              :loading="sponsorLoading && sponsors.length === 0"
-            />
-          </section>
-        </template>
       </div>
     </div>
 
@@ -911,8 +745,7 @@ onUnmounted(() => {
 
 .profile-hero,
 .profile-sidebar,
-.profile-content > .profile-card,
-.profile-content > .sponsor-panel {
+.profile-content > .profile-card {
   animation: dd-profile-rise-in var(--dd-motion-page) var(--dd-ease-decelerate)
     both;
 }
@@ -923,8 +756,7 @@ onUnmounted(() => {
   animation-delay: 50ms;
 }
 
-.profile-content > .profile-card:nth-child(1),
-.profile-content > .sponsor-panel {
+.profile-content > .profile-card:nth-child(1) {
   animation-delay: 90ms;
 }
 
@@ -1450,62 +1282,6 @@ onUnmounted(() => {
   }
 }
 
-/* ================= Sponsor panel ================= */
-.sponsor-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.sponsor-toolbar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 18px 22px;
-  /* 直角纯色底：去掉琥珀渐变与阴影，只保留琥珀描边点题 */
-  border-radius: 0;
-  border: 1px solid rgba(245, 158, 11, 0.16);
-  background: var(--profile-surface);
-}
-
-.sponsor-toolbar-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.sponsor-toolbar-title-row {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-
-  h3 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 700;
-    color: #b45309;
-  }
-}
-
-.sponsor-toolbar-hint {
-  font-size: 11.5px;
-  color: #a16207;
-}
-
-.sponsor-toolbar-intro {
-  margin: 6px 0 0;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: #78350f;
-  max-width: 680px;
-}
-
-.sponsor-refresh-btn {
-  border-radius: 0;
-}
-
 /* ================= Setup dialog ================= */
 :deep(.setup-2fa-dialog) {
   .el-dialog {
@@ -1704,23 +1480,6 @@ onUnmounted(() => {
   .shield-icon {
     width: 48px;
     height: 58px;
-  }
-}
-
-/* ================= 暗色修补 =================
-   赞助卡的琥珀文字（深棕）在暗色底上对比过低，仅在暗色下提亮，
-   不影响明色下的品牌色观感 */
-html.dark {
-  .sponsor-toolbar-title-row h3 {
-    color: #fbbf24;
-  }
-
-  .sponsor-toolbar-hint {
-    color: #d6a85f;
-  }
-
-  .sponsor-toolbar-intro {
-    color: var(--el-text-color-regular);
   }
 }
 </style>

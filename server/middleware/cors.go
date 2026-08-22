@@ -3,6 +3,7 @@ package middleware
 import (
 	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -255,10 +256,55 @@ func logCORSRejection(c *gin.Context, origin string) {
 	)
 }
 
+// AllowWebsocketOrigin 给终端 WebSocket 握手复用与 HTTP CORS 同一套来源判定。
+// gorilla/websocket 的 CheckOrigin 拿不到 gin.Context，所以这里直接吃 *http.Request。
+func AllowWebsocketOrigin(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" || origin == "null" {
+		return true
+	}
+
+	allowedOrigins := []string{
+		"http://localhost:5173",
+		"http://localhost:5700",
+		"http://localhost:15700",
+	}
+	if config.C != nil && len(config.C.CORS.Origins) > 0 {
+		allowedOrigins = config.C.CORS.Origins
+	}
+	if matchesConfiguredOrigin(origin, allowedOrigins) {
+		return true
+	}
+	if isPrivateOrLoopbackOrigin(origin) {
+		return true
+	}
+
+	originScheme, originHostname, originPort := originParts(origin)
+	forwardedPort := normalizePort(r.Header.Get("X-Forwarded-Port"))
+	candidates := []string{
+		r.Host,
+		r.Header.Get("X-Forwarded-Host"),
+		r.Header.Get("X-Original-Host"),
+	}
+	if forwarded := r.Header.Get("Forwarded"); forwarded != "" {
+		candidates = append(candidates, parseForwardedHosts(forwarded)...)
+	}
+	for _, candidate := range candidates {
+		if hostMatchesOrigin(originScheme, originHostname, originPort, candidate, forwardedPort) {
+			return true
+		}
+	}
+	return false
+}
+
 func CORS() gin.HandlerFunc {
 	allowedOrigins := []string{
 		"http://localhost:5173",
 		"http://localhost:5700",
+		"http://localhost:15700",
 	}
 	if config.C != nil && len(config.C.CORS.Origins) > 0 {
 		allowedOrigins = config.C.CORS.Origins

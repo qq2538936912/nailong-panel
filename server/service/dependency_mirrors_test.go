@@ -138,6 +138,68 @@ func TestEffectiveNpmMirrorFallsBackToDefaultAcceleratedMirror(t *testing.T) {
 	}
 }
 
+func TestApplyBuiltinDownloadMirrorsFillsEmptyAndKeepsUserValues(t *testing.T) {
+	envMap := map[string]string{
+		"PLAYWRIGHT_DOWNLOAD_HOST": "https://example.com/playwright",
+		"PIP_INDEX_URL":            "",
+	}
+	ApplyBuiltinDownloadMirrors(envMap)
+
+	if got := envMap["PLAYWRIGHT_DOWNLOAD_HOST"]; got != "https://example.com/playwright" {
+		t.Fatalf("expected user playwright host kept, got %q", got)
+	}
+	if got := envMap["PIP_INDEX_URL"]; got != DefaultPipMirror {
+		t.Fatalf("expected empty pip index filled with default, got %q", got)
+	}
+	if got := envMap["PIP_TRUSTED_HOST"]; got != "mirrors.aliyun.com" {
+		t.Fatalf("expected pip trusted host, got %q", got)
+	}
+	if got := envMap["npm_config_registry"]; got != "https://registry.npmmirror.com/" {
+		t.Fatalf("expected npm registry, got %q", got)
+	}
+	if got := envMap["NPM_CONFIG_REGISTRY"]; got != "https://registry.npmmirror.com/" {
+		t.Fatalf("expected NPM_CONFIG_REGISTRY, got %q", got)
+	}
+	if got := envMap["GOPROXY"]; got != DefaultGoProxy {
+		t.Fatalf("expected goproxy, got %q", got)
+	}
+}
+
+func TestAppendBuiltinDownloadMirrorsDoesNotDuplicateExistingKeys(t *testing.T) {
+	env := []string{
+		"PATH=/usr/bin",
+		"PIP_INDEX_URL=https://example.com/simple",
+		"PLAYWRIGHT_DOWNLOAD_HOST=https://example.com/playwright",
+	}
+	got := AppendBuiltinDownloadMirrors(env)
+
+	count := 0
+	for _, entry := range got {
+		if strings.HasPrefix(entry, "PIP_INDEX_URL=") {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("expected one PIP_INDEX_URL, got %v", got)
+	}
+	hasPlaywright := false
+	hasGoProxy := false
+	for _, entry := range got {
+		if entry == "PLAYWRIGHT_DOWNLOAD_HOST=https://example.com/playwright" {
+			hasPlaywright = true
+		}
+		if entry == "GOPROXY="+DefaultGoProxy {
+			hasGoProxy = true
+		}
+	}
+	if !hasPlaywright {
+		t.Fatalf("expected user playwright host kept, got %v", got)
+	}
+	if !hasGoProxy {
+		t.Fatalf("expected GOPROXY injected, got %v", got)
+	}
+}
+
 func TestSetPipMirrorWritesAndClearsConfig(t *testing.T) {
 	root := t.TempDir()
 	home := filepath.Join(root, "home")

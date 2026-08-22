@@ -877,39 +877,6 @@ html.dark {
     background-color: var(--el-fill-color) !important;
   }
 
-  // 赞助墙：去掉两层光晕 + 底色渐变，改纯色底，仅保留橙色描边点题
-  .sponsor-wall {
-    background: #1e293b !important;
-    border-color: rgba(249, 115, 22, 0.18) !important;
-  }
-
-  .sponsor-wall .title-text,
-  .sponsor-wall .sponsor-wall__summary,
-  .sponsor-wall .sponsor-empty h4,
-  .sponsor-wall .sponsor-empty p,
-  .sponsor-wall .podium-card__name,
-  .sponsor-wall .sponsor-card__name {
-    color: #f8fafc !important;
-  }
-
-  .sponsor-wall .summary-pill,
-  .sponsor-wall .sponsor-loading__card,
-  .sponsor-wall .sponsor-empty,
-  .sponsor-wall .podium-card,
-  .sponsor-wall .sponsor-card,
-  .sponsor-wall .podium-card__rank {
-    background: color-mix(
-      in srgb,
-      var(--el-bg-color-overlay) 92%,
-      black
-    ) !important;
-    border-color: rgba(249, 115, 22, 0.18) !important;
-  }
-
-  .sponsor-wall .podium-base {
-    background: #334155 !important;
-    border-color: rgba(249, 115, 22, 0.16) !important;
-  }
 }
 
 // el-popover 在 `.el-popover` 元素上把 --el-popover-border-radius 重新声明为 4px，

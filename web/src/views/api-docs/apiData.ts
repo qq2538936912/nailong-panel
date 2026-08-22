@@ -1114,6 +1114,56 @@ if __name__ == '__main__':
     ],
   },
   {
+    key: 'terminal',
+    label: '终端管理',
+    endpoints: [
+      {
+        id: 'terminal-info',
+        method: 'GET',
+        path: '/api/terminal/info',
+        title: '获取终端运行环境',
+        description: '返回网页终端使用的工作目录、交互 shell 和托管 Python。仅管理员本人可用，Open API 应用令牌不能访问。',
+        auth: 'jwt',
+        responseExample: JSON.stringify({
+          data: {
+            available: true,
+            work_dir: '/opt/daidai/scripts',
+            shell: '/bin/bash',
+            python: '/opt/daidai/data/deps/python/3.12/bin/python',
+            message: '',
+          },
+        }, null, 2),
+      },
+      {
+        id: 'terminal-ticket',
+        method: 'POST',
+        path: '/api/terminal/ticket',
+        title: '签发终端票据',
+        description: '签发一张 60 秒、一次性的短票，用于随后的 WebSocket 握手。浏览器原生 WebSocket 带不了 Authorization 头，所以不能直接复用 JWT。',
+        auth: 'jwt',
+        responseExample: JSON.stringify({
+          ticket: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+          expires_at: '2026-08-22T08:30:00Z',
+          ws_path: '/api/v1/terminal/ws',
+        }, null, 2),
+      },
+      {
+        id: 'terminal-ws',
+        method: 'GET',
+        path: '/api/v1/terminal/ws',
+        title: '打开终端 WebSocket',
+        description: '用短票升级为 WebSocket，拉起一条与任务执行相同环境的交互 shell。二进制帧是终端输出/输入，文本 JSON 用于 resize / ready / exit。反代需要放行 Upgrade。',
+        auth: 'ticket',
+        queryParams: [
+          { name: 'ticket', type: 'string', required: true, description: '由 /terminal/ticket 签发的一次性短票' },
+          { name: 'cols', type: 'integer', description: '初始列数', example: '120' },
+          { name: 'rows', type: 'integer', description: '初始行数', example: '36' },
+        ],
+        responseExample: JSON.stringify({ type: 'ready', work_dir: '/opt/daidai/scripts', shell: '/bin/bash' }, null, 2),
+      },
+    ],
+  },
+  {
     key: 'users',
     label: '用户管理',
     endpoints: [

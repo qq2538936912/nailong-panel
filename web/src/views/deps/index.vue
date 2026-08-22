@@ -9,6 +9,14 @@
       </div>
     </div>
 
+    <div class="terminal-entry">
+      <div class="terminal-entry__text">
+        <el-icon><Monitor /></el-icon>
+        <span>需要执行 <code>playwright install chromium</code> 这类命令时，到终端管理里执行。</span>
+      </div>
+      <el-button type="primary" size="small" @click="openTerminal">打开终端管理</el-button>
+    </div>
+
     <!-- Android 面具版：一键安装 Python / Node 解释器 -->
     <el-card
       v-if="androidStatus && androidStatus.supported"
@@ -786,8 +794,18 @@
             <span v-if="linuxMirrorMessage">。{{ linuxMirrorMessage }}</span>
           </div>
         </el-form-item>
+        <el-form-item label="Playwright">
+          <el-input
+            :model-value="playwrightDownloadHost"
+            disabled
+          />
+          <div class="mirror-hint">
+            终端和任务里执行 <code>playwright install</code> 时自动使用；要换源就在环境变量里写
+            <code>PLAYWRIGHT_DOWNLOAD_HOST</code>。
+          </div>
+        </el-form-item>
         <el-alert type="info" :closable="false" show-icon>
-          依赖管理默认优先使用加速源；清空输入框并保存，会恢复到内置的默认加速源配置。
+          依赖管理和终端会自动带上 pip、npm、Playwright、Go 国内加速源。清空输入框并保存，会恢复到内置默认值。
         </el-alert>
       </el-form>
       <template #footer>
@@ -822,6 +840,7 @@ import {
   type AndroidRuntimeStatus,
   type AndroidRuntimePreset,
 } from "@/api/androidRuntime";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   ArrowDown,
@@ -829,6 +848,7 @@ import {
   Cpu,
   Delete,
   Download,
+  Monitor,
   Plus,
   Refresh,
   RefreshRight,
@@ -842,6 +862,12 @@ import {
 import { usePageActivity } from "@/composables/usePageActivity";
 import { useResponsive } from "@/composables/useResponsive";
 import { ansiToHtml, normalizeAnsi } from "@/utils/ansi";
+
+const router = useRouter();
+
+function openTerminal() {
+  router.push("/terminal");
+}
 
 // ---------- Android 面具版脚本运行时 ----------
 const androidStatus = ref<AndroidRuntimeStatus | null>(null);
@@ -1008,6 +1034,7 @@ const mirrorForm = ref({ pip_mirror: "", npm_mirror: "", linux_mirror: "" });
 const mirrorMeta = ref<MirrorsResponse>({
   pip_mirror: "",
   npm_mirror: "",
+  playwright_download_host: "https://cdn.npmmirror.com/binaries/playwright",
   linux_mirror: "",
   linux_package_manager: "",
   linux_distribution: "",
@@ -1015,6 +1042,11 @@ const mirrorMeta = ref<MirrorsResponse>({
   linux_mirror_label: "Linux",
   linux_mirror_message: "",
 });
+const playwrightDownloadHost = computed(
+  () =>
+    mirrorMeta.value.playwright_download_host ||
+    "https://cdn.npmmirror.com/binaries/playwright",
+);
 let mounted = false;
 
 const searchKeyword = ref("");
@@ -1705,6 +1737,31 @@ onBeforeUnmount(() => {
   overflow-x: hidden;
 }
 
+.terminal-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-blank);
+}
+
+.terminal-entry__text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.5;
+
+  code {
+    font-size: 12px;
+  }
+}
+
 .page-header {
   margin-bottom: 18px;
 
@@ -2075,6 +2132,11 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .terminal-entry {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .page-header {
     margin-bottom: 14px;
     h2 {

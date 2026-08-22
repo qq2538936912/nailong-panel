@@ -38,17 +38,76 @@ case "$PYTHON_RUNTIME_VERSION" in
     ;;
 esac
 
+# 腾讯云等国内机器直连 GitHub Release 大文件，curl 经常在传了很久之后断开。
+# 不要用 curl 自带的 --retry：它和 -C - 一起用时会把已下载的半截扔掉重来。
+# 同一条 URL 自己循环续传；换镜像时再丢半截，避免 Range 对不上。
+fetch_one() {
+  url=$1
+  out=$2
+  attempt=1
+  while [ "$attempt" -le 6 ]; do
+    log "download $url (attempt ${attempt})"
+    if command -v curl >/dev/null 2>&1; then
+      if curl --http1.1 --connect-timeout 20 --max-time 900 \
+        -fL -C - -o "$out" "$url"; then
+        return 0
+      fi
+    elif command -v wget >/dev/null 2>&1; then
+      if wget --timeout=20 --tries=1 --continue -O "$out" "$url"; then
+        return 0
+      fi
+    else
+      log "curl/wget unavailable, skip Python runtime installation"
+      return 1
+    fi
+    log "download interrupted: $url"
+    attempt=$((attempt + 1))
+    sleep 2
+  done
+  return 1
+}
+
+github_proxy_urls() {
+  url=$1
+  case "$url" in
+    https://github.com/*)
+      printf '%s\n' \
+        "https://gh-proxy.org/${url}" \
+        "https://ghfast.top/${url}" \
+        "https://mirror.ghproxy.com/${url}"
+      ;;
+  esac
+}
+
 fetch() {
   url=$1
   out=$2
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$out"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$out" "$url"
-  else
-    log "curl/wget unavailable, skip Python runtime installation"
-    return 1
+  rm -f "$out"
+
+  mirror_url=
+  if [ -n "${PYTHON_RUNTIME_MIRROR:-}" ]; then
+    mirror=${PYTHON_RUNTIME_MIRROR}
+    case "$mirror" in
+      */) ;;
+      *) mirror="${mirror}/" ;;
+    esac
+    mirror_url="${mirror}${url}"
   fi
+
+  prev=
+  for candidate in "$mirror_url" $(github_proxy_urls "$url") "$url"; do
+    [ -n "$candidate" ] || continue
+    if [ "$candidate" = "$prev" ]; then
+      continue
+    fi
+    prev=$candidate
+    if fetch_one "$candidate" "$out"; then
+      return 0
+    fi
+    log "download failed: $candidate"
+    rm -f "$out"
+  done
+  return 1
 }
 
 python_platform() {

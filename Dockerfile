@@ -38,9 +38,13 @@ ARG PYTHON_RUNTIME_312=3.12.13
 ARG PYTHON_RUNTIME_MODE=single
 ARG PYTHON_RUNTIME_VERSION=3.12
 ARG INSTALL_FULL_TOOLS=false
+ARG PYTHON_RUNTIME_MIRROR=
 
 # 精简镜像只保留面板运行、脚本执行、仓库订阅和容器降权所需工具。
-RUN apk add --no-cache \
+# 构建期就把 apk 源换成阿里云：国内机器直连 dl-cdn.alpinelinux.org 装 nodejs 经常要十几二十分钟。
+# 运行时依赖管理页的默认 Alpine 镜像也是这一条，两边保持一致。
+RUN sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.aliyun.com/alpine#g' /etc/apk/repositories \
+    && apk add --no-cache \
     ca-certificates tzdata bash curl \
     gcompat libstdc++ \
     nginx \

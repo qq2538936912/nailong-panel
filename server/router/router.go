@@ -29,8 +29,8 @@ func Setup(engine *gin.Engine) {
 	depsHandler := handler.NewDepsHandler()
 	configHandler := handler.NewConfigHandler()
 	platformTokenHandler := handler.NewPlatformTokenHandler()
-	sponsorHandler := handler.NewSponsorHandler()
 	androidRuntimeHandler := handler.NewAndroidRuntimeHandler()
+	terminalHandler := handler.NewTerminalHandler()
 
 	authHandler.RegisterRoutes(v1)
 	authHandler.RegisterRoutes(legacy)
@@ -77,11 +77,11 @@ func Setup(engine *gin.Engine) {
 	platformTokenHandler.RegisterRoutes(v1)
 	platformTokenHandler.RegisterRoutes(legacy)
 
-	sponsorHandler.RegisterRoutes(v1)
-	sponsorHandler.RegisterRoutes(legacy)
-
 	androidRuntimeHandler.RegisterRoutes(v1)
 	androidRuntimeHandler.RegisterRoutes(legacy)
+
+	terminalHandler.RegisterRoutes(v1)
+	terminalHandler.RegisterRoutes(legacy)
 
 	engine.GET("/robots.txt", func(c *gin.Context) {
 		c.Data(200, "text/plain; charset=utf-8", []byte("User-agent: *\nDisallow: /\n"))

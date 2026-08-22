@@ -214,6 +214,31 @@ func TestParseForwardedHostsExtractsMultipleHosts(t *testing.T) {
 	}
 }
 
+func TestAllowWebsocketOriginMatchesCORSPolicy(t *testing.T) {
+	prev := config.C
+	t.Cleanup(func() { config.C = prev })
+	config.C = &config.Config{CORS: config.CORSConfig{Origins: []string{"https://panel.example.com"}}}
+
+	allow := httptest.NewRequest(http.MethodGet, "/api/v1/terminal/ws", nil)
+	allow.Host = "panel.example.com"
+	allow.Header.Set("Origin", "https://panel.example.com")
+	if !AllowWebsocketOrigin(allow) {
+		t.Fatal("expected same-origin websocket to be allowed")
+	}
+
+	empty := httptest.NewRequest(http.MethodGet, "/api/v1/terminal/ws", nil)
+	if !AllowWebsocketOrigin(empty) {
+		t.Fatal("expected empty origin websocket to be allowed")
+	}
+
+	deny := httptest.NewRequest(http.MethodGet, "/api/v1/terminal/ws", nil)
+	deny.Host = "panel.example.com"
+	deny.Header.Set("Origin", "https://evil.example.com")
+	if AllowWebsocketOrigin(deny) {
+		t.Fatal("expected foreign origin websocket to be rejected")
+	}
+}
+
 func TestIsPrivateOrLoopbackOriginDistinguishesPublicIPs(t *testing.T) {
 	cases := []struct {
 		origin string

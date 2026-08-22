@@ -6,7 +6,7 @@ services:
     container_name: ${DAIDAI_PANEL_CONTAINER_NAME:-daidai-panel}
     restart: unless-stopped
     ports:
-      - "${PANEL_HTTP_PORT:-5700}:5700"
+      - "${PANEL_HTTP_PORT:-15700}:5700"
     volumes:
       - ${PANEL_DATA_DIR:-./Dumb-Panel}:/app/Dumb-Panel
     environment:

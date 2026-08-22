@@ -32,6 +32,35 @@ func TestBuildManagedRuntimeEnvMapDoesNotWritePythonPreCheckEnv(t *testing.T) {
 	}
 }
 
+func TestBuildManagedRuntimeEnvMapInjectsBuiltinDownloadMirrors(t *testing.T) {
+	root := testutil.SetupTestEnv(t)
+
+	if err := database.DB.Create(&model.EnvVar{
+		Name:    "PLAYWRIGHT_DOWNLOAD_HOST",
+		Value:   "https://example.com/playwright",
+		Enabled: true,
+	}).Error; err != nil {
+		t.Fatalf("create env var: %v", err)
+	}
+
+	envMap, err := BuildManagedRuntimeEnvMap(root, root, nil, time.Hour)
+	if err != nil {
+		t.Fatalf("build managed runtime env map: %v", err)
+	}
+	if got := envMap["PLAYWRIGHT_DOWNLOAD_HOST"]; got != "https://example.com/playwright" {
+		t.Fatalf("expected database playwright host to win, got %q", got)
+	}
+	if got := envMap["PIP_INDEX_URL"]; got != DefaultPipMirror {
+		t.Fatalf("expected default pip mirror, got %q", got)
+	}
+	if got := envMap["npm_config_registry"]; got != "https://registry.npmmirror.com/" {
+		t.Fatalf("expected default npm mirror, got %q", got)
+	}
+	if got := envMap["GOPROXY"]; got != DefaultGoProxy {
+		t.Fatalf("expected default goproxy, got %q", got)
+	}
+}
+
 func TestBuildManagedRuntimeEnvMapUsesRequestedPythonVersion(t *testing.T) {
 	root := testutil.SetupTestEnv(t)
 
