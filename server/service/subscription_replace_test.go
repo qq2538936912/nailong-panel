@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/model"
+	"panel/testutil"
 )
 
 func runGit(t *testing.T, dir string, args ...string) string {

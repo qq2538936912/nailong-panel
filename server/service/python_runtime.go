@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/database"
+	"panel/model"
 )
 
 const defaultPythonRuntimeVersion = "3.12"
@@ -43,12 +43,12 @@ func CurrentPythonRuntimeVersions() []string {
 }
 
 func SinglePythonRuntimeVersion() (string, bool) {
-	mode := strings.ToLower(strings.TrimSpace(os.Getenv("DAIDAI_PYTHON_RUNTIME_MODE")))
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("PANEL_PYTHON_RUNTIME_MODE")))
 	if mode != "single" {
 		return "", false
 	}
 
-	rawVersion := strings.TrimSpace(os.Getenv("DAIDAI_PYTHON_VERSION"))
+	rawVersion := strings.TrimSpace(os.Getenv("PANEL_PYTHON_VERSION"))
 	if rawVersion == "" {
 		return defaultPythonRuntimeVersion, true
 	}
@@ -86,13 +86,13 @@ func PythonVersionSupportedByCurrentRuntime(version string) bool {
 // 这里把“模块运行态”的判断提到 service 层，供 Python 版本决策直接复用，
 // 避免只在 handler / shell 脚本里知道自己是模块版，真正执行任务时却还按通用服务器逻辑硬判 3.12。
 func IsMagiskModuleRuntime() bool {
-	if strings.TrimSpace(os.Getenv("DAIDAI_MAGISK_MODULE")) != "" {
+	if strings.TrimSpace(os.Getenv("PANEL_MAGISK_MODULE")) != "" {
 		return true
 	}
 	for _, marker := range []string{
-		"/data/adb/daidai-panel/ports.conf",
-		"/data/adb/modules/daidai-panel/module.prop",
-		"/data/adb/modules_update/daidai-panel/module.prop",
+		"/data/adb/panel/ports.conf",
+		"/data/adb/modules/panel/module.prop",
+		"/data/adb/modules_update/panel/module.prop",
 	} {
 		if _, err := os.Stat(marker); err == nil {
 			return true
@@ -199,7 +199,7 @@ func ResolvePythonVersionFromEnv(envVars map[string]string) string {
 	if envVars == nil {
 		return DefaultPythonVersion()
 	}
-	version := resolveEffectivePythonVersionForCurrentRuntime(envVars["DAIDAI_PYTHON_VERSION"])
+	version := resolveEffectivePythonVersionForCurrentRuntime(envVars["PANEL_PYTHON_VERSION"])
 	if !PythonVersionSupportedByCurrentRuntime(version) {
 		return DefaultPythonVersion()
 	}

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 
 	"github.com/robfig/cron/v3"
 )

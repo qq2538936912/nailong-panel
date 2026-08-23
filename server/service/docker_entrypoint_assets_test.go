@@ -30,7 +30,7 @@ func readDockerEntrypoint(t *testing.T) string {
 func TestDockerEntrypointHomeMatchesGoFallback(t *testing.T) {
 	text := readDockerEntrypoint(t)
 
-	const shellHome = `DAIDAI_HOME="${DATA_DIR}/.home"`
+	const shellHome = `PANEL_HOME="${DATA_DIR}/.home"`
 	if !strings.Contains(text, shellHome) {
 		t.Fatalf("entrypoint.sh 必须把降权用户的 HOME 设在 %q", shellHome)
 	}
@@ -41,7 +41,7 @@ func TestDockerEntrypointHomeMatchesGoFallback(t *testing.T) {
 	dataDir := t.TempDir()
 	missing := filepath.Join(dataDir, "never-created-home")
 	if got := resolveWritableHome(missing, dataDir); got != filepath.Join(dataDir, ".home") {
-		t.Fatalf("Go 侧回落目录与 entrypoint 的 DAIDAI_HOME 不一致，got=%q", got)
+		t.Fatalf("Go 侧回落目录与 entrypoint 的 PANEL_HOME 不一致，got=%q", got)
 	}
 }
 
@@ -52,8 +52,8 @@ func TestDockerEntrypointPinsHomeWhenDroppingPrivilege(t *testing.T) {
 	text := readDockerEntrypoint(t)
 
 	for _, snippet := range []string{
-		`su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server`,
-		`gosu "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server`,
+		`su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${PANEL_HOME}" /app/panel-server`,
+		`gosu "${RUN_AS_SPEC}" /usr/bin/env "HOME=${PANEL_HOME}" /app/panel-server`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("entrypoint.sh 缺少显式钉 HOME 的启动方式: %q", snippet)
@@ -63,7 +63,7 @@ func TestDockerEntrypointPinsHomeWhenDroppingPrivilege(t *testing.T) {
 	// env 必须写绝对路径：上面 export 的 PATH 首位是
 	// ${DATA_DIR}/deps/nodejs/node_modules/.bin，那是面板用户可写的目录。
 	// 用户装到一个 bin 名恰好叫 env 的 npm 包就会把它劫持掉，
-	// daidai-server 根本不会被执行，表现成「容器每 2 秒重启、日志只有一个退出码」。
+	// panel-server 根本不会被执行，表现成「容器每 2 秒重启、日志只有一个退出码」。
 	for i, line := range strings.Split(text, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "#") {
@@ -81,20 +81,20 @@ func TestDockerEntrypointPinsHomeWhenDroppingPrivilege(t *testing.T) {
 	}
 
 	// 不降权时必须还是那条裸启动，历史部署逐字节不变。
-	if !strings.Contains(text, "    /app/daidai-server &") {
+	if !strings.Contains(text, "    /app/panel-server &") {
 		t.Fatal("entrypoint.sh 必须保留不降权时的裸启动分支")
 	}
 }
 
 // 建用户不能再是「声明了家目录却从不创建」：那正是 npm 报
-// EACCES: mkdir '/home/daidai' 的直接原因。
+// EACCES: mkdir '/home/panel' 的直接原因。
 func TestDockerEntrypointCreatesHomeForRunUser(t *testing.T) {
 	text := readDockerEntrypoint(t)
 
 	// 必须带兜底：数据目录以 :ro 挂载、或 NFS root_squash 把容器内 root 压成 nobody 时
 	// 这句会返回 EACCES，裸写会被 set -e 直接带出 —— docker logs 里一行输出都没有，
 	// 而后面那道可写性预检本来能给出「数据目录不可写 + 三条原因 + 修复命令」。
-	if !strings.Contains(text, `mkdir -p "${DAIDAI_HOME}" 2>/dev/null || true`) {
+	if !strings.Contains(text, `mkdir -p "${PANEL_HOME}" 2>/dev/null || true`) {
 		t.Fatal("entrypoint.sh 创建 HOME 的那句必须带 || true，否则只读数据目录下会被 set -e 静默带出")
 	}
 	// HOME 在 DATA_DIR 下，靠这条 chown -R 一并覆盖属主。
@@ -103,8 +103,8 @@ func TestDockerEntrypointCreatesHomeForRunUser(t *testing.T) {
 	}
 	// 建用户时家目录字段要指向同一个位置，su-exec 覆写 HOME 时才落在可写目录上。
 	for _, snippet := range []string{
-		`-d "${DAIDAI_HOME}"`,
-		`-h "${DAIDAI_HOME}"`,
+		`-d "${PANEL_HOME}"`,
+		`-h "${PANEL_HOME}"`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("建用户时必须指定家目录 %q（shadow 与 busybox 的参数名不同，两条都要有）", snippet)
@@ -112,8 +112,8 @@ func TestDockerEntrypointCreatesHomeForRunUser(t *testing.T) {
 	}
 	// 旧写法：既不建家目录、也不指定家目录。留着就等于 bug 回来了。
 	for _, forbidden := range []string{
-		`adduser -D -H -u "${TARGET_UID}" -G daidai daidai`,
-		`useradd -M -u "${TARGET_UID}" -g "${TARGET_GID}" -s /sbin/nologin daidai`,
+		`adduser -D -H -u "${TARGET_UID}" -G panel panel`,
+		`useradd -M -u "${TARGET_UID}" -g "${TARGET_GID}" -s /sbin/nologin panel`,
 	} {
 		if strings.Contains(text, forbidden) {
 			t.Fatalf("entrypoint.sh 不应残留不指定家目录的旧建用户写法: %q", forbidden)
@@ -133,8 +133,8 @@ func TestDockerEntrypointSurvivesUidGidCollision(t *testing.T) {
 		`TARGET_GROUP=$(getent group "${TARGET_GID}" 2>/dev/null | cut -d: -f1)`,
 		`TARGET_USER=$(getent passwd "${TARGET_UID}" 2>/dev/null | cut -d: -f1)`,
 		// PUID/PGID 改过之后只做 docker restart 时，容器层里的旧账号要就地改而不是重建
-		`groupmod -g "${TARGET_GID}" daidai`,
-		`usermod -u "${TARGET_UID}" -g "${TARGET_GID}" -d "${DAIDAI_HOME}" daidai`,
+		`groupmod -g "${TARGET_GID}" panel`,
+		`usermod -u "${TARGET_UID}" -g "${TARGET_GID}" -d "${PANEL_HOME}" panel`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("entrypoint.sh 缺少 UID/GID 撞车处理片段: %q", snippet)
@@ -166,7 +166,7 @@ func TestDockerEntrypointSurvivesUidGidCollision(t *testing.T) {
 }
 
 // 只设 PGID 不设 PUID 时 TARGET_UID 会取到 0，
-// 原来会造出一个 uid=0 的假 daidai：看起来降了权、实际仍是 root。
+// 原来会造出一个 uid=0 的假 panel：看起来降了权、实际仍是 root。
 func TestDockerEntrypointRejectsRootPuid(t *testing.T) {
 	text := readDockerEntrypoint(t)
 
@@ -188,15 +188,15 @@ func TestDockerEntrypointKeepsPrivilegeChangesOptIn(t *testing.T) {
 		t.Fatal("entrypoint.sh 找不到 PUID/PGID 的 opt-in 守卫")
 	}
 	// 两个状态变量必须在守卫之前初始化为空，否则不设 PUID 时会引用到未定义变量。
-	for _, snippet := range []string{`RUN_AS_USER=""`, `DAIDAI_HOME=""`} {
+	for _, snippet := range []string{`RUN_AS_USER=""`, `PANEL_HOME=""`} {
 		idx := strings.Index(text, snippet)
 		if idx < 0 || idx > guardIdx {
 			t.Fatalf("%q 必须在 PUID 守卫之前初始化 (idx=%d guard=%d)", snippet, idx, guardIdx)
 		}
 	}
 	for _, snippet := range []string{
-		`DAIDAI_HOME="${DATA_DIR}/.home"`,
-		`mkdir -p "${DAIDAI_HOME}"`,
+		`PANEL_HOME="${DATA_DIR}/.home"`,
+		`mkdir -p "${PANEL_HOME}"`,
 		`chown -R "${TARGET_UID}:${TARGET_GID}" "${DATA_DIR}" /tmp`,
 	} {
 		if idx := strings.Index(text, snippet); idx < guardIdx {

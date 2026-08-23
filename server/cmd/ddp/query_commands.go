@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 func runTaskList(rt *cliRuntime, args []string) error {

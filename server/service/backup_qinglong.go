@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	panelcron "daidai-panel/pkg/cron"
+	"panel/config"
+	"panel/model"
+	panelcron "panel/pkg/cron"
 
 	_ "github.com/glebarez/sqlite"
 )
@@ -26,7 +26,7 @@ func buildQingLongManifest(extractedDir string) (BackupManifest, error) {
 	}
 
 	manifest := BackupManifest{
-		Format:    "daidai-panel-backup",
+		Format:    "panel-backup",
 		Version:   "0.4.0",
 		Source:    "qinglong",
 		CreatedAt: time.Now(),

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"syscall"
 
-	"daidai-panel/appboot"
-	"daidai-panel/config"
-	"daidai-panel/service"
+	"panel/appboot"
+	"panel/config"
+	"panel/service"
 )
 
 type cliRuntime struct {
@@ -53,7 +53,7 @@ func (rt *cliRuntime) dataDir() string {
 	if value := strings.TrimSpace(os.Getenv("DATA_DIR")); value != "" {
 		return value
 	}
-	return "/app/Dumb-Panel"
+	return "/app/Panel"
 }
 
 func (rt *cliRuntime) panelLogPath() string {
@@ -61,7 +61,7 @@ func (rt *cliRuntime) panelLogPath() string {
 }
 
 func (rt *cliRuntime) serverPIDFile() string {
-	return filepath.Join(rt.dataDir(), "run", "daidai-server.pid")
+	return filepath.Join(rt.dataDir(), "run", "panel-server.pid")
 }
 
 func (rt *cliRuntime) backendPort() int {

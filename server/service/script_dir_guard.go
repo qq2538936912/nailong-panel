@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 // quarantinedScriptDirNames 记录启动期需要自动隔离的异常脚本目录名。

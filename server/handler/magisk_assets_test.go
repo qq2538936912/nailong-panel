@@ -20,7 +20,7 @@ func TestMagiskServiceScriptGuardsOnlineUpgrade(t *testing.T) {
 		t.Fatal("service.sh 必须保留 file_needs_sync：无条件 cp 会把面板内在线升级的结果回滚掉")
 	}
 	for _, snippet := range []string{
-		`file_needs_sync "$MODDIR/system/bin/daidai-server" "$rootfs/usr/local/bin/daidai-server"`,
+		`file_needs_sync "$MODDIR/system/bin/panel-server" "$rootfs/usr/local/bin/panel-server"`,
 		`file_needs_sync "$MODDIR/web/index.html" "$rootfs/app/web/index.html"`,
 	} {
 		if !strings.Contains(text, snippet) {
@@ -49,12 +49,12 @@ func TestMagiskScriptsShareStopFlagPath(t *testing.T) {
 	if magiskStopFlagPath != magiskPersistDir+"/"+magiskStopFlagName {
 		t.Fatalf("magiskStopFlagPath 必须由 magiskPersistDir + magiskStopFlagName 拼出，当前=%q", magiskStopFlagPath)
 	}
-	if magiskStopFlagPath != "/data/adb/daidai-panel/stopped" {
-		t.Fatalf("停止开关路径与 Magisk 脚本约定的 /data/adb/daidai-panel/stopped 不一致：%q", magiskStopFlagPath)
+	if magiskStopFlagPath != "/data/adb/panel/stopped" {
+		t.Fatalf("停止开关路径与 Magisk 脚本约定的 /data/adb/panel/stopped 不一致：%q", magiskStopFlagPath)
 	}
 	// 停止开关绝不能落在容器数据目录里：service.sh 每次开机都会无条件删掉那里的
 	// .updating，同目录的跨重启标记迟早被同类清理误伤；rootfs 重装还会整体删除它。
-	if strings.Contains(magiskStopFlagPath, "Dumb-Panel") {
+	if strings.Contains(magiskStopFlagPath, "Panel") {
 		t.Fatalf("停止开关不得放在容器数据目录下：%q", magiskStopFlagPath)
 	}
 	// 停止能力所需的外壳版本不能超过仓库里外壳的实际版本，
@@ -67,7 +67,7 @@ func TestMagiskScriptsShareStopFlagPath(t *testing.T) {
 	// service.sh：定义开关 + 定义守护代次文件 + 早退。
 	serviceSh := readMagiskScript(t, "service.sh")
 	for _, snippet := range []string{
-		`PERSIST_DIR=/data/adb/daidai-panel`,
+		`PERSIST_DIR=/data/adb/panel`,
 		`STOP_FLAG="$PERSIST_DIR/` + magiskStopFlagName + `"`,
 		`WATCHDOG_GEN_FILE="$PERSIST_DIR/` + magiskWatchdogGenName + `"`,
 		`if [ -f "$STOP_FLAG" ]; then`,
@@ -83,9 +83,9 @@ func TestMagiskScriptsShareStopFlagPath(t *testing.T) {
 	// 早退点必须排在「模块→容器条件同步」之后、「进容器拉起面板」之前。
 	// 放到同步之前会导致：停止状态下刷入新模块 zip 再重启，新二进制同步不进容器，
 	// 点启动跑的还是旧版本，表现成「刷了新版但版本号没变」。
-	syncIdx := strings.Index(serviceSh, `file_needs_sync "$MODDIR/system/bin/daidai-server"`)
+	syncIdx := strings.Index(serviceSh, `file_needs_sync "$MODDIR/system/bin/panel-server"`)
 	stopIdx := strings.Index(serviceSh, `if [ -f "$STOP_FLAG" ]; then`)
-	startIdx := strings.Index(serviceSh, `"$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/daidai-startup.sh`)
+	startIdx := strings.Index(serviceSh, `"$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/panel-startup.sh`)
 	if syncIdx < 0 || stopIdx < 0 || startIdx < 0 {
 		t.Fatalf("service.sh 找不到定位锚点 (sync=%d stop=%d start=%d)", syncIdx, stopIdx, startIdx)
 	}
@@ -158,10 +158,10 @@ func TestMagiskServiceScriptExportsAndroidRuntimeEnv(t *testing.T) {
 	text := string(data)
 
 	requiredSnippets := []string{
-		"export DAIDAI_MAGISK_MODULE=1",
-		"export DAIDAI_ANDROID_RUNTIME_BIN_DIR=/data/adb/daidai-panel/bin",
-		"/data/adb/daidai-panel/bin/python/bin",
-		"/data/adb/daidai-panel/bin/node/bin",
+		"export PANEL_MAGISK_MODULE=1",
+		"export PANEL_ANDROID_RUNTIME_BIN_DIR=/data/adb/panel/bin",
+		"/data/adb/panel/bin/python/bin",
+		"/data/adb/panel/bin/node/bin",
 	}
 	// service.sh 里 export 的外壳版本必须等于 currentMagiskShellVersion
 	// —— 后者的定义就是「本仓库 service.sh 当前 export 的值」。
@@ -169,7 +169,7 @@ func TestMagiskServiceScriptExportsAndroidRuntimeEnv(t *testing.T) {
 	// 注意这里对齐的【不是】 requiredMagiskShellVersion：那个是「在线升级放行的最低外壳版本」，
 	// 只有当新面板无法在旧外壳上运行时才提。两者相等只是巧合，不是契约。
 	requiredSnippets = append(requiredSnippets,
-		"export DAIDAI_MAGISK_SHELL_VERSION="+strconv.Itoa(currentMagiskShellVersion),
+		"export PANEL_MAGISK_SHELL_VERSION="+strconv.Itoa(currentMagiskShellVersion),
 	)
 	for _, snippet := range requiredSnippets {
 		if !strings.Contains(text, snippet) {
@@ -189,8 +189,8 @@ func TestMagiskServiceScriptExportsAndroidRuntimeEnv(t *testing.T) {
 	}
 	for _, snippet := range []string{
 		`PY_MINOR=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"`,
-		`export DAIDAI_PYTHON_VERSION="$PY_MINOR"`,
-		`"$DAIDAI_DIR/deps/python/$PY_MINOR"`,
+		`export PANEL_PYTHON_VERSION="$PY_MINOR"`,
+		`"$PANEL_DIR/deps/python/$PY_MINOR"`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("expected service.sh to contain dynamic python runtime snippet %q", snippet)
@@ -367,7 +367,7 @@ func TestMagiskCustomizeScriptProbeAndVerifyUseFlavorShell(t *testing.T) {
 		"\"$RURIMA\" ruri -p -N -S -A \"$rootfs\" \"$CTR_SHELL\" -c '\n" +
 			"  for c in python3 node npm git bash; do",
 		// 装依赖脚本本身也要按 flavor 选 shell
-		`"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/daidai-install-deps.sh`,
+		`"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/panel-install-deps.sh`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("expected customize.sh to contain flavor-aware snippet %q", snippet)
@@ -469,7 +469,7 @@ func TestMagiskBuildScriptWritesFlavorFile(t *testing.T) {
 		// alpine 用空后缀，保证默认产物名与历史逐字节一致
 		`  alpine) FLAVOR_SUFFIX="" ;;`,
 		`  debian) FLAVOR_SUFFIX="-debian" ;;`,
-		`OUTZIP="$DIST/daidai-panel-magisk${FLAVOR_SUFFIX}-v${VERSION}.zip"`,
+		`OUTZIP="$DIST/panel-magisk${FLAVOR_SUFFIX}-v${VERSION}.zip"`,
 		// flavor 标记文件必须真的写进 staging
 		`printf '%s\n' "$FLAVOR" > "$STAGING/flavor"`,
 		// 离线 apk 只进 alpine 包
@@ -513,12 +513,12 @@ func TestMagiskCustomizeScriptUsesCapabilityProbeInsteadOfVersionGate(t *testing
 	}
 
 	// 能力探测：哨兵字符串 + 实际进容器执行
-	if !strings.Contains(text, "DAIDAI_CONTAINER_PROBE_OK") {
+	if !strings.Contains(text, "PANEL_CONTAINER_PROBE_OK") {
 		t.Fatal("customize.sh 缺少容器能力探测的哨兵字符串")
 	}
 	// 探测必须排在装依赖之前：装依赖耗时且强依赖网络，
 	// 先探测才能把「容器起不来」和「网络不通」两类失败区分开
-	probeIdx := strings.Index(text, "DAIDAI_CONTAINER_PROBE_OK")
+	probeIdx := strings.Index(text, "PANEL_CONTAINER_PROBE_OK")
 	apkIdx := strings.Index(text, "apk add --no-cache")
 	if apkIdx < 0 {
 		t.Fatal("customize.sh 找不到 apk 安装段")
@@ -787,8 +787,8 @@ func TestMagiskCustomizeScriptProbesContainerDNSBeforeInstallingDeps(t *testing.
 	}
 
 	// 探测必须排在装依赖之前
-	probeIdx := strings.Index(text, "daidai-dns-probe.sh")
-	installIdx := strings.Index(text, `"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/daidai-install-deps.sh`)
+	probeIdx := strings.Index(text, "panel-dns-probe.sh")
+	installIdx := strings.Index(text, `"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/panel-install-deps.sh`)
 	if probeIdx < 0 || installIdx < 0 {
 		t.Fatalf("customize.sh 找不到 DNS 探测或装依赖的定位锚点 (probe=%d install=%d)", probeIdx, installIdx)
 	}
@@ -804,7 +804,7 @@ func TestMagiskCustomizeScriptHardensDebianApt(t *testing.T) {
 
 	for _, snippet := range []string{
 		// apt.conf 落在 apt.conf.d 下，运行期那三条裸 apt 路径会自动继承
-		"/etc/apt/apt.conf.d/99-daidai-android",
+		"/etc/apt/apt.conf.d/99-panel-android",
 		`APT::Sandbox::User "root";`,
 		`Acquire::Retries "3";`,
 		`Acquire::ForceIPv4 "true";`,
@@ -816,7 +816,7 @@ func TestMagiskCustomizeScriptHardensDebianApt(t *testing.T) {
 		// 每换一个源都要重跑 update，否则换了也白换
 		"if apt-get update; then",
 		// 供宿主侧报错文案分流用的状态记录
-		"/tmp/daidai-deps-status",
+		"/tmp/panel-deps-status",
 	} {
 		if !strings.Contains(block, snippet) {
 			t.Fatalf("expected customize.sh Debian 分支 to contain %q", snippet)
@@ -840,8 +840,8 @@ func TestMagiskCustomizeScriptHardensDebianApt(t *testing.T) {
 		if strings.HasPrefix(trimmed, "#") {
 			continue
 		}
-		if strings.Contains(line, "99-daidai-android") && strings.Contains(line, "rm ") {
-			t.Fatalf("customize.sh Debian 分支第 %d 行不得删除 99-daidai-android（运行期 apt 也靠它）: %s",
+		if strings.Contains(line, "99-panel-android") && strings.Contains(line, "rm ") {
+			t.Fatalf("customize.sh Debian 分支第 %d 行不得删除 99-panel-android（运行期 apt 也靠它）: %s",
 				i+1, trimmed)
 		}
 	}
@@ -906,7 +906,7 @@ func TestMagiskServiceScriptStartsSshdWithPortBasedGuard(t *testing.T) {
 		`{ cat /proc/net/tcp /proc/net/tcp6 2>/dev/null; } | awk -v p="$_hexport" '`,
 		`if ssh_port_listening; then`,
 		// -D -e 缺一不可：-e 才有日志，没有 -D 时 sshd 会 daemon(0,0) 把 stdio 丢掉
-		`nohup /usr/sbin/sshd -D -e >> $DAIDAI_DIR/sshd.log 2>&1 &`,
+		`nohup /usr/sbin/sshd -D -e >> $PANEL_DIR/sshd.log 2>&1 &`,
 		// 启动前配置自检
 		`_sshd_t=$(/usr/sbin/sshd -t 2>&1)`,
 		// sshd_config 不存在时也要留线索，不能整段静默跳过
@@ -925,7 +925,7 @@ func TestMagiskServiceScriptStartsSshdWithPortBasedGuard(t *testing.T) {
 	// 老 sshd 还开着这个 fd，mv 之后它继续往 .old 写，新文件永远长不到阈值，
 	// 滚动再也不会触发，.old 变成无上限增长。
 	startIdx := strings.Index(text, `if ssh_port_listening; then`)
-	rotateIdx := strings.Index(text, `mv -f $DAIDAI_DIR/sshd.log $DAIDAI_DIR/sshd.log.old`)
+	rotateIdx := strings.Index(text, `mv -f $PANEL_DIR/sshd.log $PANEL_DIR/sshd.log.old`)
 	launchIdx := strings.Index(text, `nohup /usr/sbin/sshd -D -e`)
 	if startIdx < 0 || rotateIdx < 0 || launchIdx < 0 {
 		t.Fatalf("service.sh 找不到定位锚点 (guard=%d rotate=%d launch=%d)", startIdx, rotateIdx, launchIdx)
@@ -949,9 +949,9 @@ func TestMagiskServiceScriptWritesAuthoritativeSshdConfig(t *testing.T) {
 		`/^[[:space:]]*[Mm][Aa][Tt][Cc][Hh][[:space:]]/ {`,
 		// 进了 Match 就不再删任何东西
 		`!inmatch && /^[#[:space:]]*([Pp]ort|[Pp]ermit[Rr]oot[Ll]ogin|[Pp]assword[Aa]uthentication)[[:space:]]+/ { next }`,
-		`mv -f /etc/ssh/sshd_config.daidai-tmp /etc/ssh/sshd_config`,
+		`mv -f /etc/ssh/sshd_config.panel-tmp /etc/ssh/sshd_config`,
 		`Include[[:space:]]+/etc/ssh/sshd_config\.d/`,
-		`/etc/ssh/sshd_config.d/00-daidai.conf`,
+		`/etc/ssh/sshd_config.d/00-panel.conf`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("service.sh 缺少 sshd_config 权威写入片段: %q", snippet)
@@ -1085,7 +1085,7 @@ func TestMagiskCustomizeScriptVerifiesSshAfterInstall(t *testing.T) {
 	}
 
 	// 必须排在装依赖之后，否则验的是空容器。
-	installIdx := strings.Index(text, `"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/daidai-install-deps.sh`)
+	installIdx := strings.Index(text, `"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/panel-install-deps.sh`)
 	if installIdx < 0 || sshIdx < installIdx {
 		t.Fatalf("SSH 验收必须排在装依赖之后 (install=%d ssh=%d)", installIdx, sshIdx)
 	}
@@ -1099,8 +1099,8 @@ func TestMagiskActionScriptReportsSshStatus(t *testing.T) {
 		`SSH_PORT_INFO=$(netstat -ltn 2>/dev/null | grep ":${SSH_PORT}\b" | head -n2)`,
 		`ui_print "--- 容器 SSH ---"`,
 		`/usr/sbin/sshd -t 2>&1 | sed "s/^/sshd -t: /"`,
-		`SSHD_LOG="$rootfs/app/Dumb-Panel/sshd.log"`,
-		`CTR_SERVICE_LOG="$rootfs/app/Dumb-Panel/service.log"`,
+		`SSHD_LOG="$rootfs/app/Panel/sshd.log"`,
+		`CTR_SERVICE_LOG="$rootfs/app/Panel/service.log"`,
 	} {
 		if !strings.Contains(text, snippet) {
 			t.Fatalf("action.sh 缺少 SSH 状态片段: %q", snippet)

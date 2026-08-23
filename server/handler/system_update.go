@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
+	"panel/model"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -304,7 +304,7 @@ func triggerWatchtowerUpdate(cfg watchtowerRuntimeConfig) (map[string]interface{
 	query.Set("async", "true")
 	containerName := strings.TrimSpace(os.Getenv("CONTAINER_NAME"))
 	if containerName == "" {
-		containerName = "daidai-panel"
+		containerName = "panel"
 	}
 	// Watchtower 的 container 参数支持正则，锚定并转义后只更新当前面板容器。
 	query.Set("container", "^"+regexp.QuoteMeta(containerName)+"$")
@@ -360,11 +360,11 @@ func buildPanelUpdatePlanForRelease(release *panelReleaseInfo) (*panelUpdatePlan
 		// Watchtower 不会重写容器镜像引用，因此保持 Compose 传入的真实 IMAGE_NAME。
 		imageName := strings.TrimSpace(os.Getenv("IMAGE_NAME"))
 		if isPinnedPanelImageReference(imageName) {
-			return nil, fmt.Errorf("当前镜像使用固定版本标签或 digest，Watchtower 只会检查这个固定引用；请把 DAIDAI_PANEL_IMAGE 改为同系列浮动标签后再启用一键或自动更新")
+			return nil, fmt.Errorf("当前镜像使用固定版本标签或 digest，Watchtower 只会检查这个固定引用；请把 PANEL_IMAGE 改为同系列浮动标签后再启用一键或自动更新")
 		}
 		containerName := strings.TrimSpace(os.Getenv("CONTAINER_NAME"))
 		if containerName == "" {
-			containerName = "daidai-panel"
+			containerName = "panel"
 		}
 		return &panelUpdatePlan{
 			DeploymentType: panelUpdateDeploymentDocker,
@@ -501,7 +501,7 @@ func inspectCurrentPanelContainer() (*dockerInspectInfo, error) {
 		os.Getenv("CONTAINER_NAME"),
 		os.Getenv("HOSTNAME"),
 		mustHostname(),
-		"daidai-panel",
+		"panel",
 	)
 
 	for _, candidate := range candidates {
@@ -1082,7 +1082,7 @@ func resolveUpdateImageTarget(imageName, mirrorHost string) (pullImageName, reso
 		if repoRef == "" {
 			repoRef = repoIdentifier
 		}
-		if repoIdentifier != "linzixuanzz/daidai-panel" {
+		if repoIdentifier != "xiaofeilong2/panel" {
 			return imageName, "", buildRegistryEndpoint(registryHost)
 		}
 		if registryHost == mirrorHost {
@@ -1146,7 +1146,7 @@ func normalizePanelUpdateImageName(imageName string) string {
 	}
 	baseImage, tag, _ := splitImageTag(imageName)
 	_, repoRef := splitImageRegistry(baseImage)
-	if repoRef != "linzixuanzz/daidai-panel" {
+	if repoRef != "xiaofeilong2/panel" {
 		return imageName
 	}
 
@@ -1178,7 +1178,7 @@ func isPinnedPanelImageReference(imageName string) bool {
 
 	baseImage, tag, hasTag := splitImageTag(imageName)
 	_, repoRef := splitImageRegistry(baseImage)
-	if !hasTag || repoRef != "linzixuanzz/daidai-panel" {
+	if !hasTag || repoRef != "xiaofeilong2/panel" {
 		return false
 	}
 

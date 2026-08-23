@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 真实场景回归：拿 QLScriptPublic 风格的 4 个脚本头部样本，铺到一个 saveDir 下，

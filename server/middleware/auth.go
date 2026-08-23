@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/database"
+	"panel/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

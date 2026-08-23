@@ -11,16 +11,16 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/model"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )
 
 func TestResolveUpdateImageTargetUsesMirrorForDockerHubImage(t *testing.T) {
-	pullImage, mirrorHost, registryURL := resolveUpdateImageTarget("linzixuanzz/daidai-panel:latest", "docker.1ms.run")
+	pullImage, mirrorHost, registryURL := resolveUpdateImageTarget("xiaofeilong2/panel:latest", "docker.1ms.run")
 
-	if pullImage != "docker.1ms.run/linzixuanzz/daidai-panel:latest" {
+	if pullImage != "docker.1ms.run/xiaofeilong2/panel:latest" {
 		t.Fatalf("expected mirrored pull image, got %q", pullImage)
 	}
 	if mirrorHost != "docker.1ms.run" {
@@ -34,7 +34,7 @@ func TestResolveUpdateImageTargetUsesMirrorForDockerHubImage(t *testing.T) {
 func TestResolveBinaryUpdateDownloadURLUsesConfiguredProxy(t *testing.T) {
 	testutil.SetupTestEnv(t)
 
-	assetURL := "https://github.com/linzixuanzz/daidai-panel/releases/download/v2.2.17/daidai-linux-amd64.tar.gz"
+	assetURL := "https://gitee.com/xiaofeilong2/panel/releases/download/v2.2.17/panel-linux-amd64.tar.gz"
 	if got := resolveBinaryUpdateDownloadURL(assetURL); got != assetURL {
 		t.Fatalf("expected direct asset URL without proxy, got %q", got)
 	}
@@ -49,9 +49,9 @@ func TestResolveBinaryUpdateDownloadURLUsesConfiguredProxy(t *testing.T) {
 }
 
 func TestResolveUpdateImageTargetStripsExplicitDockerHubHost(t *testing.T) {
-	pullImage, mirrorHost, registryURL := resolveUpdateImageTarget("docker.io/linzixuanzz/daidai-panel:latest", "docker.1ms.run")
+	pullImage, mirrorHost, registryURL := resolveUpdateImageTarget("docker.io/xiaofeilong2/panel:latest", "docker.1ms.run")
 
-	if pullImage != "docker.1ms.run/linzixuanzz/daidai-panel:latest" {
+	if pullImage != "docker.1ms.run/xiaofeilong2/panel:latest" {
 		t.Fatalf("expected mirrored pull image without explicit docker.io prefix, got %q", pullImage)
 	}
 	if mirrorHost != "docker.1ms.run" {
@@ -77,15 +77,15 @@ func TestResolveUpdateImageTargetKeepsCustomRegistryDirect(t *testing.T) {
 }
 
 func TestNormalizePanelUpdateImageNameUsesRollingDebianTag(t *testing.T) {
-	got := normalizePanelUpdateImageName("linzixuanzz/daidai-panel:1.9.8-debian")
-	if got != "linzixuanzz/daidai-panel:debian" {
+	got := normalizePanelUpdateImageName("xiaofeilong2/panel:1.9.8-debian")
+	if got != "xiaofeilong2/panel:debian" {
 		t.Fatalf("expected debian rolling tag, got %q", got)
 	}
 }
 
 func TestNormalizePanelUpdateImageNameUsesRollingLatestTag(t *testing.T) {
-	got := normalizePanelUpdateImageName("docker.io/linzixuanzz/daidai-panel:1.9.8")
-	if got != "docker.io/linzixuanzz/daidai-panel:latest" {
+	got := normalizePanelUpdateImageName("docker.io/xiaofeilong2/panel:1.9.8")
+	if got != "docker.io/xiaofeilong2/panel:latest" {
 		t.Fatalf("expected latest rolling tag, got %q", got)
 	}
 }
@@ -98,7 +98,7 @@ func TestNormalizePanelUpdateImageNameKeepsCustomRepo(t *testing.T) {
 }
 
 func TestNormalizePanelUpdateImageNamePreservesRuntimeVariants(t *testing.T) {
-	const repository = "linzixuanzz/daidai-panel:"
+	const repository = "xiaofeilong2/panel:"
 	cases := []struct {
 		name    string
 		input   string
@@ -160,14 +160,14 @@ func TestNormalizePanelUpdateImageNamePreservesRuntimeVariants(t *testing.T) {
 }
 
 func TestNormalizePanelUpdateImageNameKeepsUnknownOfficialTag(t *testing.T) {
-	const imageName = "linzixuanzz/daidai-panel:preview-arm64"
+	const imageName = "xiaofeilong2/panel:preview-arm64"
 	if got := normalizePanelUpdateImageName(imageName); got != imageName {
 		t.Fatalf("expected unknown official tag to remain unchanged, got %q", got)
 	}
 }
 
 func TestNormalizePanelUpdateImageNameKeepsDigestPinned(t *testing.T) {
-	const imageName = "linzixuanzz/daidai-panel@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	const imageName = "xiaofeilong2/panel@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	if got := normalizePanelUpdateImageName(imageName); got != imageName {
 		t.Fatalf("expected digest-pinned image to remain unchanged, got %q", got)
 	}
@@ -179,17 +179,17 @@ func TestSupportsDockerSocketPanelUpdateOnlyAllowsFullRollingTags(t *testing.T) 
 		imageName string
 		want      bool
 	}{
-		{"official latest full", "linzixuanzz/daidai-panel:latest-full", true},
-		{"official debian full", "linzixuanzz/daidai-panel:debian-full", true},
-		{"normalized fixed latest full", normalizePanelUpdateImageName("linzixuanzz/daidai-panel:2.4.0-full"), true},
-		{"normalized fixed debian full", normalizePanelUpdateImageName("linzixuanzz/daidai-panel:2.4.0-debian-full"), true},
-		{"official latest slim", "linzixuanzz/daidai-panel:latest", false},
-		{"official debian slim", "linzixuanzz/daidai-panel:debian", false},
-		{"official python variant", "linzixuanzz/daidai-panel:latest-3.12", false},
+		{"official latest full", "xiaofeilong2/panel:latest-full", true},
+		{"official debian full", "xiaofeilong2/panel:debian-full", true},
+		{"normalized fixed latest full", normalizePanelUpdateImageName("xiaofeilong2/panel:2.4.0-full"), true},
+		{"normalized fixed debian full", normalizePanelUpdateImageName("xiaofeilong2/panel:2.4.0-debian-full"), true},
+		{"official latest slim", "xiaofeilong2/panel:latest", false},
+		{"official debian slim", "xiaofeilong2/panel:debian", false},
+		{"official python variant", "xiaofeilong2/panel:latest-3.12", false},
 		{"custom repository slim", "ghcr.io/acme/panel:latest", false},
 		{"custom repository full", "ghcr.io/acme/panel:latest-full", true},
 		{"custom fixed full", "ghcr.io/acme/panel:2.4.0-full", false},
-		{"untagged image", "linzixuanzz/daidai-panel", false},
+		{"untagged image", "xiaofeilong2/panel", false},
 	}
 
 	for _, tc := range cases {
@@ -203,8 +203,8 @@ func TestSupportsDockerSocketPanelUpdateOnlyAllowsFullRollingTags(t *testing.T) 
 
 func TestFormatPanelUpdatePullErrorAddsNetworkHint(t *testing.T) {
 	plan := &panelUpdatePlan{
-		ImageName:     "linzixuanzz/daidai-panel:latest",
-		PullImageName: "docker.1ms.run/linzixuanzz/daidai-panel:latest",
+		ImageName:     "xiaofeilong2/panel:latest",
+		PullImageName: "docker.1ms.run/xiaofeilong2/panel:latest",
 		MirrorHost:    "docker.1ms.run",
 		RegistryURL:   "https://docker.1ms.run/v2/",
 	}
@@ -228,11 +228,11 @@ func TestCollectVolumeMappingsKeepsCustomBindPath(t *testing.T) {
 	info := &dockerInspectInfo{
 		HostConfig: dockerInspectHostConfig{
 			Binds: []string{
-				"/srv/panel-data:/app/Dumb-Panel",
+				"/srv/panel-data:/app/Panel",
 			},
 		},
 		Mounts: []dockerInspectMount{
-			{Type: "bind", Source: "/srv/panel-data", Destination: "/app/Dumb-Panel", RW: true},
+			{Type: "bind", Source: "/srv/panel-data", Destination: "/app/Panel", RW: true},
 			{Type: "bind", Source: "/var/run/docker.sock", Destination: "/var/run/docker.sock", RW: true},
 		},
 	}
@@ -241,7 +241,7 @@ func TestCollectVolumeMappingsKeepsCustomBindPath(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("expected two distinct volume mappings, got %v", got)
 	}
-	if got[0] != "/srv/panel-data:/app/Dumb-Panel" {
+	if got[0] != "/srv/panel-data:/app/Panel" {
 		t.Fatalf("expected custom data bind to be preserved, got %v", got)
 	}
 	if got[1] != "/var/run/docker.sock:/var/run/docker.sock" {
@@ -257,7 +257,7 @@ func TestCollectVolumeMappingsPreservesNamedVolumeAlongsideBind(t *testing.T) {
 			},
 		},
 		Mounts: []dockerInspectMount{
-			{Type: "volume", Name: "daidai_panel_data", Destination: "/app/Dumb-Panel", RW: true},
+			{Type: "volume", Name: "panel_data", Destination: "/app/Panel", RW: true},
 			{Type: "bind", Source: "/var/run/docker.sock", Destination: "/var/run/docker.sock", RW: true},
 		},
 	}
@@ -272,7 +272,7 @@ func TestCollectVolumeMappingsPreservesNamedVolumeAlongsideBind(t *testing.T) {
 		gotSet[mapping] = struct{}{}
 	}
 
-	if _, exists := gotSet["daidai_panel_data:/app/Dumb-Panel"]; !exists {
+	if _, exists := gotSet["panel_data:/app/Panel"]; !exists {
 		t.Fatalf("expected named data volume to be preserved, got %v", got)
 	}
 	if _, exists := gotSet["/var/run/docker.sock:/var/run/docker.sock"]; !exists {
@@ -284,12 +284,12 @@ func TestCollectVolumeMappingsDeduplicatesEquivalentRWBindings(t *testing.T) {
 	info := &dockerInspectInfo{
 		HostConfig: dockerInspectHostConfig{
 			Binds: []string{
-				"/srv/panel-data:/app/Dumb-Panel:rw",
+				"/srv/panel-data:/app/Panel:rw",
 				"/var/run/docker.sock:/var/run/docker.sock:rw",
 			},
 		},
 		Mounts: []dockerInspectMount{
-			{Type: "bind", Source: "/srv/panel-data", Destination: "/app/Dumb-Panel", RW: true},
+			{Type: "bind", Source: "/srv/panel-data", Destination: "/app/Panel", RW: true},
 			{Type: "bind", Source: "/var/run/docker.sock", Destination: "/var/run/docker.sock", RW: true},
 		},
 	}
@@ -304,7 +304,7 @@ func TestCollectVolumeMappingsDeduplicatesEquivalentRWBindings(t *testing.T) {
 		gotSet[mapping] = struct{}{}
 	}
 
-	if _, exists := gotSet["/srv/panel-data:/app/Dumb-Panel:rw"]; !exists {
+	if _, exists := gotSet["/srv/panel-data:/app/Panel:rw"]; !exists {
 		t.Fatalf("expected original data bind to be preserved, got %v", got)
 	}
 	if _, exists := gotSet["/var/run/docker.sock:/var/run/docker.sock:rw"]; !exists {
@@ -316,7 +316,7 @@ func TestBuildContainerRunArgsPreservesCustomDataDirEnvAndMount(t *testing.T) {
 	info := &dockerInspectInfo{
 		HostConfig: dockerInspectHostConfig{
 			Binds: []string{
-				"/opt/daidai-data:/srv/custom-data",
+				"/opt/panel-data:/srv/custom-data",
 				"/var/run/docker.sock:/var/run/docker.sock",
 			},
 		},
@@ -324,20 +324,20 @@ func TestBuildContainerRunArgsPreservesCustomDataDirEnvAndMount(t *testing.T) {
 			Env: []string{
 				"TZ=Asia/Shanghai",
 				"DATA_DIR=/srv/custom-data",
-				"CONTAINER_NAME=daidai-panel",
-				"IMAGE_NAME=linzixuanzz/daidai-panel:2.3.5-debianall",
+				"CONTAINER_NAME=panel",
+				"IMAGE_NAME=xiaofeilong2/panel:2.3.5-debianall",
 				"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
 			},
 		},
 		Mounts: []dockerInspectMount{
-			{Type: "bind", Source: "/opt/daidai-data", Destination: "/srv/custom-data", RW: true},
+			{Type: "bind", Source: "/opt/panel-data", Destination: "/srv/custom-data", RW: true},
 			{Type: "bind", Source: "/var/run/docker.sock", Destination: "/var/run/docker.sock", RW: true},
 		},
 	}
 
-	got := buildContainerRunArgs("daidai-panel", "linzixuanzz/daidai-panel:latest", info)
+	got := buildContainerRunArgs("panel", "xiaofeilong2/panel:latest", info)
 
-	if !slices.Contains(got, "/opt/daidai-data:/srv/custom-data") {
+	if !slices.Contains(got, "/opt/panel-data:/srv/custom-data") {
 		t.Fatalf("expected custom data mount to be preserved, got %v", got)
 	}
 	if !slices.Contains(got, "DATA_DIR=/srv/custom-data") {
@@ -346,13 +346,13 @@ func TestBuildContainerRunArgsPreservesCustomDataDirEnvAndMount(t *testing.T) {
 	if slices.Contains(got, "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin") {
 		t.Fatalf("expected runtime PATH env to be filtered out, got %v", got)
 	}
-	if slices.Contains(got, "IMAGE_NAME=linzixuanzz/daidai-panel:2.3.5-debianall") {
+	if slices.Contains(got, "IMAGE_NAME=xiaofeilong2/panel:2.3.5-debianall") {
 		t.Fatalf("expected stale IMAGE_NAME env to be removed, got %v", got)
 	}
-	if !slices.Contains(got, "IMAGE_NAME=linzixuanzz/daidai-panel:latest") {
+	if !slices.Contains(got, "IMAGE_NAME=xiaofeilong2/panel:latest") {
 		t.Fatalf("expected IMAGE_NAME env to match the actual target image, got %v", got)
 	}
-	if got[len(got)-1] != "linzixuanzz/daidai-panel:latest" {
+	if got[len(got)-1] != "xiaofeilong2/panel:latest" {
 		t.Fatalf("expected image name to remain the final run arg, got %v", got)
 	}
 }
@@ -364,11 +364,11 @@ func TestResolveBinaryReleaseTargetMatchesReleaseAssets(t *testing.T) {
 		assetName  string
 		binaryName string
 	}{
-		{"windows", "amd64", "daidai-windows-amd64.zip", "daidai-server.exe"},
-		{"linux", "amd64", "daidai-linux-amd64.tar.gz", "daidai-linux-amd64"},
-		{"linux", "arm64", "daidai-linux-arm64.tar.gz", "daidai-linux-arm64"},
-		{"linux", "386", "daidai-linux-386.tar.gz", "daidai-linux-386"},
-		{"linux", "arm", "daidai-linux-armv7.tar.gz", "daidai-linux-armv7"},
+		{"windows", "amd64", "panel-windows-amd64.zip", "panel-server.exe"},
+		{"linux", "amd64", "panel-linux-amd64.tar.gz", "panel-linux-amd64"},
+		{"linux", "arm64", "panel-linux-arm64.tar.gz", "panel-linux-arm64"},
+		{"linux", "386", "panel-linux-386.tar.gz", "panel-linux-386"},
+		{"linux", "arm", "panel-linux-armv7.tar.gz", "panel-linux-armv7"},
 	}
 
 	for _, tc := range cases {
@@ -394,11 +394,11 @@ func TestResolveBinaryReleaseTargetRejectsUnsupportedPlatform(t *testing.T) {
 func TestPanelReleaseFindAssetByName(t *testing.T) {
 	release := panelReleaseInfo{
 		Assets: []panelReleaseAsset{
-			{Name: "daidai-linux-amd64.tar.gz", BrowserDownloadURL: "https://example.com/linux"},
+			{Name: "panel-linux-amd64.tar.gz", BrowserDownloadURL: "https://example.com/linux"},
 		},
 	}
 
-	asset, ok := release.findAsset("DAIDAI-LINUX-AMD64.TAR.GZ")
+	asset, ok := release.findAsset("PANEL-LINUX-AMD64.TAR.GZ")
 	if !ok {
 		t.Fatalf("expected asset to be found case-insensitively")
 	}
@@ -439,7 +439,7 @@ func TestNormalizeDockerImageID(t *testing.T) {
 	}
 
 	invalidValues := []string{
-		"linzixuanzz/daidai-panel:latest",
+		"xiaofeilong2/panel:latest",
 		"sha256:" + strings.Repeat("a", 63),
 		"sha256:" + strings.Repeat("g", 64),
 		"",
@@ -454,14 +454,14 @@ func TestNormalizeDockerImageID(t *testing.T) {
 func TestBuildPanelUpdateHelperScriptCleansPreviousImageAfterSuccessfulRun(t *testing.T) {
 	previousImageID := "sha256:" + strings.Repeat("b", 64)
 	plan := &panelUpdatePlan{
-		ContainerName:   "daidai-panel",
+		ContainerName:   "panel",
 		PreviousImageID: previousImageID,
 		RunArgs: []string{
 			"run",
 			"-d",
 			"--name",
-			"daidai-panel",
-			"linzixuanzz/daidai-panel:latest",
+			"panel",
+			"xiaofeilong2/panel:latest",
 		},
 	}
 
@@ -485,9 +485,9 @@ func TestBuildPanelUpdateHelperScriptCleansPreviousImageAfterSuccessfulRun(t *te
 
 func TestBuildPanelUpdateHelperScriptSkipsInvalidPreviousImageID(t *testing.T) {
 	plan := &panelUpdatePlan{
-		ContainerName:   "daidai-panel",
-		PreviousImageID: "linzixuanzz/daidai-panel:latest",
-		RunArgs:         []string{"run", "-d", "--name", "daidai-panel", "linzixuanzz/daidai-panel:latest"},
+		ContainerName:   "panel",
+		PreviousImageID: "xiaofeilong2/panel:latest",
+		RunArgs:         []string{"run", "-d", "--name", "panel", "xiaofeilong2/panel:latest"},
 	}
 
 	script := buildPanelUpdateHelperScript(plan)
@@ -636,8 +636,8 @@ func TestBuildPanelUpdatePlanInfoPrefersWatchtowerAndKeepsDebianFamily(t *testin
 	t.Setenv("PANEL_UPDATE_MANAGER", "watchtower")
 	t.Setenv("WATCHTOWER_HTTP_API_URL", "http://watchtower:8080")
 	t.Setenv("WATCHTOWER_HTTP_API_TOKEN", "demo-token")
-	t.Setenv("CONTAINER_NAME", "daidai-panel")
-	t.Setenv("IMAGE_NAME", "docker.1ms.run/linzixuanzz/daidai-panel:debian-all")
+	t.Setenv("CONTAINER_NAME", "panel")
+	t.Setenv("IMAGE_NAME", "docker.1ms.run/xiaofeilong2/panel:debian-all")
 
 	plan, err := BuildPanelUpdatePlanInfo()
 	if err != nil {
@@ -649,7 +649,7 @@ func TestBuildPanelUpdatePlanInfoPrefersWatchtowerAndKeepsDebianFamily(t *testin
 	if !plan.WatchtowerManualTriggerSupported {
 		t.Fatalf("expected Watchtower manual trigger to be available, got %#v", plan)
 	}
-	if plan.ImageName != "docker.1ms.run/linzixuanzz/daidai-panel:debian-all" {
+	if plan.ImageName != "docker.1ms.run/xiaofeilong2/panel:debian-all" {
 		t.Fatalf("expected Watchtower target to keep the actual rolling image tag, got %#v", plan)
 	}
 	if plan.Channel != "debian" {
@@ -670,7 +670,7 @@ func TestBuildPanelUpdatePlanInfoRejectsPinnedWatchtowerImage(t *testing.T) {
 	t.Setenv("PANEL_UPDATE_MANAGER", "watchtower")
 	t.Setenv("WATCHTOWER_HTTP_API_URL", "http://watchtower:8080")
 	t.Setenv("WATCHTOWER_HTTP_API_TOKEN", "demo-token")
-	t.Setenv("IMAGE_NAME", "linzixuanzz/daidai-panel:2.4.0-debian-full")
+	t.Setenv("IMAGE_NAME", "xiaofeilong2/panel:2.4.0-debian-full")
 
 	_, err := BuildPanelUpdatePlanInfo()
 	if err == nil || !strings.Contains(err.Error(), "浮动标签") {
@@ -689,7 +689,7 @@ func TestExecutePanelUpdateForCLIPrefersWatchtower(t *testing.T) {
 	t.Setenv("PANEL_UPDATE_MANAGER", "watchtower")
 	t.Setenv("WATCHTOWER_HTTP_API_URL", server.URL)
 	t.Setenv("WATCHTOWER_HTTP_API_TOKEN", "demo-token")
-	t.Setenv("IMAGE_NAME", "linzixuanzz/daidai-panel:latest-full")
+	t.Setenv("IMAGE_NAME", "xiaofeilong2/panel:latest-full")
 	panelUpdater = newPanelUpdateManager()
 	t.Cleanup(func() { panelUpdater = newPanelUpdateManager() })
 
@@ -701,7 +701,7 @@ func TestExecutePanelUpdateForCLIPrefersWatchtower(t *testing.T) {
 		if status.Status != "completed" || status.UpdateManager != panelUpdateManagerWatchtower || status.Phase != "watchtower-triggered" {
 			t.Fatalf("expected terminal Watchtower CLI status, got %#v", status)
 		}
-		if status.PullImageName != "linzixuanzz/daidai-panel:latest-full" {
+		if status.PullImageName != "xiaofeilong2/panel:latest-full" {
 			t.Fatalf("expected Watchtower to keep the actual rolling full image tag, got %#v", status)
 		}
 	}
@@ -714,7 +714,7 @@ func TestUpdatePanelReturnsCompletedWatchtowerStatus(t *testing.T) {
 	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
-		if r.URL.Query().Get("async") != "true" || r.URL.Query().Get("container") != "^daidai-panel$" {
+		if r.URL.Query().Get("async") != "true" || r.URL.Query().Get("container") != "^panel$" {
 			t.Fatalf("expected targeted asynchronous request, got %s", r.URL.String())
 		}
 		w.WriteHeader(http.StatusAccepted)
@@ -725,8 +725,8 @@ func TestUpdatePanelReturnsCompletedWatchtowerStatus(t *testing.T) {
 	t.Setenv("PANEL_UPDATE_MANAGER", "watchtower")
 	t.Setenv("WATCHTOWER_HTTP_API_URL", server.URL)
 	t.Setenv("WATCHTOWER_HTTP_API_TOKEN", "demo-token")
-	t.Setenv("CONTAINER_NAME", "daidai-panel")
-	t.Setenv("IMAGE_NAME", "linzixuanzz/daidai-panel:debian-full")
+	t.Setenv("CONTAINER_NAME", "panel")
+	t.Setenv("IMAGE_NAME", "xiaofeilong2/panel:debian-full")
 	panelUpdater = newPanelUpdateManager()
 	t.Cleanup(func() { panelUpdater = newPanelUpdateManager() })
 
@@ -770,8 +770,8 @@ func TestExecutePanelUpdateForCLIExplainsIncompleteWatchtowerConfig(t *testing.T
 }
 
 func TestShouldRequireDockerPanelUpdateIgnoresDockerEnvVarsOutsideContainer(t *testing.T) {
-	t.Setenv("IMAGE_NAME", "linzixuanzz/daidai-panel:latest")
-	t.Setenv("CONTAINER_NAME", "daidai-panel")
+	t.Setenv("IMAGE_NAME", "xiaofeilong2/panel:latest")
+	t.Setenv("CONTAINER_NAME", "panel")
 
 	if shouldRequireDockerPanelUpdate() {
 		t.Fatal("expected docker env vars alone to not force docker-only update path outside container")
@@ -779,8 +779,8 @@ func TestShouldRequireDockerPanelUpdateIgnoresDockerEnvVarsOutsideContainer(t *t
 }
 
 func TestBuildPanelUpdatePlanForReleaseFallsBackToBinaryWhenDockerEnvVarsLeak(t *testing.T) {
-	t.Setenv("IMAGE_NAME", "linzixuanzz/daidai-panel:latest")
-	t.Setenv("CONTAINER_NAME", "daidai-panel")
+	t.Setenv("IMAGE_NAME", "xiaofeilong2/panel:latest")
+	t.Setenv("CONTAINER_NAME", "panel")
 
 	// 本用例验证的语义是「只有 Docker 环境变量泄漏、但并不在容器里时回退到二进制更新」，
 	// 与宿主机是什么平台无关。因此 fixture 按 release.yml 实际发布的全部制品构造，
@@ -795,11 +795,11 @@ func TestBuildPanelUpdatePlanForReleaseFallsBackToBinaryWhenDockerEnvVarsLeak(t 
 		Name:    "v2.2.19",
 	}
 	for _, name := range []string{
-		"daidai-windows-amd64.zip",
-		"daidai-linux-amd64.tar.gz",
-		"daidai-linux-arm64.tar.gz",
-		"daidai-linux-386.tar.gz",
-		"daidai-linux-armv7.tar.gz",
+		"panel-windows-amd64.zip",
+		"panel-linux-amd64.tar.gz",
+		"panel-linux-arm64.tar.gz",
+		"panel-linux-386.tar.gz",
+		"panel-linux-armv7.tar.gz",
 	} {
 		release.Assets = append(release.Assets, panelReleaseAsset{
 			Name:               name,

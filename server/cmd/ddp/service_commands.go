@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"daidai-panel/appboot"
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/service"
+	"panel/appboot"
+	"panel/config"
+	"panel/model"
+	"panel/service"
 )
 
 func runService(rt *cliRuntime, args []string) error {
@@ -66,7 +66,7 @@ WorkingDirectory=%s
 ExecStart=%s
 Restart=always
 RestartSec=3
-Environment=DAIDAI_CONFIG=%s
+Environment=PANEL_CONFIG=%s
 Environment=DATA_DIR=%s
 Environment=SERVER_PORT=%d
 %s

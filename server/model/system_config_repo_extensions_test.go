@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func setRawSystemConfigValue(t *testing.T, key, value string) {

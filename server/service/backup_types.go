@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 type BackupSelection struct {

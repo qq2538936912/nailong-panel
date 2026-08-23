@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 复现用户报告的 jdpro 仓库 "扫描 0 个候选文件" 失败：

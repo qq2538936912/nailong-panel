@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/handler"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/handler"
+	"panel/middleware"
+	"panel/model"
+	"panel/service"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )

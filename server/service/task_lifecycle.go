@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/pathutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/pathutil"
 
 	"gorm.io/gorm"
 )

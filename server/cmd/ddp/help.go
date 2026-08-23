@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func printHelp() {
-	fmt.Println(`ddp - 呆呆面板容器内置命令
+	fmt.Println(`ddp - 面板容器内置命令
 
 用法:
   ddp help

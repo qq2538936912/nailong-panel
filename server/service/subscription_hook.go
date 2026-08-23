@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 const subscriptionHookTimeoutSeconds = 900

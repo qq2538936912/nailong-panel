@@ -20,9 +20,9 @@
 
 set -u
 
-# 默认按脚本自身位置定位仓库根；DAIDAI_REPO_ROOT 用于「把脚本复制到别处再跑」的场景
+# 默认按脚本自身位置定位仓库根；PANEL_REPO_ROOT 用于「把脚本复制到别处再跑」的场景
 # （Windows 检出的 .sh 是 CRLF，本地验证时通常要先复制一份去掉 CR 再执行）。
-cd "${DAIDAI_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}" || exit 1
+cd "${PANEL_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}" || exit 1
 FAILED=0
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT

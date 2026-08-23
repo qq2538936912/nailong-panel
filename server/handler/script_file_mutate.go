@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"daidai-panel/pkg/pathutil"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/pkg/pathutil"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )

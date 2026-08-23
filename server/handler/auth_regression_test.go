@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/handler"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/handler"
+	"panel/middleware"
+	"panel/model"
+	"panel/service"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -449,7 +449,7 @@ func TestLoginReplacesOnlySameClientTypeSessions(t *testing.T) {
 
 	webTokenA := login("198.51.100.10", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", map[string]string{
 		"X-Client-Type": "web",
-		"X-Client-App":  "daidai-panel-web",
+		"X-Client-App":  "panel-web",
 	})
 	assertSessions(map[string]string{
 		service.SessionClientWeb: "198.51.100.10",
@@ -458,7 +458,7 @@ func TestLoginReplacesOnlySameClientTypeSessions(t *testing.T) {
 
 	appTokenA := login("198.51.100.20", "Dart/3.11 (dart:io)", map[string]string{
 		"X-Client-Type":     "app",
-		"X-Client-App":      "daidai-panel-app",
+		"X-Client-App":      "panel-app",
 		"X-Client-Platform": "android",
 		"X-Device-Model":    "Xiaomi 15 Pro",
 		"X-Device-Name":     "umi",
@@ -474,7 +474,7 @@ func TestLoginReplacesOnlySameClientTypeSessions(t *testing.T) {
 
 	webTokenB := login("198.51.100.30", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", map[string]string{
 		"X-Client-Type": "web",
-		"X-Client-App":  "daidai-panel-web",
+		"X-Client-App":  "panel-web",
 	})
 	assertSessions(map[string]string{
 		service.SessionClientWeb: "198.51.100.30",
@@ -486,7 +486,7 @@ func TestLoginReplacesOnlySameClientTypeSessions(t *testing.T) {
 
 	appTokenB := login("198.51.100.40", "DaidaiPanelApp/1.0.2+3 (Android; Flutter)", map[string]string{
 		"X-Client-Type":     "app",
-		"X-Client-App":      "daidai-panel-app",
+		"X-Client-App":      "panel-app",
 		"X-Client-Platform": "ios",
 		"X-Device-Model":    "iPhone16,2",
 		"X-Device-Name":     "iPhone",

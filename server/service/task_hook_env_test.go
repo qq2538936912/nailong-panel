@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/model"
+	"panel/testutil"
 )
 
 // syncOutputCollector 收集任务日志。RunInlineScript 的读管道协程与调用方是并发的，
@@ -105,21 +105,21 @@ func TestMergeHookEnvExportsDoesNotPropagateUnset(t *testing.T) {
 func TestMergeHookEnvExportsProtectsRuntimeContractKeys(t *testing.T) {
 	envVars := map[string]string{
 		"TZ":                       "Asia/Shanghai",
-		"DAIDAI_NOTIFY_CHANNEL_ID": "7",
-		"DAIDAI_TOKEN":             "real-token",
+		"PANEL_NOTIFY_CHANNEL_ID": "7",
+		"PANEL_TOKEN":             "real-token",
 	}
 	baseline := map[string]string{
 		"TZ":                       "Asia/Shanghai",
-		"DAIDAI_NOTIFY_CHANNEL_ID": "7",
-		"DAIDAI_TOKEN":             "real-token",
+		"PANEL_NOTIFY_CHANNEL_ID": "7",
+		"PANEL_TOKEN":             "real-token",
 		"PWD":                      "/data/scripts",
 		"BASH_VERSION":             "5.2.15",
 		"SHLVL":                    "1",
 	}
 	final := map[string]string{
 		"TZ":                       "UTC",
-		"DAIDAI_NOTIFY_CHANNEL_ID": "",
-		"DAIDAI_TOKEN":             "stolen",
+		"PANEL_NOTIFY_CHANNEL_ID": "",
+		"PANEL_TOKEN":             "stolen",
 		"PWD":                      "/tmp",
 		"BASH_VERSION":             "5.2.21",
 		"SHLVL":                    "2",
@@ -134,7 +134,7 @@ func TestMergeHookEnvExportsProtectsRuntimeContractKeys(t *testing.T) {
 	}
 	// 只有「用户有意去改的契约变量」才进日志；PWD / SHLVL / BASH_* / COMP_* 这类
 	// shell 内部易变量同样被挡下，但静默处理（前置脚本一句 cd 就会让 PWD 变化）。
-	wantIgnored := "DAIDAI_NOTIFY_CHANNEL_ID,DAIDAI_TOKEN,TZ"
+	wantIgnored := "PANEL_NOTIFY_CHANNEL_ID,PANEL_TOKEN,TZ"
 	if got := strings.Join(ignored, ","); got != wantIgnored {
 		t.Fatalf("expected ignored %q, got %q", wantIgnored, got)
 	}
@@ -146,11 +146,11 @@ func TestMergeHookEnvExportsProtectsRuntimeContractKeys(t *testing.T) {
 	if envVars["TZ"] != "Asia/Shanghai" {
 		t.Fatalf("expected panel timezone contract to survive, got %q", envVars["TZ"])
 	}
-	if envVars["DAIDAI_NOTIFY_CHANNEL_ID"] != "7" {
-		t.Fatalf("expected notify channel binding to survive, got %q", envVars["DAIDAI_NOTIFY_CHANNEL_ID"])
+	if envVars["PANEL_NOTIFY_CHANNEL_ID"] != "7" {
+		t.Fatalf("expected notify channel binding to survive, got %q", envVars["PANEL_NOTIFY_CHANNEL_ID"])
 	}
-	if envVars["DAIDAI_TOKEN"] != "real-token" {
-		t.Fatalf("expected script token to survive, got %q", envVars["DAIDAI_TOKEN"])
+	if envVars["PANEL_TOKEN"] != "real-token" {
+		t.Fatalf("expected script token to survive, got %q", envVars["PANEL_TOKEN"])
 	}
 }
 
@@ -254,7 +254,7 @@ func TestTaskBeforeInlineScriptExportsMergeIntoTaskEnv(t *testing.T) {
 	envVars := map[string]string{
 		"PATH":                     os.Getenv("PATH"),
 		"TZ":                       "Asia/Shanghai",
-		"DAIDAI_NOTIFY_CHANNEL_ID": "7",
+		"PANEL_NOTIFY_CHANNEL_ID": "7",
 		"BIG_ENV":                  bigValue,
 		"KEEP_ME":                  "unchanged",
 	}
@@ -264,7 +264,7 @@ export MULTILINE='line1
 line2'
 export WITH_EQ='a=b=c'
 export TZ=UTC
-export DAIDAI_NOTIFY_CHANNEL_ID=
+export PANEL_NOTIFY_CHANNEL_ID=
 export PATH="/opt/custom/bin:$PATH"
 echo pre-script done
 exit 0
@@ -291,8 +291,8 @@ echo never reached
 	if envVars["TZ"] != "Asia/Shanghai" {
 		t.Fatalf("expected TZ contract to survive, got %q", envVars["TZ"])
 	}
-	if envVars["DAIDAI_NOTIFY_CHANNEL_ID"] != "7" {
-		t.Fatalf("expected DAIDAI_* to survive, got %q", envVars["DAIDAI_NOTIFY_CHANNEL_ID"])
+	if envVars["PANEL_NOTIFY_CHANNEL_ID"] != "7" {
+		t.Fatalf("expected PANEL_* to survive, got %q", envVars["PANEL_NOTIFY_CHANNEL_ID"])
 	}
 	if len(envVars["BIG_ENV"]) != len(bigValue) {
 		t.Fatalf("expected oversized env not to be dropped, got %d bytes", len(envVars["BIG_ENV"]))
@@ -364,7 +364,7 @@ func TestSubscriptionHookStaysUnaffectedByHookEnvCapture(t *testing.T) {
 
 	// 结论写文件而不是走 stdout：RunInlineScript 的读管道协程与 cmd.Wait 是并发的，
 	// 靠 stdout 断言会引入偶发的截断。
-	script := `printf 'dump=[%s]\n' "$DAIDAI_HOOK_ENV_DUMP" > sub-hook.out
+	script := `printf 'dump=[%s]\n' "$PANEL_HOOK_ENV_DUMP" > sub-hook.out
 printf 'trap=[%s]\n' "$(trap -p EXIT)" >> sub-hook.out
 exit 3
 `
@@ -415,7 +415,7 @@ func TestTaskBeforeFailureKeepsExitCodeAndStillMergesExports(t *testing.T) {
 	}
 }
 
-// `.ok` 门禁：DAIDAI_HOOK_ENV_DUMP 非空【不足以】装上采集逻辑，还必须有面板落下的
+// `.ok` 门禁：PANEL_HOOK_ENV_DUMP 非空【不足以】装上采集逻辑，还必须有面板落下的
 // 同名 .ok 标记文件。
 //
 // 用户完全可以在「环境变量」页手建一条同名变量、值随手填成某个真实路径

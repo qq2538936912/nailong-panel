@@ -59,9 +59,9 @@
 
 `Magisk/` 下的脚本与 Go 代码是**互相依赖的两层**，只改一边必然对不上。要一起检查：
 
-- `Magisk/service.sh` 导出的环境变量 ↔ Go 里读它的地方（`DAIDAI_MAGISK_MODULE`、`DAIDAI_MAGISK_SHELL_VERSION`、`DAIDAI_ANDROID_RUNTIME_BIN_DIR`）
+- `Magisk/service.sh` 导出的环境变量 ↔ Go 里读它的地方（`PANEL_MAGISK_MODULE`、`PANEL_MAGISK_SHELL_VERSION`、`PANEL_ANDROID_RUNTIME_BIN_DIR`）
 - Go 写出的文件名 / 哨兵 ↔ shell 里判断它的地方（例如升级窗口哨兵 `.updating`）
-- 外壳版本号：改任何 `Magisk/*.sh` 或 rootfs 结构，`DAIDAI_MAGISK_SHELL_VERSION` 与 Go 里的 **`currentMagiskShellVersion`** 必须**一起加一**（后者的定义就是「本仓库 service.sh 当前 export 的值」，`magisk_assets_test.go` 静态断言两者相等）。
+- 外壳版本号：改任何 `Magisk/*.sh` 或 rootfs 结构，`PANEL_MAGISK_SHELL_VERSION` 与 Go 里的 **`currentMagiskShellVersion`** 必须**一起加一**（后者的定义就是「本仓库 service.sh 当前 export 的值」，`magisk_assets_test.go` 静态断言两者相等）。
   **`requiredMagiskShellVersion` 不要跟着动** —— 它是「在线升级放行的最低外壳版本」，只有当新面板**无法**在旧外壳上运行时才提。提了就意味着所有还在跑旧外壳的用户必须先手动重刷一次模块 ZIP 才能继续在面板内一键升级。外壳只是多了一项增量能力时，正确做法是保持它不动、由前端按外壳版本 gating 并提示重刷。
 - `server/handler/magisk_assets_test.go` 里的字符串断言（它只能防「整段被删掉」，防不住逻辑写错）
 
@@ -69,7 +69,7 @@
 
 ### 服务端 ↔ 独立发版的客户端（APP）
 
-APP 在**另一个仓库**（`D:\GitHub\Dumb Panel\android-app`，Flutter，iOS/Android 共用一套代码），
+APP 在**另一个仓库**（`D:\GitHub\Panel\android-app`，Flutter，iOS/Android 共用一套代码），
 独立发版。这条边界没有任何自动机制能发现脱节：服务端测试只测服务端，
 APP 测试只测 APP，**两边各自 CI 全绿，功能却是坏的**。
 
@@ -122,7 +122,7 @@ APP 把全局 `validateStatus` 收紧成 `< 400` 后，这个信号在读到 bod
 也就是说这条门禁从写下那天起就是空转的，而它"通过"了，看起来一切正常。
 
 判据要选**压缩不会改动的东西**——字符串字面量、注释里的魔法串（注释会被删，别用）、文件数量、体积。
-本项目最终用的是 `web/src/demo/index.ts` 里一个纯 ASCII 字符串字面量哨兵 `__DAIDAI_DEMO_MOCK__`。
+本项目最终用的是 `web/src/demo/index.ts` 里一个纯 ASCII 字符串字面量哨兵 `__PANEL_DEMO_MOCK__`。
 
 **并且必须配一条反向断言**：发布版必须搜不到、Demo 版必须搜得到。
 只写前一条的话，哪天哨兵被删被改名，两边又双双 0 命中，门禁静默失效且没有任何人会发现。
@@ -139,7 +139,7 @@ APP 把全局 `validateStatus` 收紧成 `< 400` 后，这个信号在读到 bod
 | 构建 | 产物特征 |
 |---|---|
 | `npm run build` | 无 mock 层、`robots=noindex`、资源为根相对路径 |
-| `npm run build:demo` | 浏览器内 mock 顶替层、`robots=index, follow`、资源带 `/daidai-panel/` 前缀 |
+| `npm run build:demo` | 浏览器内 mock 顶替层、`robots=index, follow`、资源带 `/panel/` 前缀 |
 
 而 `Magisk/build.sh` 的逻辑是「`web/dist` 已存在就跳过构建，直接 `cp` 进模块」。
 于是「跑一次 `build:demo` → 打一个 Magisk 包」就会把整套 mock 层打进模块 ZIP，

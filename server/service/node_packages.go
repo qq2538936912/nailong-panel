@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 var nodePackageOperationMu sync.Mutex

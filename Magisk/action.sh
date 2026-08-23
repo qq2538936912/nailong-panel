@@ -1,6 +1,6 @@
 #!/system/bin/sh
 ##########################################################################
-# 呆呆面板 Magisk 模块 - 快捷操作脚本（停止 / 启动 toggle + 状态摘要）
+# 面板 Magisk 模块 - 快捷操作脚本（停止 / 启动 toggle + 状态摘要）
 #
 # 点击管理器卡片上的「运行 / Action」按钮触发。
 #
@@ -10,7 +10,7 @@
 ##########################################################################
 
 MODDIR=${0%/*}
-PERSIST_DIR=/data/adb/daidai-panel
+PERSIST_DIR=/data/adb/panel
 SERVICE_LOG="$PERSIST_DIR/service.log"
 PORTS_CONF="$PERSIST_DIR/ports.conf"
 # 跨重启的手动停止开关，与 service.sh / customize.sh / uninstall.sh 用的是同一个路径。
@@ -30,10 +30,10 @@ fi
 CTR_SHELL=/bin/ash
 [ "$FLAVOR" = "debian" ] && CTR_SHELL=/bin/bash
 
-rootfs=/data/daidai
-[ ! -d "$rootfs" ] && rootfs=/data/local/daidai
+rootfs=/data/panel
+[ ! -d "$rootfs" ] && rootfs=/data/local/panel
 
-SERVER_LOG="$rootfs/app/Dumb-Panel/daidai.log"
+SERVER_LOG="$rootfs/app/Panel/panel.log"
 TAIL_LINES=60
 
 # 端口配置（有则读，无则默认）
@@ -58,7 +58,7 @@ fi
 # 这里【绝对不能】写成 `read ... || continue`：那会让下面的 case 永远执行不到，
 # 函数恒返回「未运行」，于是动作按钮永远只会去「启动」，停止功能直接失效。
 #
-# 匹配的是完整路径 /usr/local/bin/daidai-server（不是裸 daidai-server）：
+# 匹配的是完整路径 /usr/local/bin/panel-server（不是裸 panel-server）：
 # 这个 argv0 是 Go 常量与两个 shell 共同依赖的契约，也避免误伤自身命令行。
 panel_pids() {
   _pids=""
@@ -67,7 +67,7 @@ panel_pids() {
     proc_cmdline=""
     read -r proc_cmdline 2>/dev/null < "$proc_dir/cmdline"
     case "$proc_cmdline" in
-      /usr/local/bin/daidai-server*) _pids="$_pids ${proc_dir#/proc/}" ;;
+      /usr/local/bin/panel-server*) _pids="$_pids ${proc_dir#/proc/}" ;;
     esac
   done
   _pids=${_pids# }
@@ -76,7 +76,7 @@ panel_pids() {
 }
 
 ui_print "========================================="
-ui_print " 呆呆面板 - 运行状态"
+ui_print " 面板 - 运行状态"
 ui_print "========================================="
 ui_print "- 容器基础系统: ${FLAVOR}"
 ui_print "- 端口配置: PANEL=${PANEL_PORT} (绑定 0.0.0.0)  SSH=${SSH_PORT}"
@@ -112,7 +112,7 @@ if [ -n "$ACTION_PIDS" ]; then
   mkdir -p "$PERSIST_DIR" 2>/dev/null
   printf '%s\n' "stopped by action.sh at $(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null)" > "$STOP_FLAG" 2>/dev/null
 
-  # 2. 先 TERM 后 KILL。用 kill + 已探到的 PID，不用 `pkill -f daidai-server`：
+  # 2. 先 TERM 后 KILL。用 kill + 已探到的 PID，不用 `pkill -f panel-server`：
   #    后者会连带命中任何 cmdline 里含这串字符的进程（包括执行它的 sh -c 本身）。
   for _pid in $ACTION_PIDS; do
     kill -TERM "$_pid" 2>/dev/null
@@ -161,7 +161,7 @@ else
       ui_print "- 已启动 (PID=$ACTION_PIDS)"
       ui_print "- 访问地址: http://127.0.0.1:${PANEL_PORT}"
     else
-      ui_print "! 启动后没有探测到面板进程，请看下面的 service.log / daidai.log"
+      ui_print "! 启动后没有探测到面板进程，请看下面的 service.log / panel.log"
     fi
   else
     ui_print "! 找不到 $MODDIR/service.sh，模块可能未安装完整，请重刷模块 ZIP"
@@ -192,7 +192,7 @@ fi
 
 ui_print "- 访问地址: http://127.0.0.1:${PANEL_PORT}"
 ui_print "- rootfs  : $rootfs"
-ui_print "- 数据目录: $rootfs/app/Dumb-Panel"
+ui_print "- 数据目录: $rootfs/app/Panel"
 
 # ---- SSH 状态 -----------------------------------------------------------
 # README 一直写着「点动作按钮能看到 PANEL_PORT / SSH_PORT 的监听情况」，
@@ -212,9 +212,9 @@ if [ -x "$RURIMA" ] && [ -d "$rootfs" ]; then
   ui_print " "
   ui_print "--- 容器运行时 ---"
   "$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" -c '
-    export DAIDAI_MAGISK_MODULE=1
-    export DAIDAI_ANDROID_RUNTIME_BIN_DIR=/data/adb/daidai-panel/bin
-    export PATH=/data/adb/daidai-panel/bin/python/bin:/data/adb/daidai-panel/bin/node/bin:/data/adb/daidai-panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app
+    export PANEL_MAGISK_MODULE=1
+    export PANEL_ANDROID_RUNTIME_BIN_DIR=/data/adb/panel/bin
+    export PATH=/data/adb/panel/bin/python/bin:/data/adb/panel/bin/node/bin:/data/adb/panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app
     for c in python3 node npm git curl bash; do
       p=$(command -v $c 2>/dev/null)
       if [ -n "$p" ]; then
@@ -264,9 +264,9 @@ else
   ui_print "(暂无 $SERVICE_LOG)"
 fi
 
-# ---- daidai.log (容器内后端日志) ----------------------------------------
+# ---- panel.log (容器内后端日志) ----------------------------------------
 ui_print " "
-ui_print "--- daidai.log (最近 ${TAIL_LINES} 行) ---"
+ui_print "--- panel.log (最近 ${TAIL_LINES} 行) ---"
 if [ -f "$SERVER_LOG" ]; then
   tail -n "$TAIL_LINES" "$SERVER_LOG" 2>/dev/null | while IFS= read -r line; do
     ui_print "$line"
@@ -278,8 +278,8 @@ fi
 # ---- 容器内 service.log / sshd.log ---------------------------------------
 # 宿主侧 service.log（上面那段）和容器内的 service.log 是两个不同的文件：
 # SSH 状态快照、容器启动脚本的日志全在容器那一份里，原来这里根本没展示。
-CTR_SERVICE_LOG="$rootfs/app/Dumb-Panel/service.log"
-SSHD_LOG="$rootfs/app/Dumb-Panel/sshd.log"
+CTR_SERVICE_LOG="$rootfs/app/Panel/service.log"
+SSHD_LOG="$rootfs/app/Panel/sshd.log"
 
 ui_print " "
 ui_print "--- 容器 service.log (最近 30 行, 含 SSH 状态快照) ---"
@@ -309,6 +309,6 @@ ui_print "     su -c \"$RURIMA ruri -p -N -S -A $rootfs /bin/bash\""
 ui_print "   停止 / 启动面板（与本按钮完全等价的 toggle）:"
 ui_print "     su -c \"sh $MODDIR/action.sh\""
 ui_print " "
-ui_print " 不要再用 \"pkill -f daidai-server\" 停面板："
+ui_print " 不要再用 \"pkill -f panel-server\" 停面板："
 ui_print " 存活守护最多 60 秒就会把它重新拉起来（刚拉起过则最坏要等 5 分钟）。"
 ui_print "========================================="

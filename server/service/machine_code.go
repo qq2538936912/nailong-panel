@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 
 	"github.com/google/uuid"
 )

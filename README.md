@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./images/图标.png" alt="呆呆面板" width="120">
+  <img src="./images/图标.png" alt="面板" width="120">
 </p>
 
-<h1 align="center">呆呆面板</h1>
+<h1 align="center">面板</h1>
 
 <p align="center">
   <em>轻量、现代的定时任务管理面板，Docker 一键部署，开箱即用</em>
@@ -16,27 +16,13 @@
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker">
 </p>
 
-<p align="center">
-  <a href="https://linzixuanzz.github.io/daidai-panel/"><img src="https://img.shields.io/badge/在线演示-点开即用-2EA44F?logo=github&logoColor=white" alt="在线演示"></a>
-</p>
-
 ---
 
-呆呆面板 (Daidai Panel) 是一款轻量级定时任务管理平台，采用 Go (Gin) + Vue3 (Element Plus) + SQLite 架构，专注于脚本托管与自动化任务调度。支持 Python、Node.js（含 `.js` / `.mjs`）、Shell、TypeScript、Go 等多语言脚本的定时执行与可视化管理，内置 18 种消息推送渠道、订阅管理、环境变量、依赖管理、Open API 等功能。Docker 一键部署，开箱即用。
+面板是一款轻量级定时任务管理平台，采用 Go (Gin) + Vue3 (Element Plus) + SQLite 架构，专注于脚本托管与自动化任务调度。支持 Python、Node.js（含 `.js` / `.mjs`）、Shell、TypeScript、Go 等多语言脚本的定时执行与可视化管理，内置 18 种消息推送渠道、订阅管理、环境变量、依赖管理、Open API 等功能。Docker 一键部署，开箱即用。
 
 > 最新稳定版：`v3.0.7` · [更新日志](./docs/release-notes/v3.0.7.md)<br>
 > 本次重点：修掉容器设置 `PUID` / `PGID` 后面板内装依赖必报 `EACCES`（顺带修好 `PUID=1000` 在 Debian 版镜像上直接起不来），重写 Magisk 版的 SSH 启动链并补上全套排障日志。<br>
-> APP 客户端：[linzixuanzz/Dumb-Panel-APP](https://github.com/linzixuanzz/Dumb-Panel-APP)
-
-## 在线演示
-
-想先看看效果再决定装不装，直接打开 **<https://linzixuanzz.github.io/daidai-panel/>**，点「进入演示环境」就能逛完整面板 —— 不用注册，也不用装 Docker。演示站跟随每个正式版自动更新，打开看到的就是最新正式版的界面。
-
-里面新建任务、编辑脚本、拖拽排序都会真的生效，所以更要先说清楚它是什么：
-
-> **演示站不是一台真实运行的面板**，而是面板前端单独打包后配上浏览器内的模拟数据，没有后端，也不会真的执行任何脚本。<br>
-> **你的所有操作只存在你自己的浏览器里，刷新页面即恢复初始状态**，不会保存，也不会被别人看到。<br>
-> 因此**请不要在演示站里填写真实的 Cookie、密码或推送密钥**——那里没有能托管它们的服务端，填了也只是白填。
+> APP 客户端：[xiaofeilong2/panel-app](https://gitee.com/xiaofeilong2/panel-app)
 
 ## 功能特性
 
@@ -140,38 +126,38 @@
 
 ```yaml
 # docker-compose.yml
-name: daidai-panel
+name: panel
 
 services:
-  daidai-panel:
-    image: ${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
-    container_name: daidai-panel
+  panel:
+    image: ${PANEL_IMAGE:-xiaofeilong2/panel:latest}
+    container_name: panel
     restart: unless-stopped
     ports:
       - "5700:5700"                                # 宿主机端口:容器内 Nginx 端口
     volumes:
-      - ./Dumb-Panel:/app/Dumb-Panel               # 面板数据目录，升级保留
+      - ./Panel:/app/Panel               # 面板数据目录，升级保留
     environment:
       - TZ=Asia/Shanghai
-      - CONTAINER_NAME=daidai-panel
-      - IMAGE_NAME=${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
+      - CONTAINER_NAME=panel
+      - IMAGE_NAME=${PANEL_IMAGE:-xiaofeilong2/panel:latest}
       - PANEL_UPDATE_MANAGER=watchtower
       - WATCHTOWER_HTTP_API_URL=${WATCHTOWER_HTTP_API_URL:-http://watchtower:8080}
-      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-daidai-panel-watchtower-token}
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-panel-watchtower-token}
       - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
   watchtower:
     image: nickfedor/watchtower:latest
-    container_name: daidai-watchtower
+    container_name: panel-watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - com.centurylinklabs.watchtower.enable=false
     environment:
-      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-daidai-panel-watchtower-token}
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-panel-watchtower-token}
       - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
       - WATCHTOWER_HTTP_API_ENDPOINTS=update
     command:
@@ -190,13 +176,13 @@ docker compose up -d
 <details>
 <summary><b>展开：这份 compose 每一条在做什么 · Docker Hub 太慢怎么换镜像源 · 不想自动更新怎么删掉 Watchtower · docker run 等价写法</b></summary>
 
-如果 Docker Hub 访问慢，可以设置一次 `DAIDAI_PANEL_IMAGE`，让 `image` 和 `IMAGE_NAME` 同时使用你信任的镜像加速地址；README 默认不再内置固定第三方镜像源。也可以到 [容器镜像监控](https://status.anye.xyz/) 查看更多 Docker Hub 镜像加速源状态，再选择可用地址填写。
+如果 Docker Hub 访问慢，可以设置一次 `PANEL_IMAGE`，让 `image` 和 `IMAGE_NAME` 同时使用你信任的镜像加速地址；README 默认不再内置固定第三方镜像源。也可以到 [容器镜像监控](https://status.anye.xyz/) 查看更多 Docker Hub 镜像加速源状态，再选择可用地址填写。
 
 这份 compose 已经是推荐的可直接上线版本：
 
-1. 面板容器只挂业务数据目录 `./Dumb-Panel:/app/Dumb-Panel`
+1. 面板容器只挂业务数据目录 `./Panel:/app/Panel`
 2. `docker.sock` 只暴露给 Watchtower，不暴露给面板容器
-3. `DAIDAI_PANEL_IMAGE` 同时控制容器实际镜像和面板记录的 `IMAGE_NAME`，切换标签只改一处
+3. `PANEL_IMAGE` 同时控制容器实际镜像和面板记录的 `IMAGE_NAME`，切换标签只改一处
 4. 只有打了 `com.centurylinklabs.watchtower.enable=true` 标签的容器会被自动更新
 5. Watchtower 自己显式打了 `com.centurylinklabs.watchtower.enable=false`，避免被这套规则误纳入管理
 6. `WATCHTOWER_HTTP_API_ENDPOINTS=update` 开放面板所需的更新入口；API 只在 Compose 内部网络使用，没有向宿主机开放端口
@@ -213,28 +199,28 @@ docker compose up -d
 想用 `docker run` 而不是 compose，推荐等价方式是分别启动面板容器和 Watchtower 容器：
 
 ```bash
-docker network create daidai-panel-net
-WATCHTOWER_API_TOKEN=daidai-panel-watchtower-token
+docker network create panel-net
+WATCHTOWER_API_TOKEN=panel-watchtower-token
 
 docker run -d --pull=always \
-  --name daidai-panel \
-  --network daidai-panel-net \
+  --name panel \
+  --network panel-net \
   --restart unless-stopped \
   -p 5700:5700 \
-  -v "$(pwd)/Dumb-Panel:/app/Dumb-Panel" \
+  -v "$(pwd)/Panel:/app/Panel" \
   -e TZ=Asia/Shanghai \
-  -e CONTAINER_NAME=daidai-panel \
-  -e IMAGE_NAME=linzixuanzz/daidai-panel:latest \
+  -e CONTAINER_NAME=panel \
+  -e IMAGE_NAME=xiaofeilong2/panel:latest \
   -e PANEL_UPDATE_MANAGER=watchtower \
-  -e WATCHTOWER_HTTP_API_URL=http://daidai-watchtower:8080 \
+  -e WATCHTOWER_HTTP_API_URL=http://panel-watchtower:8080 \
   -e WATCHTOWER_HTTP_API_TOKEN="$WATCHTOWER_API_TOKEN" \
   -e WATCHTOWER_HTTP_API_PERIODIC_POLLS=true \
   --label com.centurylinklabs.watchtower.enable=true \
-  linzixuanzz/daidai-panel:latest
+  xiaofeilong2/panel:latest
 
 docker run -d \
-  --name daidai-watchtower \
-  --network daidai-panel-net \
+  --name panel-watchtower \
+  --network panel-net \
   --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e WATCHTOWER_HTTP_API_TOKEN="$WATCHTOWER_API_TOKEN" \
@@ -293,7 +279,7 @@ docker run -d \
 
 #### Python 去重与 32 位例外
 
-- Alpine 的 `amd64 / arm64` 和全部 Debian 镜像不再同时安装系统 Python，只保留 `/opt/daidai-python` 下的目标独立运行时。
+- Alpine 的 `amd64 / arm64` 和全部 Debian 镜像不再同时安装系统 Python，只保留 `/opt/panel-python` 下的目标独立运行时。
 - `latest-all` 和 `debian-all` 只包含 Python 3.10、3.11、3.12 三套独立运行时，不会再多装一套系统 Python。
 - Alpine 的 `linux/386` 与 `linux/arm/v7` 没有对应的独立 Python 资产，因此 `latest`、`latest-full` 在这两个平台只使用 Alpine 系统 Python 3.12。这是 32 位平台的兼容例外，仍然只有一套 Python。
 - `latest-3.10`、`latest-3.11`、`latest-all` 只发布 `amd64 / arm64`，不会发布“标签写 3.10，实际却是 3.12”的 32 位镜像。
@@ -318,10 +304,10 @@ Debian 的旧固定版本格式也保留兼容别名：`3.0.7-debian3.10`、`3.0
 仓库里的两份基础 Compose 都只需要设置一次镜像变量。例如切换到 Alpine 完整版：
 
 ```bash
-DAIDAI_PANEL_IMAGE=linzixuanzz/daidai-panel:latest-full docker compose up -d
+PANEL_IMAGE=xiaofeilong2/panel:latest-full docker compose up -d
 ```
 
-也可以在 `.env` 中设置 `DAIDAI_PANEL_IMAGE=linzixuanzz/daidai-panel:latest-full` 后再运行 `docker compose up -d`。Compose 会把同一个值同时写入 `image` 和 `IMAGE_NAME`，不会出现容器运行标签和更新标签不一致。
+也可以在 `.env` 中设置 `PANEL_IMAGE=xiaofeilong2/panel:latest-full` 后再运行 `docker compose up -d`。Compose 会把同一个值同时写入 `image` 和 `IMAGE_NAME`，不会出现容器运行标签和更新标签不一致。
 
 切到 Debian 运行时：
 
@@ -330,7 +316,7 @@ DAIDAI_PANEL_IMAGE=linzixuanzz/daidai-panel:latest-full docker compose up -d
 docker compose -f docker-compose.debian.yml up -d
 
 # 或基于源码本地构建
-docker build --build-arg VERSION=dev -f Dockerfile.debian -t daidai-panel:debian-local .
+docker build --build-arg VERSION=dev -f Dockerfile.debian -t panel:debian-local .
 ```
 
 本地构建时，`PYTHON_RUNTIME_MODE` 决定单版本或三版本，`PYTHON_RUNTIME_VERSION` 决定单版本镜像的 Python 版本，`INSTALL_FULL_TOOLS=true` 决定是否安装完整开发工具。下面的命令可以直接运行：
@@ -342,7 +328,7 @@ docker build \
   --build-arg PYTHON_RUNTIME_MODE=single \
   --build-arg PYTHON_RUNTIME_VERSION=3.10 \
   --build-arg INSTALL_FULL_TOOLS=false \
-  -t daidai-panel:latest-3.10-local .
+  -t panel:latest-3.10-local .
 
 # Alpine：默认 Python 3.12 完整版
 docker build \
@@ -350,7 +336,7 @@ docker build \
   --build-arg PYTHON_RUNTIME_MODE=single \
   --build-arg PYTHON_RUNTIME_VERSION=3.12 \
   --build-arg INSTALL_FULL_TOOLS=true \
-  -t daidai-panel:latest-full-local .
+  -t panel:latest-full-local .
 
 # Alpine：Python 3.10 / 3.11 / 3.12 三版本精简版
 docker build \
@@ -358,7 +344,7 @@ docker build \
   --build-arg PYTHON_RUNTIME_MODE=all \
   --build-arg PYTHON_RUNTIME_VERSION=3.12 \
   --build-arg INSTALL_FULL_TOOLS=false \
-  -t daidai-panel:latest-all-local .
+  -t panel:latest-all-local .
 
 # Debian：单版本 Python 3.11 精简版
 docker build -f Dockerfile.debian \
@@ -366,7 +352,7 @@ docker build -f Dockerfile.debian \
   --build-arg PYTHON_RUNTIME_MODE=single \
   --build-arg PYTHON_RUNTIME_VERSION=3.11 \
   --build-arg INSTALL_FULL_TOOLS=false \
-  -t daidai-panel:debian-3.11-local .
+  -t panel:debian-3.11-local .
 
 # Debian：默认 Python 3.12 完整版
 docker build -f Dockerfile.debian \
@@ -374,7 +360,7 @@ docker build -f Dockerfile.debian \
   --build-arg PYTHON_RUNTIME_MODE=single \
   --build-arg PYTHON_RUNTIME_VERSION=3.12 \
   --build-arg INSTALL_FULL_TOOLS=true \
-  -t daidai-panel:debian-full-local .
+  -t panel:debian-full-local .
 
 # Debian：Python 3.10 / 3.11 / 3.12 三版本精简版
 docker build -f Dockerfile.debian \
@@ -382,7 +368,7 @@ docker build -f Dockerfile.debian \
   --build-arg PYTHON_RUNTIME_MODE=all \
   --build-arg PYTHON_RUNTIME_VERSION=3.12 \
   --build-arg INSTALL_FULL_TOOLS=false \
-  -t daidai-panel:debian-all-local .
+  -t panel:debian-all-local .
 ```
 
 </details>
@@ -394,31 +380,31 @@ docker build -f Dockerfile.debian \
 
 Windows 用户可以直接下载编译好的 zip 解压运行，面板内置 Go 后端同时托管前端（无需 Nginx / Docker）。
 
-1. 去 [GitHub Release](https://github.com/linzixuanzz/daidai-panel/releases) 下载 `daidai-windows-amd64.zip` 解压到任意目录（建议路径无空格、无中文，例如 `D:\daidai-panel`）。
+1. 去 [GitHub Release](https://gitee.com/xiaofeilong2/panel/releases) 下载 `panel-windows-amd64.zip` 解压到任意目录（建议路径无空格、无中文，例如 `D:\panel`）。
 2. 双击 `start.bat` 启动服务。
 3. 浏览器访问 `http://localhost:5700`，首次进入创建管理员账号。
 
 > 注意：仓库源码目录中的本地 `server/*.exe` 仅用于开发阶段临时调试，不作为可信发布产物。  
-> Windows 正式发布包请始终以 GitHub Release 中 workflow 构建出的 `daidai-windows-amd64.zip` 为准。
+> Windows 正式发布包请始终以 GitHub Release 中 workflow 构建出的 `panel-windows-amd64.zip` 为准。
 
 解压后目录：
 
 ```
-daidai-panel-windows-amd64/
-├── daidai-server.exe     # 后端主程序（同端口同时服务前端）
+panel-windows-amd64/
+├── panel-server.exe     # 后端主程序（同端口同时服务前端）
 ├── ddp.exe               # 运维 CLI
 ├── web/                  # 前端静态资源（Go 通过 web_dir 直接托管）
 ├── config.yaml           # 端口 / 数据目录配置
 ├── start.bat             # 启动脚本（chcp 65001 兜底中文显示）
 ├── README.txt            # 详细使用说明
-└── Dumb-Panel/           # 首次启动时自动创建，含数据库 / 脚本 / 日志 / 备份
+└── Panel/           # 首次启动时自动创建，含数据库 / 脚本 / 日志 / 备份
 ```
 
 **可选：脚本执行环境**。如需面板调度 Python / Node.js 脚本，请自行安装 Python 3.10+ 和 Node.js 20 LTS 并勾选 "Add to PATH"，重启 `start.bat` 即可（`ddp.exe`、脚本执行器会从 PATH 找到对应的 `python` / `node`）。
 
 **Python 多版本说明**：二进制部署包不会内置 Python 3.10 / 3.11 / 3.12 三个解释器，用户只需要安装实际要使用的版本。面板会为已检测到的 Python 版本创建独立依赖环境；未安装的版本会在依赖管理里提示不可用，不影响其他版本的脚本运行。Windows 建议安装官方 Python 并保留 `py` 启动器，Linux 需要确保 `python3.10` / `python3.11` / `python3.12` 能在 PATH 中被找到。
 
-**升级**：优先在面板后台进入「系统设置」→「概览」→「检查系统更新」→「立即更新」。二进制后台更新会自动下载对应平台的 Release 包，替换程序与前端文件，并保留现有 `config.yaml`、`Dumb-Panel\`、`data\`、`logs\`、`backups\` 等本地配置和数据目录。只有在程序目录没有写入权限、网络无法访问 GitHub Release，或后台更新失败时，才需要手动下载新版 zip 后迁移数据。
+**升级**：优先在面板后台进入「系统设置」→「概览」→「检查系统更新」→「立即更新」。二进制后台更新会自动下载对应平台的 Release 包，替换程序与前端文件，并保留现有 `config.yaml`、`Panel\`、`data\`、`logs\`、`backups\` 等本地配置和数据目录。只有在程序目录没有写入权限、网络无法访问 GitHub Release，或后台更新失败时，才需要手动下载新版 zip 后迁移数据。
 
 </details>
 
@@ -427,20 +413,20 @@ daidai-panel-windows-amd64/
 
 ### Android Magisk 模块（Root 手机）
 
-在已 Root 的 Android 设备上直接跑面板，无需 Docker、无需 Termux。模块会在安装阶段下载一份 rootfs 到 `/data/daidai`，在容器里装好 Python / Node.js / Git 等运行时，然后通过 `rurima` 进入容器启动后端，开机自启。
+在已 Root 的 Android 设备上直接跑面板，无需 Docker、无需 Termux。模块会在安装阶段下载一份 rootfs 到 `/data/panel`，在容器里装好 Python / Node.js / Git 等运行时，然后通过 `rurima` 进入容器启动后端，开机自启。
 
 - **支持**：Magisk v24.0+ / KernelSU / APatch；Android 6.0+（建议 8.0+）；**仅 `arm64`**（容器运行时只有 aarch64 构建，x86_64 设备安装时会被明确拦截）
 - **默认访问**：`http://127.0.0.1:5700`，后端绑定 `0.0.0.0`，局域网 / 内网穿透可直连
 - **一键更新**：自 `v3.0.3` 起可在面板里在线升级（只换面板程序与前端，容器与已装依赖不动，不用重启手机）。在线升级**覆盖不到模块脚本**，所以由模块脚本实现的新能力（例如 `v3.0.4` 的「停止面板服务」）需要重刷一次 ZIP 才有；模块 `updateJson` 会推送新版 ZIP 并保留数据
 - **手动停止 / 启动**：自 `v3.0.4` 起，点模块卡片的「运行 / Action」按钮即可停止面板（再点一次启动），停止状态跨重启保持；也可以在面板「设置 → 概览 → 停止面板服务」里操作
-- **下载**：[GitHub Release](https://github.com/linzixuanzz/daidai-panel/releases)
+- **下载**：[GitHub Release](https://gitee.com/xiaofeilong2/panel/releases)
 
 两个可选版本，**装哪个都行，但只能装一个**：
 
 | ZIP | 容器 | 什么时候选 |
 |-----|------|-----------|
-| `daidai-panel-magisk-vX.Y.Z.zip` | Alpine 3.18（musl） | **默认选它**。体积小、装得快，磁盘 ≥1.5 GB |
-| `daidai-panel-magisk-debian-vX.Y.Z.zip` | Debian 12（glibc） | 需要跑 glibc 预编译产物时。最典型的是面板「依赖管理」里的**一键安装 Python / Node 运行时**——它下发的是 `*-unknown-linux-gnu` 与 nodejs.org 官方构建，**在 Alpine(musl) 容器里根本无法执行**（实测 0/2）。磁盘 ≥2.5 GB |
+| `panel-magisk-vX.Y.Z.zip` | Alpine 3.18（musl） | **默认选它**。体积小、装得快，磁盘 ≥1.5 GB |
+| `panel-magisk-debian-vX.Y.Z.zip` | Debian 12（glibc） | 需要跑 glibc 预编译产物时。最典型的是面板「依赖管理」里的**一键安装 Python / Node 运行时**——它下发的是 `*-unknown-linux-gnu` 与 nodejs.org 官方构建，**在 Alpine(musl) 容器里根本无法执行**（实测 0/2）。磁盘 ≥2.5 GB |
 
 > 自 `v3.0.3` 起两个 flavor 各有各的 `updateJson`，Debian 版在管理器里点「更新」不会再被静默换成 Alpine 版。从 `v3.0.2` 或更早升上来的 Debian 用户需要先手动刷一次 v3.0.3 的 Debian ZIP，之后管理器才会走对地址。Debian 版**仍未经过真机验证**。详见 `Magisk/README.md`。
 
@@ -454,7 +440,6 @@ daidai-panel-windows-amd64/
 
 | 我想… | 看哪里 |
 |-------|--------|
-| 先看看界面长什么样，不想为此先装一遍 | [在线演示](#在线演示)，或直接打开 <https://linzixuanzz.github.io/daidai-panel/> |
 | 跑 Go 任务、装需要现场编译的依赖、换 Debian 运行时、指定 Python 3.10 / 3.11 | [快速部署](#快速部署) → 「该选哪个镜像标签」 |
 | 不用 Docker，在 Windows 上直接跑 | [快速部署](#快速部署) → 「Windows 单机版」 |
 | 在已 Root 的安卓手机上跑 | [快速部署](#快速部署) → 「Android Magisk 模块」，完整文档见 [`Magisk/README.md`](./Magisk/README.md) |
@@ -509,7 +494,7 @@ ports:
 **连容器内 Nginx 端口一起改**（只在容器内 5700 和其他服务冲突时）：`-p` 右侧必须和 `PANEL_PORT` 一致，Go 后端 `5701` 不受影响。
 
 ```bash
-docker run -d --name daidai-panel \
+docker run -d --name panel \
   -p 8080:7100 \
   -e PANEL_PORT=7100 \
   ...
@@ -517,13 +502,13 @@ docker run -d --name daidai-panel \
 
 ### Magisk 模块（Android Root）改端口
 
-Magisk 模块版和 Docker 结构不一样：没有容器内 Nginx，前端 / 后端都由单个 `daidai-server` 二进制在 `PANEL_PORT` 上直接托管，**不要**直接去改 `config.yaml`——每次开机 `service.sh` 都会按 `ports.conf` 重新生成 `config.yaml`，手动改的内容会被覆盖。
+Magisk 模块版和 Docker 结构不一样：没有容器内 Nginx，前端 / 后端都由单个 `panel-server` 二进制在 `PANEL_PORT` 上直接托管，**不要**直接去改 `config.yaml`——每次开机 `service.sh` 都会按 `ports.conf` 重新生成 `config.yaml`，手动改的内容会被覆盖。
 
 改端口的唯一入口是编辑持久化目录下的 `ports.conf`：
 
 ```bash
 su
-vi /data/adb/daidai-panel/ports.conf
+vi /data/adb/panel/ports.conf
 ```
 
 > 首次安装模块时会自动生成这个文件，内容带注释，直接修改对应的值即可。
@@ -547,7 +532,7 @@ EXTRA_CORS_ORIGINS="https://panel.example.com,https://xx.trycloudflare.com"
 改完后重启手机，或手动执行以下命令让配置立即生效：
 
 ```bash
-su -c "sh /data/adb/modules/daidai-panel/service.sh"
+su -c "sh /data/adb/modules/panel/service.sh"
 ```
 
 生效后在 Magisk / KernelSU / APatch 管理器里点模块卡片的「运行」按钮，可以看到当前 `PANEL_PORT` / `SSH_PORT` 的实际监听状态。完整的 Magisk 模块安装 / 升级 / 卸载文档见 [`Magisk/README.md`](./Magisk/README.md)。
@@ -589,7 +574,7 @@ server {
 }
 ```
 
-如果反代本身也跑在同一 Docker 网络里，可以直接代理到 `http://daidai-panel:5700`（依然是容器内 Nginx 端口）。
+如果反代本身也跑在同一 Docker 网络里，可以直接代理到 `http://panel:5700`（依然是容器内 Nginx 端口）。
 
 **别做的事**：
 
@@ -610,8 +595,8 @@ server {
 
 - **Docker 精简版**：自 `v3.0.0` 起，统一由 Watchtower 拉取并重建容器。仓库自带的两份基础 Compose 已配置内部 HTTP API，所以页面手动更新和面板的 `auto_update` 都能触发 Watchtower；Watchtower API 没有向宿主机开放端口。
 - **Docker 完整版**：同样推荐使用 Watchtower。早期直接把 `/var/run/docker.sock` 挂给面板、由面板调用 Docker CLI 更新的部署仍可保留原有 Socket 挂载，但这条兼容更新链只支持完整版标签。使用 `3.0.7-full`、`3.0.7-debian-full` 这类固定完整版标签触发一键更新时，面板会切换到同系列浮动标签 `latest-full` 或 `debian-full`；精简版不包含 Docker CLI。
-- **二进制部署**：自动匹配 `daidai-windows-amd64.zip` 或 `daidai-linux-*.tar.gz`，后台下载、解压、替换程序和 `web/` 前端文件，更新过程会跳过 `config.yaml` 与数据目录，避免覆盖服务器本地配置。
-- **Magisk 模块版**（自 `v3.0.3`）：下载对应架构的 `daidai-linux-*.tar.gz`，只替换容器内的 `daidai-server`、`ddp` 和前端目录，同时写回模块目录并同步 `module.prop` 版本号，保证重启后不回滚。容器 rootfs、apt/apk 系统包、Python venv 与已装依赖、`config.yaml`、`ports.conf` 一概不动，**不需要重启手机**。
+- **二进制部署**：自动匹配 `panel-windows-amd64.zip` 或 `panel-linux-*.tar.gz`，后台下载、解压、替换程序和 `web/` 前端文件，更新过程会跳过 `config.yaml` 与数据目录，避免覆盖服务器本地配置。
+- **Magisk 模块版**（自 `v3.0.3`）：下载对应架构的 `panel-linux-*.tar.gz`，只替换容器内的 `panel-server`、`ddp` 和前端目录，同时写回模块目录并同步 `module.prop` 版本号，保证重启后不回滚。容器 rootfs、apt/apk 系统包、Python venv 与已装依赖、`config.yaml`、`ports.conf` 一概不动，**不需要重启手机**。
   ⚠️ 在线升级**替换不了模块脚本**（`service.sh` / `customize.sh` / `action.sh`），升完之后是「新面板 + 旧模块外壳」，管理器里的版本号会跟着变成新版。所以由模块脚本实现的新能力需要重刷一次 ZIP 才有 —— 例如 `v3.0.4` 的「停止面板服务」，在线升级上来的用户在面板里会看到该按钮被禁用并提示当前外壳版本。只有当新面板**根本无法**在旧外壳上运行时，面板才会在检查更新阶段直接拒绝升级并要求重刷 ZIP。
 
 ### 手动更新
@@ -619,27 +604,27 @@ server {
 先在项目目录的 `.env` 中持久写入实际使用的镜像。例如 Alpine 默认镜像写入：
 
 ```dotenv
-DAIDAI_PANEL_IMAGE=linzixuanzz/daidai-panel:latest
+PANEL_IMAGE=xiaofeilong2/panel:latest
 ```
 
 然后只拉取并重建面板服务，`image` 与容器内 `IMAGE_NAME` 会继续使用同一个值：
 
 ```bash
 # Alpine Compose
-docker compose pull daidai-panel
-docker compose up -d daidai-panel
+docker compose pull panel
+docker compose up -d panel
 
 # Debian Compose
-docker compose -f docker-compose.debian.yml pull daidai-panel
-docker compose -f docker-compose.debian.yml up -d daidai-panel
+docker compose -f docker-compose.debian.yml pull panel
+docker compose -f docker-compose.debian.yml up -d panel
 ```
 
-也可以把 `.env` 中的 `DAIDAI_PANEL_IMAGE` 改成对应正式标签，例如 `latest-full`、`latest-3.10`、`latest-3.11`、`latest-all`、`debian-full`、`debian-3.10`、`debian-3.11` 或 `debian-all`。
+也可以把 `.env` 中的 `PANEL_IMAGE` 改成对应正式标签，例如 `latest-full`、`latest-3.10`、`latest-3.11`、`latest-all`、`debian-full`、`debian-3.10`、`debian-3.11` 或 `debian-all`。
 
 本地基于源码自己构建的镜像，重新 build 即可：
 
 ```bash
-docker build --build-arg VERSION=dev -f Dockerfile.debian -t daidai-panel:debian-local .
+docker build --build-arg VERSION=dev -f Dockerfile.debian -t panel:debian-local .
 ```
 
 </details>
@@ -652,7 +637,7 @@ docker build --build-arg VERSION=dev -f Dockerfile.debian -t daidai-panel:debian
 容器里预置了 `ddp` CLI，覆盖运维、脚本 / 变量 / 任务 / 订阅管理、账号恢复等场景。统一入口：
 
 ```bash
-docker exec -it daidai-panel ddp <subcommand>
+docker exec -it panel ddp <subcommand>
 ```
 
 > 没叫 `dd` 是因为会和 Linux 自带 `dd` 命令冲突。
@@ -699,7 +684,7 @@ ddp sub pull 我的订阅            # 立即执行一次订阅拉取
 ### 运维
 
 ```bash
-ddp restart                     # 重启容器内 daidai-server 进程
+ddp restart                     # 重启容器内 panel-server 进程
 ddp update                      # 复用面板一键更新链路
 ddp clean-logs 7                # 清理 7 天前的任务日志文件
 ddp backup create --name nightly
@@ -721,15 +706,15 @@ ddp ip-whitelist clear                      # IP 白名单填错进不去面板�
 ddp ip-whitelist set 203.0.113.10           # 直接重设白名单，也支持 CIDR / IPv4 通配格式
 ```
 
-> **忘记密码怎么办**：`docker exec -it daidai-panel ddp list-users` 查出用户名，再 `ddp reset-password <用户名> <新密码>`，不需要删数据重装。
-> **IP 白名单填错怎么办**：进入容器执行 `docker exec -it daidai-panel ddp ip-whitelist clear`，清空后登录页会恢复所有 IP 可访问，再回面板重新添加正确白名单。
+> **忘记密码怎么办**：`docker exec -it panel ddp list-users` 查出用户名，再 `ddp reset-password <用户名> <新密码>`，不需要删数据重装。
+> **IP 白名单填错怎么办**：进入容器执行 `docker exec -it panel ddp ip-whitelist clear`，清空后登录页会恢复所有 IP 可访问，再回面板重新添加正确白名单。
 
 命令也支持直接跑完就退出的一次性形态：
 
 ```bash
 docker run --rm \
-  -v $(pwd)/Dumb-Panel:/app/Dumb-Panel \
-  linzixuanzz/daidai-panel:latest \
+  -v $(pwd)/Panel:/app/Panel \
+  xiaofeilong2/panel:latest \
   ddp version
 ```
 
@@ -738,13 +723,13 @@ docker run --rm \
 ## 数据目录
 
 <details>
-<summary><b>展开：Dumb-Panel 目录里都有什么 —— 备份、迁移带走这一个目录就够了</b></summary>
+<summary><b>展开：Panel 目录里都有什么 —— 备份、迁移带走这一个目录就够了</b></summary>
 
-默认挂在 `./Dumb-Panel`，保留这一个目录 = 保留整个面板状态：
+默认挂在 `./Panel`，保留这一个目录 = 保留整个面板状态：
 
 ```
-Dumb-Panel/
-├── daidai.db          # SQLite 数据库
+Panel/
+├── panel.db          # SQLite 数据库
 ├── .jwt_secret        # 自动生成的 JWT 密钥
 ├── panel.log          # 面板运行日志
 ├── deps/              # Python / Node.js 依赖
@@ -770,8 +755,8 @@ Dumb-Panel/
 | 变量 | 说明 | 默认 |
 |------|------|------|
 | `TZ` | 时区 | `Asia/Shanghai` |
-| `DATA_DIR` | 数据目录 | `/app/Dumb-Panel` |
-| `DB_PATH` | 数据库路径 | `${DATA_DIR}/daidai.db` |
+| `DATA_DIR` | 数据目录 | `/app/Panel` |
+| `DB_PATH` | 数据库路径 | `${DATA_DIR}/panel.db` |
 | `PANEL_PORT` | 容器内 Nginx 端口 | `5700` |
 | `SERVER_PORT` | 容器内 Go 后端端口（**不要改**） | `5701` |
 | `CONTAINER_NAME` / `IMAGE_NAME` | 面板内一键更新识别自己用 | 空 |
@@ -789,7 +774,7 @@ Dumb-Panel/
 - **改完 `PUID` 要重建容器**（`docker compose up -d --force-recreate`）比只 `docker restart` 更保险。
 - **已知限制**：降权之后，面板里的「Linux 系统依赖」（`apt-get` / `apk`）装不了 —— 系统包管理器需要 root。面板会给出明确说明而不是报一串 `Permission denied`。**Node.js / Python 依赖不受影响**，降权下照常安装。
 
-`DAIDAI_PANEL_IMAGE` 是宿主机上的 Compose 变量，不是容器内变量。两份基础 Compose 都用它同时设置 `image` 和 `IMAGE_NAME`。
+`PANEL_IMAGE` 是宿主机上的 Compose 变量，不是容器内变量。两份基础 Compose 都用它同时设置 `image` 和 `IMAGE_NAME`。
 
 </details>
 
@@ -822,4 +807,4 @@ Dumb-Panel/
 
 ## LICENSE
 
-Copyright © 2026, [linzixuanzz](https://github.com/linzixuanzz). Released under the [MIT](LICENSE).
+Copyright © 2026, [xiaofeilong2](https://github.com/xiaofeilong2). Released under the [MIT](LICENSE).

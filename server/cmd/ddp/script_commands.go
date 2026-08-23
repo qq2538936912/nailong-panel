@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/service"
+	"panel/service"
 )
 
 var cliAllowedScriptExtensions = map[string]bool{

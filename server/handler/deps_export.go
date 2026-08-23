@@ -9,10 +9,10 @@ import (
 	"slices"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/service"
 )
 
 func buildDependencyExportText(depType string, deps []model.Dependency) (string, error) {

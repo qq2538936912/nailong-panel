@@ -24,7 +24,7 @@ type TinyLog struct {
 }
 
 func NewTinyLog(logID string) (*TinyLog, error) {
-	tmpFile, err := os.CreateTemp("", "daidai-log-"+logID+"-*.log")
+	tmpFile, err := os.CreateTemp("", "panel-log-"+logID+"-*.log")
 	if err != nil {
 		return nil, err
 	}

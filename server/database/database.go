@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"daidai-panel/config"
+	"panel/config"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ var DB *gorm.DB
 func Init(cfg *config.DatabaseConfig) {
 	dbPath := cfg.Path
 	if dbPath == "" {
-		dbPath = "./data/daidai.db"
+		dbPath = "./data/panel.db"
 	}
 
 	dir := filepath.Dir(dbPath)

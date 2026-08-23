@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
+	"panel/config"
 
 	"github.com/google/uuid"
 )

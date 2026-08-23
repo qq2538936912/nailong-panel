@@ -93,7 +93,7 @@ export function openAuthorizedEventStream(
         Accept: 'text/event-stream',
         Authorization: `Bearer ${authStore.accessToken}`,
         'X-Client-Type': 'web',
-        'X-Client-App': 'daidai-panel-web',
+        'X-Client-App': 'panel-web',
         ...(requestOptions.headers || {})
       }
 

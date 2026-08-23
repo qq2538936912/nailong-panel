@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 func TestBuildTaskExecutionNotificationIncludesFailureExcerpt(t *testing.T) {
@@ -312,7 +312,7 @@ func TestSummarizeTaskFailureOutputCondensesPythonTraceback(t *testing.T) {
 		`  File "/usr/lib/python3.11/asyncio/runners.py", line 190, in run`,
 		"    return runner.run(main)",
 		"    ^^^^^^^^^^^^^^^^^^^^^^^",
-		`  File "/app/Dumb-Panel/scripts/电信营业厅/电信.py", line 1118, in main`,
+		`  File "/app/Panel/scripts/电信营业厅/电信.py", line 1118, in main`,
 		"    sign, accId = await getSign(ticket, session)",
 		"    ^^^^^^^^^^^",
 		"TypeError: cannot unpack non-iterable NoneType object",
@@ -337,8 +337,8 @@ func TestBuildModuleCompatibilityHintRecognizesRequireEsmFailure(t *testing.T) {
 	output := strings.Join([]string{
 		`const { v4: uuidv4 } = require('uuid');`,
 		"                       ^",
-		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Dumb-Panel/deps/nodejs/node_modules/uuid/dist-node/index.js from /app/Dumb-Panel/scripts/wc.js not supported.",
-		"Instead change the require of index.js in /app/Dumb-Panel/scripts/wc.js to a dynamic import() which is available in all CommonJS modules.",
+		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Panel/deps/nodejs/node_modules/uuid/dist-node/index.js from /app/Panel/scripts/wc.js not supported.",
+		"Instead change the require of index.js in /app/Panel/scripts/wc.js to a dynamic import() which is available in all CommonJS modules.",
 	}, "\n")
 
 	hint := BuildModuleCompatibilityHint(output)
@@ -374,8 +374,8 @@ func TestBuildModuleCompatibilityHintParsesScopedRequireEsmPackage(t *testing.T)
 func TestBuildModuleCompatibilityHintReportsUnmappedRequireEsmPackage(t *testing.T) {
 	output := strings.Join([]string{
 		`const pkg = require('some-esm-only-package');`,
-		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Dumb-Panel/deps/nodejs/node_modules/some-esm-only-package/index.js from /app/Dumb-Panel/scripts/demo.js not supported.",
-		"Instead change the require of index.js in /app/Dumb-Panel/scripts/demo.js to a dynamic import() which is available in all CommonJS modules.",
+		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Panel/deps/nodejs/node_modules/some-esm-only-package/index.js from /app/Panel/scripts/demo.js not supported.",
+		"Instead change the require of index.js in /app/Panel/scripts/demo.js to a dynamic import() which is available in all CommonJS modules.",
 	}, "\n")
 
 	hint := BuildModuleCompatibilityHint(output)
@@ -392,8 +392,8 @@ func TestSummarizeTaskFailureOutputPrefersModuleCompatibilityHint(t *testing.T) 
 		"[安装成功: uuid]",
 		"[依赖已安装 (1/5)，自动重试执行]",
 		`const { v4: uuidv4 } = require('uuid');`,
-		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Dumb-Panel/deps/nodejs/node_modules/uuid/dist-node/index.js from /app/Dumb-Panel/scripts/wc.js not supported.",
-		"Instead change the require of index.js in /app/Dumb-Panel/scripts/wc.js to a dynamic import() which is available in all CommonJS modules.",
+		"Error [ERR_REQUIRE_ESM]: require() of ES Module /app/Panel/deps/nodejs/node_modules/uuid/dist-node/index.js from /app/Panel/scripts/wc.js not supported.",
+		"Instead change the require of index.js in /app/Panel/scripts/wc.js to a dynamic import() which is available in all CommonJS modules.",
 	}, "\n")
 
 	summary := summarizeTaskFailureOutput(output)

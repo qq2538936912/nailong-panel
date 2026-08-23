@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	panelcron "daidai-panel/pkg/cron"
+	"panel/database"
+	"panel/model"
+	panelcron "panel/pkg/cron"
 
 	"github.com/robfig/cron/v3"
 )

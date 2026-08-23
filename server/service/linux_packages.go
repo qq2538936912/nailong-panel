@@ -138,14 +138,14 @@ func EnsureLinuxPackageManagerPrivilege() error {
 		return nil
 	}
 	// 出路要按部署形态给，不能一律写 Docker：仓库自己也推荐二进制部署用
-	// packaging/linux/daidai-panel.service 的 User=daidai 非 root 跑，
+	// packaging/linux/panel.service 的 User=panel 非 root 跑，
 	// 给那类用户一段 docker exec 的指引等于没给。
 	hint := "去掉降权配置改回 root 运行，或以 root 身份手动安装该软件包"
 	if _, err := os.Stat("/.dockerenv"); err == nil {
 		hint = "在宿主机执行 docker exec -u 0 <容器名> apk add <包名>" +
 			"（Debian 版镜像用 apt-get install -y <包名>），" +
 			"或去掉 compose 里的 PUID/PGID 让容器回到 root 运行"
-	} else if strings.TrimSpace(os.Getenv("DAIDAI_MAGISK_MODULE")) != "" {
+	} else if strings.TrimSpace(os.Getenv("PANEL_MAGISK_MODULE")) != "" {
 		hint = "进容器后以 root 手动安装：参考模块 README 的「进入容器」命令"
 	} else {
 		hint = "以 root 手动安装该软件包，或去掉 systemd 单元里的 User= / Group= 让面板回到 root 运行"

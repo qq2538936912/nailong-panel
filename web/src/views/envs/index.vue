@@ -9,8 +9,8 @@ import EnvEditDialog from './components/EnvEditDialog.vue'
 import EnvImportDialog from './components/EnvImportDialog.vue'
 import { useResponsive } from '@/composables/useResponsive'
 
-const envTableDensityStorageKey = 'daidai-env-table-density'
-const envPageSizeStorageKey = 'daidai-env-page-size'
+const envTableDensityStorageKey = 'panel-env-table-density'
+const envPageSizeStorageKey = 'panel-env-page-size'
 const envAllFetchBatchSize = 100
 const { isMobile } = useResponsive()
 

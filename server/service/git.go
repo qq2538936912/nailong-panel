@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 func GitClone(url, branch, destDir string, sshKeyPath string) (string, error) {

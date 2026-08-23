@@ -38,7 +38,7 @@ export const apiCategories: ApiCategory[] = [
         method: 'GET',
         path: '/docs/plugin-overview',
         title: '对接概述',
-        description: '呆呆面板通过 Open API 应用机制对接第三方插件，实现环境变量的自动管理。首先在面板「Open API」页面创建应用，获取 App Key 和 App Secret。配置格式：Host丨AppKey丨AppSecret（使用中文竖线 丨 分隔），示例：http://127.0.0.1:5173丨a1b2c3d4...丨e5f6g7h8...。对接流程：1. 使用 App Key + App Secret 获取 Token → 2. 使用 Token 操作环境变量（增删改查）→ 3. Token 过期（24小时）后重新获取。',
+        description: '面板通过 Open API 应用机制对接第三方插件，实现环境变量的自动管理。首先在面板「Open API」页面创建应用，获取 App Key 和 App Secret。配置格式：Host丨AppKey丨AppSecret（使用中文竖线 丨 分隔），示例：http://127.0.0.1:5173丨a1b2c3d4...丨e5f6g7h8...。对接流程：1. 使用 App Key + App Secret 获取 Token → 2. 使用 Token 操作环境变量（增删改查）→ 3. Token 过期（24小时）后重新获取。',
         auth: 'none',
         responseExample: JSON.stringify({
           '配置格式': 'Host丨AppKey丨AppSecret',
@@ -56,7 +56,7 @@ export const apiCategories: ApiCategory[] = [
           ],
         }, null, 2),
         responseFields: [
-          { name: 'Host', type: 'string', description: '呆呆面板地址，如 http://127.0.0.1:5173' },
+          { name: 'Host', type: 'string', description: '面板地址，如 http://127.0.0.1:5173' },
           { name: 'AppKey', type: 'string', description: '应用的 App Key（在面板 Open API 页面创建应用后获取）' },
           { name: 'AppSecret', type: 'string', description: '应用的 App Secret（创建应用时生成）' },
           { name: 'Token', type: 'string', description: '通过 App Key + Secret 获取的 JWT Token，有效期 24 小时' },
@@ -125,7 +125,7 @@ export const apiCategories: ApiCategory[] = [
         method: 'POST',
         path: '/api/envs',
         title: '添加环境变量',
-        description: '当查找不到已有变量时，调用此接口添加新的环境变量。注意：呆呆面板不需要对 value 进行 URL 编码，直接传递原始值即可。',
+        description: '当查找不到已有变量时，调用此接口添加新的环境变量。注意：面板不需要对 value 进行 URL 编码，直接传递原始值即可。',
         auth: 'jwt',
         bodyParams: [
           { name: 'name', type: 'string', required: true, description: '变量名', example: 'sfsyUrl' },
@@ -166,7 +166,7 @@ export const apiCategories: ApiCategory[] = [
         method: 'DELETE',
         path: '/api/envs/:id',
         title: '删除环境变量',
-        description: '删除指定的环境变量。注意：呆呆面板通过路径参数传递 ID，不是请求体数组。',
+        description: '删除指定的环境变量。注意：面板通过路径参数传递 ID，不是请求体数组。',
         auth: 'jwt',
         pathParams: [
           { name: 'id', type: 'integer', required: true, description: '环境变量 ID' },
@@ -1127,9 +1127,9 @@ if __name__ == '__main__':
         responseExample: JSON.stringify({
           data: {
             available: true,
-            work_dir: '/opt/daidai/scripts',
+            work_dir: '/opt/panel/scripts',
             shell: '/bin/bash',
-            python: '/opt/daidai/data/deps/python/3.12/bin/python',
+            python: '/opt/panel/data/deps/python/3.12/bin/python',
             message: '',
           },
         }, null, 2),
@@ -1159,7 +1159,7 @@ if __name__ == '__main__':
           { name: 'cols', type: 'integer', description: '初始列数', example: '120' },
           { name: 'rows', type: 'integer', description: '初始行数', example: '36' },
         ],
-        responseExample: JSON.stringify({ type: 'ready', work_dir: '/opt/daidai/scripts', shell: '/bin/bash' }, null, 2),
+        responseExample: JSON.stringify({ type: 'ready', work_dir: '/opt/panel/scripts', shell: '/bin/bash' }, null, 2),
       },
     ],
   },
@@ -1325,7 +1325,7 @@ if __name__ == '__main__':
           { name: 'password', type: 'string', required: false, example: '', description: '可选加密密码，留空则导出明文 .json 文件' },
           { name: 'selection', type: 'object', required: false, example: '{}', description: '可选模块选择，留空导出全部内容' },
         ],
-        responseExample: JSON.stringify({ data: { path: 'data/backups/daidai-backup-20260101-120000.json' }, message: '备份成功' }, null, 2),
+        responseExample: JSON.stringify({ data: { path: 'data/backups/panel-backup-20260101-120000.json' }, message: '备份成功' }, null, 2),
       },
       {
         id: 'backup-list',
@@ -1334,7 +1334,7 @@ if __name__ == '__main__':
         title: '获取备份列表',
         description: '列出当前面板已生成的全部备份文件',
         auth: 'jwt',
-        responseExample: JSON.stringify({ data: [{ filename: 'daidai-backup-20260101.json', size: 102400, modified_at: '2026-01-01T12:00:00Z' }] }, null, 2),
+        responseExample: JSON.stringify({ data: [{ filename: 'panel-backup-20260101.json', size: 102400, modified_at: '2026-01-01T12:00:00Z' }] }, null, 2),
       },
       {
         id: 'backup-delete',

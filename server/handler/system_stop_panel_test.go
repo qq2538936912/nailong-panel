@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/service"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +32,7 @@ func newSystemStopPanelTestEnv(t *testing.T, magiskRuntime bool, shellVersion st
 
 	testutil.SetupTestEnv(t)
 
-	flagPath := filepath.Join(t.TempDir(), "daidai-panel", "stopped")
+	flagPath := filepath.Join(t.TempDir(), "panel", "stopped")
 	previousFlagPath := magiskStopFlagPathForTest
 	magiskStopFlagPathForTest = flagPath
 
@@ -52,9 +52,9 @@ func newSystemStopPanelTestEnv(t *testing.T, magiskRuntime bool, shellVersion st
 	// 其次探 /data/adb 下的模块标记文件 —— Windows / CI 上都不存在。
 	// 这里显式写空值而不是「不设置」，避免受同包其它用例残留的环境变量影响。
 	if magiskRuntime {
-		t.Setenv("DAIDAI_MAGISK_MODULE", "1")
+		t.Setenv("PANEL_MAGISK_MODULE", "1")
 	} else {
-		t.Setenv("DAIDAI_MAGISK_MODULE", "")
+		t.Setenv("PANEL_MAGISK_MODULE", "")
 	}
 	t.Setenv(magiskShellVersionEnv, shellVersion)
 
@@ -158,13 +158,13 @@ func TestStopPanelRejectedOnLegacyShellVersion(t *testing.T) {
 // —— 这个接口独立发版的 Flutter APP 也在读。
 func TestSystemInfoExposesDeploymentTypeAndShellVersion(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_MAGISK_MODULE", "1")
+	t.Setenv("PANEL_MAGISK_MODULE", "1")
 	t.Setenv(magiskShellVersionEnv, "2")
 
 	// 采集真实资源快照会去读磁盘 / 起外部命令，跟本用例要验的东西无关，换成固定值。
 	previousResourceInfo := systemHealthGetResourceInfo
 	systemHealthGetResourceInfo = func() service.ResourceInfo {
-		return service.ResourceInfo{Hostname: "stop-panel-test-host", DataDir: "/tmp/daidai"}
+		return service.ResourceInfo{Hostname: "stop-panel-test-host", DataDir: "/tmp/panel"}
 	}
 	t.Cleanup(func() { systemHealthGetResourceInfo = previousResourceInfo })
 

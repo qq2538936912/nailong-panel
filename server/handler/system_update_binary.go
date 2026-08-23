@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/model"
+	"panel/service"
 )
 
 const (
@@ -80,18 +80,18 @@ func resolveBinaryReleaseTarget(goos, goarch string) (assetName, binaryName stri
 	switch goos {
 	case "windows":
 		if goarch == "amd64" {
-			return "daidai-windows-amd64.zip", "daidai-server.exe", nil
+			return "panel-windows-amd64.zip", "panel-server.exe", nil
 		}
 	case "linux":
 		switch goarch {
 		case "amd64":
-			return "daidai-linux-amd64.tar.gz", "daidai-linux-amd64", nil
+			return "panel-linux-amd64.tar.gz", "panel-linux-amd64", nil
 		case "arm64":
-			return "daidai-linux-arm64.tar.gz", "daidai-linux-arm64", nil
+			return "panel-linux-arm64.tar.gz", "panel-linux-arm64", nil
 		case "386":
-			return "daidai-linux-386.tar.gz", "daidai-linux-386", nil
+			return "panel-linux-386.tar.gz", "panel-linux-386", nil
 		case "arm":
-			return "daidai-linux-armv7.tar.gz", "daidai-linux-armv7", nil
+			return "panel-linux-armv7.tar.gz", "panel-linux-armv7", nil
 		}
 	}
 
@@ -100,9 +100,9 @@ func resolveBinaryReleaseTarget(goos, goarch string) (assetName, binaryName stri
 
 func isMagiskPanelRuntime() bool {
 	for _, marker := range []string{
-		"/data/adb/daidai-panel/ports.conf",
-		"/data/adb/modules/daidai-panel/module.prop",
-		"/data/adb/modules_update/daidai-panel/module.prop",
+		"/data/adb/panel/ports.conf",
+		"/data/adb/modules/panel/module.prop",
+		"/data/adb/modules_update/panel/module.prop",
 	} {
 		if _, err := os.Stat(marker); err == nil {
 			return true
@@ -197,7 +197,7 @@ func resolveBinaryUpdateBaseDir() string {
 	if config.C != nil && strings.TrimSpace(config.C.Data.Dir) != "" {
 		return config.C.Data.Dir
 	}
-	return filepath.Join(os.TempDir(), "daidai-panel")
+	return filepath.Join(os.TempDir(), "panel")
 }
 
 func downloadBinaryUpdateAsset(assetURL, archivePath string) error {
@@ -211,7 +211,7 @@ func downloadBinaryUpdateAsset(assetURL, archivePath string) error {
 	if err != nil {
 		return fmt.Errorf("构建更新包下载请求失败: %w", err)
 	}
-	req.Header.Set("User-Agent", "daidai-panel-updater")
+	req.Header.Set("User-Agent", "panel-updater")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -490,7 +490,7 @@ for item in "$SRC"/* "$SRC"/.[!.]* "$SRC"/..?*; do
   [ -e "$item" ] || continue
   name=$(basename "$item")
   case "$name" in
-    %s|Dumb-Panel|data|logs|backups|.env)
+    %s|Panel|data|logs|backups|.env)
       log "skip protected item: $name"
       continue
       ;;
@@ -557,7 +557,7 @@ try {
   }
 
   Write-UpdateLog "copy update files from $Source to $Target"
-  $Protected = @('%s', 'Dumb-Panel', 'data', 'logs', 'backups', '.env')
+  $Protected = @('%s', 'Panel', 'data', 'logs', 'backups', '.env')
   Get-ChildItem -LiteralPath $Source -Force | ForEach-Object {
     if ($Protected -contains $_.Name) {
       Write-UpdateLog "skip protected item: $($_.Name)"
@@ -634,7 +634,7 @@ func resolvePanelServerPIDFile() string {
 	if config.C == nil || strings.TrimSpace(config.C.Data.Dir) == "" {
 		return ""
 	}
-	return filepath.Join(config.C.Data.Dir, "run", "daidai-server.pid")
+	return filepath.Join(config.C.Data.Dir, "run", "panel-server.pid")
 }
 
 func readPIDFileIfExists(path string) int {

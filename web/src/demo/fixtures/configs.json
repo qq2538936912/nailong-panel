@@ -593,7 +593,7 @@
       "value_type": "enum"
     },
     "panel_service_name": {
-      "default_value": "daidai-panel",
+      "default_value": "panel",
       "description": "systemd 服务名称",
       "group": "branding",
       "group_label": "面板与运行时",
@@ -602,11 +602,11 @@
       "registered": true,
       "secret": false,
       "updated_at": null,
-      "value": "daidai-panel",
+      "value": "panel",
       "value_type": "string"
     },
     "panel_title": {
-      "default_value": "呆呆面板",
+      "default_value": "面板",
       "description": "面板标题",
       "group": "branding",
       "group_label": "面板与运行时",
@@ -615,7 +615,7 @@
       "registered": true,
       "secret": false,
       "updated_at": null,
-      "value": "呆呆面板",
+      "value": "面板",
       "value_type": "string"
     },
     "proxy_url": {
@@ -740,7 +740,7 @@
     },
     "update_image_mirror": {
       "default_value": "",
-      "description": "旧 Docker Socket 更新链路使用的可选镜像源（Watchtower 部署请通过 DAIDAI_PANEL_IMAGE 配置仓库）",
+      "description": "旧 Docker Socket 更新链路使用的可选镜像源（Watchtower 部署请通过 PANEL_IMAGE 配置仓库）",
       "group": "network",
       "group_label": "网络代理",
       "label": "系统更新镜像源",

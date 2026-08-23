@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // TestCreateUpsertsOnNameAndRemarks was previously the upsert契约；青龙化后

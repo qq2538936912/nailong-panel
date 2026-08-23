@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/database"
+	"panel/model"
 )
 
 var (

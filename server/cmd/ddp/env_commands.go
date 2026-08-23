@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 var cliEnvNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)

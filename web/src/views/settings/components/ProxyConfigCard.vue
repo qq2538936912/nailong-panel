@@ -76,7 +76,7 @@ const binaryProxyOptions = [
         </el-button>
       </div>
       <span class="form-hint">
-        仅用于旧 Docker Socket 一键更新。Watchtower 部署请在 .env 中设置 DAIDAI_PANEL_IMAGE，让容器镜像与 IMAGE_NAME 同步使用镜像加速或自建仓库。
+        仅用于旧 Docker Socket 一键更新。Watchtower 部署请在 .env 中设置 PANEL_IMAGE，让容器镜像与 IMAGE_NAME 同步使用镜像加速或自建仓库。
       </span>
     </div>
 

@@ -966,7 +966,7 @@ function buildLoginLogs(now: number): DemoLoginLog[] {
     user_id: seed[0] === 'demo' ? 1 : seed[0] === 'ops' ? 2 : 3,
     username: seed[0],
     ip: seed[3],
-    client_name: index === 2 ? '呆呆面板 APP' : 'Chrome · Windows',
+    client_name: index === 2 ? '面板 APP' : 'Chrome · Windows',
     user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     method: '密码登录',
     status: seed[2],
@@ -983,7 +983,7 @@ function buildSessions(now: number): DemoSession[] {
       expires_at: iso(now + 6 * DAY_MS), created_at: iso(now - 3 * MINUTE_MS),
     },
     {
-      id: 2, user_id: 2, username: 'ops', client_type: 'app', client_name: '呆呆面板 APP',
+      id: 2, user_id: 2, username: 'ops', client_type: 'app', client_name: '面板 APP',
       ip: '203.0.113.71', user_agent: 'Dart/3.5 (dart:io)',
       expires_at: iso(now + 4 * DAY_MS), created_at: iso(now - 2 * DAY_MS),
     },
@@ -999,9 +999,9 @@ function buildIPWhitelist(now: number): DemoIPWhitelist[] {
 
 function buildBackups(now: number): DemoBackupFile[] {
   return [
-    { name: 'daidai-backup-auto-20260819-0300.tgz', size: 8_412_672, created_at: iso(now - 29 * HOUR_MS) },
-    { name: 'daidai-backup-auto-20260818-0300.tgz', size: 8_355_840, created_at: iso(now - 53 * HOUR_MS) },
-    { name: 'daidai-backup-升级前手动备份.tgz', size: 7_982_080, created_at: iso(now - 9 * DAY_MS) },
+    { name: 'panel-backup-auto-20260819-0300.tgz', size: 8_412_672, created_at: iso(now - 29 * HOUR_MS) },
+    { name: 'panel-backup-auto-20260818-0300.tgz', size: 8_355_840, created_at: iso(now - 53 * HOUR_MS) },
+    { name: 'panel-backup-升级前手动备份.tgz', size: 7_982_080, created_at: iso(now - 9 * DAY_MS) },
   ]
 }
 

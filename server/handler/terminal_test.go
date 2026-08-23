@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/service"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

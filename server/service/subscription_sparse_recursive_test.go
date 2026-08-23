@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 本文件覆盖「片段命中目录时，目录里的文件也要被 sparse-checkout 检出/排除」这条语义。

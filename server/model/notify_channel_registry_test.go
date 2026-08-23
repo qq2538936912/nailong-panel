@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // TestNotifyChannelRegistryHasNoStructuralDefects 兜住注册表里「写错了但编译得过」的那些形态问题。

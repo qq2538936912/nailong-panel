@@ -3,7 +3,7 @@ package handler
 import (
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 func TestStreamDoneEventForStatusRunningReconnects(t *testing.T) {

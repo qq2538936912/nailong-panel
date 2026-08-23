@@ -1,11 +1,11 @@
 # 脚本内调用面板能力
 
-面板在执行定时任务时，会往脚本进程里注入一批 `DAIDAI_*` 环境变量，其中包含**面板自己的接口地址和一枚临时凭据**。
+面板在执行定时任务时，会往脚本进程里注入一批 `PANEL_*` 环境变量，其中包含**面板自己的接口地址和一枚临时凭据**。
 脚本因此可以在运行过程中回头调用面板：发通知、读写环境变量、查任务和日志、触发订阅拉取……全都不需要你去后台申请 Open API 应用，也不用把账号密码写进脚本。
 
 这篇文档写给**写定时任务脚本的人**，不需要懂面板内部实现。
 
-> 一句话版本：`$DAIDAI_API_BASE` 是接口根地址，`$DAIDAI_TOKEN` 是配套的令牌，两个拼起来直接发 HTTP 请求就行。
+> 一句话版本：`$PANEL_API_BASE` 是接口根地址，`$PANEL_TOKEN` 是配套的令牌，两个拼起来直接发 HTTP 请求就行。
 > 唯一必须记住的红线：**要触发别的任务，请走 HTTP 接口，不要在脚本里跑 `ddp task run`**（原因见[第 4 节](#4-两条路径ddp-还是-http)）。
 
 ---
@@ -29,22 +29,22 @@
 
 | 变量 | 含义 |
 |------|------|
-| `DAIDAI_API_BASE` | 面板 API 根地址，形如 `http://127.0.0.1:5701/api/v1`。端口跟着 `config.yaml` 的 `server.port` 走，**不要在脚本里写死** |
-| `DAIDAI_TOKEN` | 调用上面这些接口用的 Bearer 令牌。权限与有效期见[第 6 节](#6-安全说明) |
-| `DAIDAI_NOTIFY_URL` | 发通知接口的完整地址，等价于 `$DAIDAI_API_BASE/notifications/send`。为兼容既有脚本保留 |
-| `DAIDAI_NOTIFY_TOKEN` | 与 `DAIDAI_TOKEN` **完全同值**，同样为兼容既有脚本保留。新脚本用哪个都行 |
-| `DAIDAI_NOTIFY_TIMEOUT` | 内置通知 helper 的请求超时，固定 `15000`（毫秒） |
-| `DAIDAI_NOTIFY_CHANNEL_ID` | 当前任务在「通知渠道」里选定的默认渠道 ID。**任务没有选渠道时这个变量不存在**，内置 helper 会退回广播 —— 广播只发到「默认推送」渠道，设为「绑定推送」的渠道收不到 |
-| `DAIDAI_SCRIPTS_DIR` | 脚本根目录的绝对路径（面板里「脚本管理」看到的那个根） |
-| `DAIDAI_NOTIFY_PY` | 内置 Python 通知 helper `notify.py` 的绝对路径 |
-| `DAIDAI_SEND_NOTIFY_JS` | 内置 Node 通知 helper `sendNotify.js` 的绝对路径 |
-| `DAIDAI_PYTHON_VERSION` | 当前任务实际使用的 Python 小版本，如 `3.12`。任务表单里选的版本若在本机不可用，这里是回退后的**真实**版本 |
-| `DAIDAI_SILENT_EXIT_DETECT` | **由你按需设置**（不是面板注入的）。填 `0` / `off` / `false` 可为该任务单独关掉「半路静默结束」检测，见下方小节 |
+| `PANEL_API_BASE` | 面板 API 根地址，形如 `http://127.0.0.1:5701/api/v1`。端口跟着 `config.yaml` 的 `server.port` 走，**不要在脚本里写死** |
+| `PANEL_TOKEN` | 调用上面这些接口用的 Bearer 令牌。权限与有效期见[第 6 节](#6-安全说明) |
+| `PANEL_NOTIFY_URL` | 发通知接口的完整地址，等价于 `$PANEL_API_BASE/notifications/send`。为兼容既有脚本保留 |
+| `PANEL_NOTIFY_TOKEN` | 与 `PANEL_TOKEN` **完全同值**，同样为兼容既有脚本保留。新脚本用哪个都行 |
+| `PANEL_NOTIFY_TIMEOUT` | 内置通知 helper 的请求超时，固定 `15000`（毫秒） |
+| `PANEL_NOTIFY_CHANNEL_ID` | 当前任务在「通知渠道」里选定的默认渠道 ID。**任务没有选渠道时这个变量不存在**，内置 helper 会退回广播 —— 广播只发到「默认推送」渠道，设为「绑定推送」的渠道收不到 |
+| `PANEL_SCRIPTS_DIR` | 脚本根目录的绝对路径（面板里「脚本管理」看到的那个根） |
+| `PANEL_NOTIFY_PY` | 内置 Python 通知 helper `notify.py` 的绝对路径 |
+| `PANEL_SEND_NOTIFY_JS` | 内置 Node 通知 helper `sendNotify.js` 的绝对路径 |
+| `PANEL_PYTHON_VERSION` | 当前任务实际使用的 Python 小版本，如 `3.12`。任务表单里选的版本若在本机不可用，这里是回退后的**真实**版本 |
+| `PANEL_SILENT_EXIT_DETECT` | **由你按需设置**（不是面板注入的）。填 `0` / `off` / `false` 可为该任务单独关掉「半路静默结束」检测，见下方小节 |
 
 三点补充：
 
-1. **这些名字是保留名。** 注入发生在面板环境变量之后，如果你在「环境变量」页面建了一条同名的 `DAIDAI_NOTIFY_URL`，任务运行时会被上面的值覆盖掉。
-2. **脚本调试运行、`ddp python` / `ddp shell` 也有。** 这两条路径同样会注入这批变量（但没有 `DAIDAI_NOTIFY_CHANNEL_ID`，因为它们不挂在任何任务上），令牌也同样在运行 / 会话结束后立即作废，详见[第 6 节](#6-安全说明)。
+1. **这些名字是保留名。** 注入发生在面板环境变量之后，如果你在「环境变量」页面建了一条同名的 `PANEL_NOTIFY_URL`，任务运行时会被上面的值覆盖掉。
+2. **脚本调试运行、`ddp python` / `ddp shell` 也有。** 这两条路径同样会注入这批变量（但没有 `PANEL_NOTIFY_CHANNEL_ID`，因为它们不挂在任何任务上），令牌也同样在运行 / 会话结束后立即作废，详见[第 6 节](#6-安全说明)。
 3. **子进程会继承。** 脚本里 `subprocess` / `child_process` 起的子命令自动继承这些变量，所以在 Python 里调 `ddp`、在 Node 里调 `curl` 都不用手动传。
 
 ### Node 任务：半路静默结束的检测与豁免
@@ -81,8 +81,8 @@ report().catch(() => {});      // fire-and-forget 挂防御性 catch
 
 | 方式 | 作用范围 | 怎么用 |
 |------|----------|--------|
-| `globalThis.daidaiDone?.()` | 单个脚本 | 主流程末尾加一行，声明「我跑完了」，之后一律判 CLEAN |
-| `DAIDAI_SILENT_EXIT_DETECT=0` | 单个任务 | 在该任务的环境变量里加这条，只关它一个 |
+| `globalThis.panelDone?.()` | 单个脚本 | 主流程末尾加一行，声明「我跑完了」，之后一律判 CLEAN |
+| `PANEL_SILENT_EXIT_DETECT=0` | 单个任务 | 在该任务的环境变量里加这条，只关它一个 |
 | 系统设置里关掉 | 全部任务 | 影响面最大，非必要不用 |
 
 推荐第一种：写 `?.()` 而不是 `()`，这样脚本在面板之外（本地、青龙）跑时不会因为没有这个函数而报错。
@@ -105,7 +105,7 @@ const { sendNotify } = require('sendNotify');
 await sendNotify('任务标题', '正文第一行\n正文第二行');
 ```
 
-两个 helper 由面板自动放进脚本根目录并加进 `PYTHONPATH` / `NODE_PATH`，`import` / `require` 直接能找到，签名与青龙保持兼容。它们内部读的就是 `DAIDAI_NOTIFY_URL` 和 `DAIDAI_NOTIFY_TOKEN`。
+两个 helper 由面板自动放进脚本根目录并加进 `PYTHONPATH` / `NODE_PATH`，`import` / `require` 直接能找到，签名与青龙保持兼容。它们内部读的就是 `PANEL_NOTIFY_URL` 和 `PANEL_NOTIFY_TOKEN`。
 
 ---
 
@@ -127,8 +127,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-API_BASE = os.environ["DAIDAI_API_BASE"]
-TOKEN = os.environ["DAIDAI_TOKEN"]
+API_BASE = os.environ["PANEL_API_BASE"]
+TOKEN = os.environ["PANEL_TOKEN"]
 
 
 def api(method, path, payload=None):
@@ -192,9 +192,9 @@ if __name__ == "__main__":
 ### Node（fetch，Node 18+ 自带，无需装依赖）
 
 ```js
-const API_BASE = process.env.DAIDAI_API_BASE;
+const API_BASE = process.env.PANEL_API_BASE;
 const HEADERS = {
-  Authorization: `Bearer ${process.env.DAIDAI_TOKEN}`,
+  Authorization: `Bearer ${process.env.PANEL_TOKEN}`,
   'Content-Type': 'application/json',
 };
 
@@ -253,12 +253,12 @@ main().catch((err) => {
 #!/usr/bin/env bash
 set -euo pipefail
 
-AUTH="Authorization: Bearer ${DAIDAI_TOKEN}"
+AUTH="Authorization: Bearer ${PANEL_TOKEN}"
 JSON='Content-Type: application/json'
 
 # 1. 读：查名字里含 DEMO_TOKEN 的环境变量（keyword 是模糊匹配）
 echo "--- 当前记录 ---"
-curl -sS -H "$AUTH" "${DAIDAI_API_BASE}/envs?all=1&keyword=DEMO_TOKEN"
+curl -sS -H "$AUTH" "${PANEL_API_BASE}/envs?all=1&keyword=DEMO_TOKEN"
 echo
 
 # 2. 写：按名字 upsert。同名多条时接口返回 400，set -e 配合下面的判断会让脚本停下来
@@ -266,7 +266,7 @@ echo "--- 写回 ---"
 http_code=$(curl -sS -o /tmp/ddp_upsert.json -w '%{http_code}' \
   -X PUT -H "$AUTH" -H "$JSON" \
   -d '{"name":"DEMO_TOKEN","value":"new-token-value","remarks":"脚本自动更新"}' \
-  "${DAIDAI_API_BASE}/envs/by-name")
+  "${PANEL_API_BASE}/envs/by-name")
 cat /tmp/ddp_upsert.json
 echo
 if [ "$http_code" -ge 400 ]; then
@@ -278,7 +278,7 @@ fi
 echo "--- 通知 ---"
 curl -sS -X POST -H "$AUTH" -H "$JSON" \
   -d '{"title":"示例任务","content":"DEMO_TOKEN 已更新"}' \
-  "${DAIDAI_API_BASE}/notifications/send"
+  "${PANEL_API_BASE}/notifications/send"
 echo
 ```
 
@@ -288,8 +288,8 @@ echo
 
 **统一约定**
 
-- 根地址：`$DAIDAI_API_BASE`（即 `http://127.0.0.1:<后端端口>/api/v1`）
-- 鉴权：请求头 `Authorization: Bearer $DAIDAI_TOKEN`
+- 根地址：`$PANEL_API_BASE`（即 `http://127.0.0.1:<后端端口>/api/v1`）
+- 鉴权：请求头 `Authorization: Bearer $PANEL_TOKEN`
 - 请求体：JSON，需要带 `Content-Type: application/json`
 - 出错：HTTP 4xx / 5xx，响应体是 `{"error": "原因"}`
 - 列表类接口返回 `{"data": [...], "total": N, "page": 1, "page_size": 20}`
@@ -326,10 +326,10 @@ echo
 | `PUT /subscriptions/<id>/pull` | 立即拉取一次订阅 |
 | `POST /notifications/send` | 发通知，body `{"title": "...", "content": "...", "channel_id": 1}`。`channel_id` / `channel_ids` 都可省略，省略即广播到全部「默认推送」渠道（`push_scope=default`）；显式指定 ID 时按 ID 精确投递，「绑定推送」渠道同样能收到。传了 `channel_id` / 非空 `channel_ids` 但里面没有大于 0 的 ID 会直接返回 400，不会退化成广播 |
 
-> 注：面板同时保留了不带版本号的 `/api/...` 路径（等价于 `/api/v1/...`），脚本里用 `$DAIDAI_API_BASE` 即可，不必关心。
+> 注：面板同时保留了不带版本号的 `/api/...` 路径（等价于 `/api/v1/...`），脚本里用 `$PANEL_API_BASE` 即可，不必关心。
 >
 > 内置 helper 的 `ignore_default_config=True`（Node 侧是 `{ ignore_default_config: true }`）**不是「发给所有人」**：
-> 它跳过的只是 `DAIDAI_NOTIFY_CHANNEL_ID`，也就是任务绑定的那个渠道，跳过之后退回广播 ——
+> 它跳过的只是 `PANEL_NOTIFY_CHANNEL_ID`，也就是任务绑定的那个渠道，跳过之后退回广播 ——
 > 而广播只发到「默认推送」渠道，等于「只发默认推送渠道」。要连「绑定推送」渠道一起发，必须显式列出 `channel_ids`。
 
 ---
@@ -341,7 +341,7 @@ echo
 |  | `ddp` CLI | HTTP API |
 |--|-----------|----------|
 | 怎么工作 | 自己打开数据库直接读写 | 请求正在运行的面板进程 |
-| 要不要令牌 | 不要 | 要 `$DAIDAI_TOKEN` |
+| 要不要令牌 | 不要 | 要 `$PANEL_TOKEN` |
 | 要不要面板在跑 | 不要 | 要 |
 | 输出 | 给人看的文本，不好解析 | JSON |
 | **触发任务** | ⚠️ **会绕开并发闸门** | ✅ 走面板调度器 |
@@ -361,7 +361,7 @@ echo
 api("PUT", "/tasks/12/run")
 ```
 
-`ddp task run` 保留给**人在终端里手动跑**用（`docker exec -it daidai-panel ddp task run 12`），那种场景下你自己知道正在开第二条线。
+`ddp task run` 保留给**人在终端里手动跑**用（`docker exec -it panel ddp task run 12`），那种场景下你自己知道正在开第二条线。
 
 ### 按场景怎么选
 
@@ -454,7 +454,7 @@ upsert_env("MY_LIST", '{"items":["a","b"]}')
 
 **这枚令牌能干什么**
 
-`$DAIDAI_TOKEN` 是 operator 角色，能读写：
+`$PANEL_TOKEN` 是 operator 角色，能读写：
 
 - ✅ 环境变量（增删改查、导入导出）
 - ✅ 任务（增删改查、运行、停止、批量操作、导入导出）
@@ -484,11 +484,11 @@ upsert_env("MY_LIST", '{"items":["a","b"]}')
 上面那列有效期只在**吊销压根没机会执行**时才起作用：面板进程被 `kill -9`、宿主断电。正常运行下这枚令牌的实际寿命就是一次运行的时长。
 
 > 这三条是当前版本签发脚本令牌的**全部**入口 —— 它们最终都汇聚到同一段注入逻辑。
-> 如果你在别处看到 `DAIDAI_TOKEN`，那也是从上面某一条继承下来的（比如脚本起的子进程）。
+> 如果你在别处看到 `PANEL_TOKEN`，那也是从上面某一条继承下来的（比如脚本起的子进程）。
 
 **请遵守**
 
-- 🚫 **不要打印到日志**。`print(os.environ["DAIDAI_TOKEN"])` 会让令牌进入执行日志，而日志是可以被导出的
+- 🚫 **不要打印到日志**。`print(os.environ["PANEL_TOKEN"])` 会让令牌进入执行日志，而日志是可以被导出的
 - 🚫 **不要发给第三方**。它只对本机 `127.0.0.1` 上的面板有意义，发到外网服务器上没有任何用处，只有风险
 - 🚫 **不要写进通知内容**、不要提交进 Git、不要缓存到文件
 - ⚠️ **不要把它当长期凭据**。一次运行结束就失效了，缓存下来下次用一定会 401。每次运行都从环境变量重新读
@@ -502,14 +502,14 @@ upsert_env("MY_LIST", '{"items":["a","b"]}')
 |----------|-----------|------------------|
 | Docker（Alpine / Debian 镜像） | `/usr/local/bin/ddp` | ✅ 直接 `ddp` |
 | Android Magisk 模块 | 容器内 `/usr/local/bin/ddp` | ✅ 直接 `ddp`（必须在容器内，宿主侧那份找不到数据库） |
-| Windows 单机版 zip | 与 `daidai-server.exe` 同目录的 `ddp.exe` | ✅ 需保证它在 PATH 里，或用绝对路径 |
+| Windows 单机版 zip | 与 `panel-server.exe` 同目录的 `ddp.exe` | ✅ 需保证它在 PATH 里，或用绝对路径 |
 | Linux tar.gz | 解压后与主程序同目录的 `ddp`（**v3.0.0 起随包提供**） | ⚠️ 见下方「找不到配置」 |
 
 ### `ddp` 找不到配置怎么办
 
 `ddp` 需要读 `config.yaml` 才知道数据库在哪，查找顺序是：
 
-1. 环境变量 `DAIDAI_CONFIG` 指定的路径
+1. 环境变量 `PANEL_CONFIG` 指定的路径
 2. `/app/config.yaml`（Docker 镜像就是靠这条）
 3. `ddp` 可执行文件**同目录**下的 `config.yaml`
 4. 当前工作目录下的 `config.yaml`
@@ -519,7 +519,7 @@ Docker / Magisk 走第 2 条，天然可用。**二进制部署（Linux tar.gz�
 两种解法，任选其一：
 
 - 把 `ddp` 留在解压出来的目录里（和 `config.yaml` 做邻居），脚本里用绝对路径调用
-- 在面板的「环境变量」页面加一条 `DAIDAI_CONFIG`，值填 `config.yaml` 的绝对路径。它会被注入任务环境，`ddp` 子进程就能读到
+- 在面板的「环境变量」页面加一条 `PANEL_CONFIG`，值填 `config.yaml` 的绝对路径。它会被注入任务环境，`ddp` 子进程就能读到
 
 配好之后在容器 / 终端里跑一下 `ddp status`，能打出版本和数据目录就说明找对了。
 
@@ -585,8 +585,8 @@ print(os.environ["API_BASE_URL"])   # https://api.example.com
    （原因：面板只能看到「新增」和「值变了」，看不到「被删了」；而超大的账号变量本来就不会出现在前置脚本的环境里，
    按「缺席即删除」处理会把它们误删。）
 2. **后置脚本自身的 `export` 不回传** —— 它跑完任务就结束了，没有下游消费方。
-3. **`TZ` 和所有 `DAIDAI_` 开头的变量改了不生效。** 它们是面板的运行时契约：`TZ` 决定面板时区，
-   `DAIDAI_TOKEN` / `DAIDAI_API_BASE` 是脚本调面板接口的凭据，`DAIDAI_NOTIFY_CHANNEL_ID` 决定任务通知发给哪个渠道。
+3. **`TZ` 和所有 `PANEL_` 开头的变量改了不生效。** 它们是面板的运行时契约：`TZ` 决定面板时区，
+   `PANEL_TOKEN` / `PANEL_API_BASE` 是脚本调面板接口的凭据，`PANEL_NOTIFY_CHANNEL_ID` 决定任务通知发给哪个渠道。
    前置脚本改动它们会被忽略，任务日志里会写明「已忽略受保护变量: …」。
    `PWD`、`SHLVL`、`BASH_VERSION` 这类 shell 内部变量同样不会回传（静默忽略）。
 4. **`PATH` 不在保护名单里**，前置脚本改 `PATH` 是生效的 —— 它决定你脚本里 `subprocess` 调 `pip` / `npm` / `git` 时用哪个。
@@ -635,4 +635,4 @@ print(os.environ["API_BASE_URL"])   # https://api.example.com
 ## 相关文档
 
 - [README → 容器命令 `ddp`](../README.md#容器命令-ddp)：`ddp` 全部子命令
-- [README → 端口与反向代理](../README.md#端口与反向代理)：`DAIDAI_API_BASE` 里那个端口是怎么来的
+- [README → 端口与反向代理](../README.md#端口与反向代理)：`PANEL_API_BASE` 里那个端口是怎么来的

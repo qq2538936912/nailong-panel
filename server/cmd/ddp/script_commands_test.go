@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/testutil"
 )
 
 // gitConfigWithToken 复刻订阅 Token 鉴权落盘后的真实内容：remote URL 里内嵌了 PAT。

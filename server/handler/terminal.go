@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/middleware"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/middleware"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

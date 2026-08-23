@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func countTaskLogs(t *testing.T) int64 {

@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/dlticket"
-	"daidai-panel/pkg/pathutil"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/dlticket"
+	"panel/pkg/pathutil"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -208,7 +208,7 @@ func (h *NotificationHandler) Test(c *gin.Context) {
 		return
 	}
 
-	err := service.SendNotificationToChannel(&ch, "呆呆面板测试通知", "这是一条测试通知消息，如果您收到此消息，说明通知渠道配置正确。")
+	err := service.SendNotificationToChannel(&ch, "面板测试通知", "这是一条测试通知消息，如果您收到此消息，说明通知渠道配置正确。")
 	if err != nil {
 		updateNotificationTestState(ch.ID, "failed")
 		response.BadRequest(c, "发送失败: "+err.Error())

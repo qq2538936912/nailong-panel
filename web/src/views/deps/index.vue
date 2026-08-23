@@ -900,7 +900,7 @@ async function installAndroidRuntime(name: string) {
   }
   try {
     await ElMessageBox.confirm(
-      `将从 ${preset.url} 下载约 ${preset.size_mb}MB 并解压到 /data/adb/daidai-panel/bin/${name}，是否继续？`,
+      `将从 ${preset.url} 下载约 ${preset.size_mb}MB 并解压到 /data/adb/panel/bin/${name}，是否继续？`,
       "安装确认",
       { confirmButtonText: "开始安装", cancelButtonText: "取消" },
     );
@@ -961,7 +961,7 @@ async function installAndroidRuntime(name: string) {
 async function uninstallAndroidRuntime(name: string) {
   try {
     await ElMessageBox.confirm(
-      `确定移除 /data/adb/daidai-panel/bin/${name}？`,
+      `确定移除 /data/adb/panel/bin/${name}？`,
       "确认",
       { type: "warning" },
     );

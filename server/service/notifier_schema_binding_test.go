@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // notifierSourceFile 是被扫描的权威源码。

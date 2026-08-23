@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
+	"panel/config"
 
 	"github.com/gin-gonic/gin"
 )

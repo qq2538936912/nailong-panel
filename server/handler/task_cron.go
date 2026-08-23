@@ -3,8 +3,8 @@ package handler
 import (
 	"time"
 
-	panelcron "daidai-panel/pkg/cron"
-	"daidai-panel/pkg/response"
+	panelcron "panel/pkg/cron"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

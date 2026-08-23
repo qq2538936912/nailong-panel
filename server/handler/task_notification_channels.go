@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

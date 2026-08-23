@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 var (

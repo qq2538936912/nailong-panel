@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"daidai-panel/service"
+	"panel/service"
 )
 
 // ddp python / ddp shell 解决的痛点：

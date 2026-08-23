@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 // pep503SeparatorPattern 把连续的 - _ . 折叠成单个 -（PEP 503 规范化）。

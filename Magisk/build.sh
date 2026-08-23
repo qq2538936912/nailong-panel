@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ##########################################################################
-# 呆呆面板 Magisk 模块打包脚本 (容器方案 v2.0.6+)
+# 面板 Magisk 模块打包脚本 (容器方案 v2.0.6+)
 #
 # 用法（版本号必填）:
 #   bash Magisk/build.sh 3.0.7                # arm64 + alpine
@@ -11,8 +11,8 @@
 #   bash Magisk/build.sh --check-dist         # 只校验已存在的 web/dist 是不是发布版产物
 #
 # 产物:
-#   alpine（默认）: dist/daidai-panel-magisk-v<版本>.zip
-#   debian        : dist/daidai-panel-magisk-debian-v<版本>.zip
+#   alpine（默认）: dist/panel-magisk-v<版本>.zip
+#   debian        : dist/panel-magisk-debian-v<版本>.zip
 #
 # 模块内部不再内置 Python/Node；改为在 customize.sh 里用 rurima + rootfs 构建一个
 # 容器，再用 apk / apt-get 装出 python3 / nodejs / npm / git 等：
@@ -62,7 +62,7 @@ esac
 MODDIR="$ROOT/Magisk"
 DIST="$ROOT/dist"
 STAGING="$DIST/magisk-staging${FLAVOR_SUFFIX}"
-OUTZIP="$DIST/daidai-panel-magisk${FLAVOR_SUFFIX}-v${VERSION}.zip"
+OUTZIP="$DIST/panel-magisk${FLAVOR_SUFFIX}-v${VERSION}.zip"
 
 info()  { printf "\033[1;32m[INFO]\033[0m %s\n" "$*" >&2; }
 warn()  { printf "\033[1;33m[WARN]\033[0m %s\n" "$*" >&2; }
@@ -71,7 +71,7 @@ error() { printf "\033[1;31m[ERR ]\033[0m %s\n" "$*" >&2; }
 # ⚠️ 复用已存在的 web/dist 之前必须先确认它是【发布版】产物。
 #    web 侧有两条构建，写的是【同一个】 web/dist：
 #      npm run build       -> 发布版：无 mock 层、robots=noindex、根相对路径
-#      npm run build:demo  -> 在线演示 Demo：浏览器内 mock 层 + --base=/daidai-panel/
+#      npm run build:demo  -> 在线演示 Demo：浏览器内 mock 层 + --base=/panel/
 #    跑过 build:demo 之后直接跑本脚本，下面那句 cp web/dist 会把整套 mock 顶替层打进
 #    模块 ZIP。装上去的表现是「面板能开、数据全是假的、一个错都不报」——比白屏难查得多。
 #
@@ -91,9 +91,9 @@ assert_release_dist() {
   # 或者压根不出现在产物里，拿它们做判据是恒不命中的空转门禁。
   # 缘由见 web/src/demo/marker.ts 顶部注释。
   local demo_hits
-  demo_hits="$(grep -rl '__DAIDAI_DEMO_MOCK__' "$dist/assets" 2>/dev/null || true)"
+  demo_hits="$(grep -rl '__PANEL_DEMO_MOCK__' "$dist/assets" 2>/dev/null || true)"
   if [ -n "$demo_hits" ]; then
-    error "web/dist 是 Demo 产物：命中 mock 哨兵 __DAIDAI_DEMO_MOCK__，绝不能打进模块 ZIP"
+    error "web/dist 是 Demo 产物：命中 mock 哨兵 __PANEL_DEMO_MOCK__，绝不能打进模块 ZIP"
     printf '%s\n' "$demo_hits" | head -n 5 >&2 || true
     error "解决：rm -rf web/dist && (cd web && npm run build)，然后重跑本脚本"
     exit 1
@@ -111,7 +111,7 @@ assert_release_dist() {
 
   # 判据 3：子路径构建。
   # 前两条只认得出 Demo，认不出「没有 mock 层、但带了 base 前缀」的产物
-  # （例如有人手动跑 npx vite build --base=/daidai-panel/ 做验证后忘了还原）。
+  # （例如有人手动跑 npx vite build --base=/panel/ 做验证后忘了还原）。
   # 模块把前端挂在服务根上，带前缀的产物装上去是【所有资源 404】。
   if ! grep -qE '<script[^>]+src="/assets/' "$dist/index.html"; then
     error "web/dist 的入口脚本不是根相对路径（/assets/...），疑似子路径构建（--base=...）"
@@ -180,12 +180,12 @@ build_backend() {
   (cd "$ROOT/server" && \
     CGO_ENABLED=0 GOOS=linux GOARCH="${go_arch}" \
     go build -trimpath \
-      -ldflags="-s -w -X daidai-panel/handler.Version=${VERSION}" \
-      -o "$STAGING/system/bin/daidai-server-${suffix}" .)
+      -ldflags="-s -w -X panel/handler.Version=${VERSION}" \
+      -o "$STAGING/system/bin/panel-server-${suffix}" .)
   (cd "$ROOT/server" && \
     CGO_ENABLED=0 GOOS=linux GOARCH="${go_arch}" \
     go build -trimpath \
-      -ldflags="-s -w -X daidai-panel/handler.Version=${VERSION}" \
+      -ldflags="-s -w -X panel/handler.Version=${VERSION}" \
       -o "$STAGING/system/bin/ddp-${suffix}" ./cmd/ddp)
 }
 
@@ -270,7 +270,7 @@ sed -i.bak \
 rm -f "$STAGING/module.prop.bak"
 
 # updateJson 按 flavor 分开。
-# 两个 flavor 共用同一个 module id（daidai-panel），而 updateJson 只能填一个 zipUrl，
+# 两个 flavor 共用同一个 module id（panel），而 updateJson 只能填一个 zipUrl，
 # 所以以前 Debian 用户在管理器里点「更新」会被静默刷成 Alpine 版 —— 容器基础系统
 # 直接从 glibc 换成 musl，装好的依赖全部失效。这里让 Debian ZIP 指向自己的
 # update-debian.json，两条更新线彻底分开。

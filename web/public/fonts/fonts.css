@@ -8,7 +8,7 @@
  *
  * 为什么放在 public/ 而不是 src/ 里让 Vite 打包：
  *   1. public/ 原样拷贝，本文件内的 url() 不经 Vite 处理。用相对路径 ./xxx.woff2
- *      时浏览器按本文件自身 URL 解析，因此 `--base=/` 和 `--base=/daidai-panel/`
+ *      时浏览器按本文件自身 URL 解析，因此 `--base=/` 和 `--base=/panel/`
  *      两种构建都不需要任何重写就正确 —— 子路径部署的一整类坑直接不存在。
  *   2. 走 index.html 里的 <link> 引入，字体在 HTML 解析阶段就被发现，
  *      比等 JS bundle 里的 CSS 落地更早；这和同目录邻居 assets/optimization.css

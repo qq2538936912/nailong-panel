@@ -14,7 +14,7 @@ import (
 	"time"
 	"unicode"
 
-	"daidai-panel/pkg/pathutil"
+	"panel/pkg/pathutil"
 )
 
 type ScriptResult struct {
@@ -1025,7 +1025,7 @@ func buildCmd(plan *CommandExecutionPlan, workDir string, envVars map[string]str
 		return createManagedPythonModuleCommand(plan.Interpreter, plan.PythonModule, plan.ScriptArgs, workDir, envVars)
 	}
 
-	helperBaseDir := strings.TrimSpace(envVars["DAIDAI_SCRIPTS_DIR"])
+	helperBaseDir := strings.TrimSpace(envVars["PANEL_SCRIPTS_DIR"])
 	if helperBaseDir != "" {
 		_ = EnsureBuiltinNotifyHelpers(helperBaseDir)
 		_ = cleanupManagedHelperCopies(helperBaseDir, filepath.Dir(plan.FullPath))

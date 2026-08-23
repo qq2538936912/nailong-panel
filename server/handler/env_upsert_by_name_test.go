@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func upsertEnvByName(t *testing.T, token string, payload map[string]interface{}) (int, map[string]interface{}) {

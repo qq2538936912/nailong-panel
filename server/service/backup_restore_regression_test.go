@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestReconcileDependenciesAfterRestartResumesRestoreJobs(t *testing.T) {
@@ -231,9 +231,9 @@ func TestRestoreBackupManifestPreservesCurrentPanelUsers(t *testing.T) {
 	}
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.4.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			Configs: true,
 		},
@@ -301,9 +301,9 @@ func TestRestoreBackupManifestIgnoresLegacyOpenAppCallCount(t *testing.T) {
 	testutil.SetupTestEnv(t)
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.4.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			Configs: true,
 		},
@@ -351,9 +351,9 @@ func TestRestoreBackupManifestSkipsAutoUpdateRuntimeStateConfigs(t *testing.T) {
 	}
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.4.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			Configs: true,
 		},
@@ -434,9 +434,9 @@ func TestRestoreBackupManifestAppliesDependencyMirrorsBeforeDependencyResume(t *
 	}
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.4.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			Configs:      true,
 			Dependencies: true,
@@ -449,7 +449,7 @@ func TestRestoreBackupManifestAppliesDependencyMirrorsBeforeDependencyResume(t *
 				},
 			},
 			Dependencies: []BackupDependency{
-				{Type: model.DepTypePython, Name: "daidai-restore-mirror-test-package"},
+				{Type: model.DepTypePython, Name: "panel-restore-mirror-test-package"},
 			},
 		},
 	}
@@ -491,9 +491,9 @@ func TestRestoreBackupManifestReplacesCoreBusinessData(t *testing.T) {
 	}
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.4.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			Configs: true,
 			Tasks:   true,
@@ -567,9 +567,9 @@ func TestRestoreBackupManifestDefaultsLegacyEnvEnabledWhenMissing(t *testing.T) 
 	testutil.SetupTestEnv(t)
 
 	manifest := BackupManifest{
-		Format:  "daidai-panel-backup",
+		Format:  "panel-backup",
 		Version: "0.3.0",
-		Source:  "daidai-panel",
+		Source:  "panel",
 		Selection: BackupSelection{
 			EnvVars: true,
 		},
@@ -808,7 +808,7 @@ func TestRestoreScriptFilesKeepsLiveDataWhenStageCopyFails(t *testing.T) {
 		return errors.New("inject stage copy failure")
 	}
 
-	err := restoreScriptFiles(extractedDir, "daidai-panel")
+	err := restoreScriptFiles(extractedDir, "panel")
 	if err == nil || !strings.Contains(err.Error(), "inject stage copy failure") {
 		t.Fatalf("expected injected stage copy failure, got %v", err)
 	}
@@ -863,7 +863,7 @@ func TestRestoreLogFilesKeepsLivePanelLogWhenStageCopyFails(t *testing.T) {
 		return errors.New("inject log stage copy failure")
 	}
 
-	err := restoreLogFiles(extractedDir, "daidai-panel")
+	err := restoreLogFiles(extractedDir, "panel")
 	if err == nil || !strings.Contains(err.Error(), "inject log stage copy failure") {
 		t.Fatalf("expected injected log stage copy failure, got %v", err)
 	}

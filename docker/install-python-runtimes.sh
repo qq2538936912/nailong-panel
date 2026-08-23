@@ -13,7 +13,7 @@ PYTHON_RUNTIME_312=${7:-3.12.13}
 PYTHON_RUNTIME_MODE=${8:-single}
 PYTHON_RUNTIME_VERSION=${9:-3.12}
 
-INSTALL_ROOT=${PYTHON_RUNTIME_ROOT:-/opt/daidai-python}
+INSTALL_ROOT=${PYTHON_RUNTIME_ROOT:-/opt/panel-python}
 BASE_URL="https://github.com/astral-sh/python-build-standalone/releases/download/${PYTHON_STANDALONE_RELEASE}"
 
 log() {
@@ -170,7 +170,7 @@ install_python() {
     exit 1
   fi
   "python${minor}" -m pip --version
-  smoke_venv="/tmp/daidai-python-${minor}-venv-smoke"
+  smoke_venv="/tmp/panel-python-${minor}-venv-smoke"
   rm -rf "$smoke_venv"
   "python${minor}" -m venv "$smoke_venv"
   smoke_version=$("${smoke_venv}/bin/python" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
@@ -208,7 +208,7 @@ if [ -z "$PLATFORM" ]; then
       exit 1
     fi
     python3 -m pip --version
-    smoke_venv=/tmp/daidai-python-distro-venv-smoke
+    smoke_venv=/tmp/panel-python-distro-venv-smoke
     rm -rf "$smoke_venv"
     python3 -m venv "$smoke_venv"
     smoke_version=$("${smoke_venv}/bin/python" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')

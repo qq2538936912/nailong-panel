@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // isolatePythonProbePath 把进程 PATH 整体替换成一个空的临时目录，并返回这个目录。
@@ -146,8 +146,8 @@ func TestCreateTaskUsesConfiguredDefaultPythonVersionWhenOmitted(t *testing.T) {
 
 func TestCreateTaskRejectsUnsupportedSingleRuntimePythonVersion(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.12")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.12")
 
 	engine := newProtectedRouter()
 	user := testutil.MustCreateUser(t, "task-create-unsupported-python", "operator")

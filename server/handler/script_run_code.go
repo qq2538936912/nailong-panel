@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,7 +30,7 @@ func (h *ScriptHandler) RunCode(c *gin.Context) {
 		return
 	}
 
-	tmpDir := filepath.Join(os.TempDir(), "daidai-debug")
+	tmpDir := filepath.Join(os.TempDir(), "panel-debug")
 	os.MkdirAll(tmpDir, 0755)
 
 	tmpFile := filepath.Join(tmpDir, fmt.Sprintf("code_%d%s", time.Now().UnixMilli(), ext))

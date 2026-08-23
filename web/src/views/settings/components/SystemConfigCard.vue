@@ -38,8 +38,8 @@ defineProps<{
       <h4 class="section-title">面板设置</h4>
       <div class="form-field">
         <label>面板标题</label>
-        <el-input v-model="form.panel_title" placeholder="呆呆面板" />
-        <span class="form-hint">自定义面板的站点标题，留空使用默认值"呆呆面板"</span>
+        <el-input v-model="form.panel_title" placeholder="面板" />
+        <span class="form-hint">自定义面板的站点标题，留空使用默认值"面板"</span>
       </div>
       <div class="form-field">
         <label>面板时区</label>

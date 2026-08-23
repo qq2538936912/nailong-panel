@@ -1,6 +1,6 @@
 package service
 
-import "daidai-panel/model"
+import "panel/model"
 
 func ResolveTaskInactiveStatus(task *model.Task) float64 {
 	if task == nil {

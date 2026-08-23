@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
 
 	"gorm.io/gorm"
 )
@@ -118,9 +118,9 @@ func normalizeBackupArchiveName(raw string, encrypted bool) string {
 
 func buildBackupManifest(selection BackupSelection) (BackupManifest, error) {
 	manifest := BackupManifest{
-		Format:    "daidai-panel-backup",
+		Format:    "panel-backup",
 		Version:   "0.4.0",
-		Source:    "daidai-panel",
+		Source:    "panel",
 		CreatedAt: time.Now(),
 		Selection: selection,
 	}
@@ -533,7 +533,7 @@ func looksLikeJSON(data []byte) bool {
 func restoreArchiveBytes(data []byte) error {
 	UpdateRestoreProgress("extracting", "正在解包并校验备份内容...", 28)
 
-	tempDir, err := os.MkdirTemp("", "daidai-restore-*")
+	tempDir, err := os.MkdirTemp("", "panel-restore-*")
 	if err != nil {
 		return fmt.Errorf("创建临时目录失败: %w", err)
 	}
@@ -575,7 +575,7 @@ func restoreLegacyJSONBytes(data []byte) error {
 		return fmt.Errorf("failed to parse backup: %w", err)
 	}
 
-	tempDir, err := os.MkdirTemp("", "daidai-legacy-restore-*")
+	tempDir, err := os.MkdirTemp("", "panel-legacy-restore-*")
 	if err != nil {
 		return fmt.Errorf("创建旧备份临时目录失败: %w", err)
 	}
@@ -600,9 +600,9 @@ func restoreLegacyJSONBytes(data []byte) error {
 	}
 
 	manifest := BackupManifest{
-		Format:    "daidai-panel-backup",
+		Format:    "panel-backup",
 		Version:   legacy.Version,
-		Source:    "daidai-panel",
+		Source:    "panel",
 		CreatedAt: legacy.CreatedAt,
 		Selection: BackupSelection{
 			Configs:       true,

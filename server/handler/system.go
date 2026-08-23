@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -455,7 +455,7 @@ func (h *SystemHandler) CheckUpdate(c *gin.Context) {
 		pinnedImage := isPinnedPanelImageReference(imageName)
 		autoUpdateSupported = watchtowerCfg.ManualTriggerSupported && !pinnedImage
 		if pinnedImage {
-			updateDisabledReason = "当前容器使用固定版本标签或 digest，Watchtower 不会把它切换到后续版本；请先把 DAIDAI_PANEL_IMAGE 改为同系列浮动标签"
+			updateDisabledReason = "当前容器使用固定版本标签或 digest，Watchtower 不会把它切换到后续版本；请先把 PANEL_IMAGE 改为同系列浮动标签"
 		} else if !watchtowerCfg.ManualTriggerSupported {
 			updateDisabledReason = "当前由 Watchtower 托管自动更新；面板可展示更新状态，但未配置 Watchtower HTTP API 手动触发能力"
 		}

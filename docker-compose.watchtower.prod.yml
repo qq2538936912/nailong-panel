@@ -1,18 +1,18 @@
-name: daidai-panel-prod
+name: panel-prod
 
 services:
-  daidai-panel:
-    image: ${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
-    container_name: ${DAIDAI_PANEL_CONTAINER_NAME:-daidai-panel}
+  panel:
+    image: ${PANEL_IMAGE:-xiaofeilong2/panel:latest}
+    container_name: ${PANEL_CONTAINER_NAME:-panel}
     restart: unless-stopped
     ports:
       - "${PANEL_HTTP_PORT:-15700}:5700"
     volumes:
-      - ${PANEL_DATA_DIR:-./Dumb-Panel}:/app/Dumb-Panel
+      - ${PANEL_DATA_DIR:-./Panel}:/app/Panel
     environment:
       TZ: ${PANEL_TZ:-Asia/Shanghai}
-      CONTAINER_NAME: ${DAIDAI_PANEL_CONTAINER_NAME:-daidai-panel}
-      IMAGE_NAME: ${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
+      CONTAINER_NAME: ${PANEL_CONTAINER_NAME:-panel}
+      IMAGE_NAME: ${PANEL_IMAGE:-xiaofeilong2/panel:latest}
       PANEL_UPDATE_MANAGER: watchtower
       WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_HTTP_API_TOKEN:-}
       WATCHTOWER_HTTP_API_URL: ${WATCHTOWER_HTTP_API_URL:-http://watchtower:8080}
@@ -29,7 +29,7 @@ services:
 
   watchtower:
     image: nickfedor/watchtower:latest
-    container_name: ${WATCHTOWER_CONTAINER_NAME:-daidai-watchtower}
+    container_name: ${WATCHTOWER_CONTAINER_NAME:-panel-watchtower}
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -42,7 +42,7 @@ services:
       WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_NOTIFICATION_URL:-logger://watchtower}
       WATCHTOWER_NOTIFICATIONS_LEVEL: ${WATCHTOWER_NOTIFICATIONS_LEVEL:-info}
       WATCHTOWER_NOTIFICATION_REPORT: "true"
-      WATCHTOWER_NOTIFICATION_TITLE_TAG: ${WATCHTOWER_NOTIFICATION_TITLE_TAG:-[Daidai Panel]}
+      WATCHTOWER_NOTIFICATION_TITLE_TAG: ${WATCHTOWER_NOTIFICATION_TITLE_TAG:-[Panel]}
       WATCHTOWER_NOTIFICATIONS_HOSTNAME: ${WATCHTOWER_NOTIFICATIONS_HOSTNAME:-}
       WATCHTOWER_NOTIFICATION_LOG_STDOUT: "true"
       WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"

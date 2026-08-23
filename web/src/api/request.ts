@@ -9,7 +9,7 @@ const request: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'X-Client-Type': 'web',
-    'X-Client-App': 'daidai-panel-web'
+    'X-Client-App': 'panel-web'
   }
 })
 

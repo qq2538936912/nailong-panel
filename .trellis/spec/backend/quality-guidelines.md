@@ -1007,8 +1007,8 @@ pythonVersion.value = resolveDisplayPythonVersion(
 - 构建参数：`PYTHON_RUNTIME_MODE=single|all`
 - 构建参数：`PYTHON_RUNTIME_VERSION=3.10|3.11|3.12`
 - 工具档位：`INSTALL_FULL_TOOLS=true|false`
-- 运行时环境：`DAIDAI_PYTHON_RUNTIME_MODE`、`DAIDAI_PYTHON_VERSION`
-- Compose 环境：`DAIDAI_PANEL_IMAGE` -> `image` + `IMAGE_NAME`
+- 运行时环境：`PANEL_PYTHON_RUNTIME_MODE`、`PANEL_PYTHON_VERSION`
+- Compose 环境：`PANEL_IMAGE` -> `image` + `IMAGE_NAME`
 - 更新管理环境：`PANEL_UPDATE_MANAGER=watchtower`、`WATCHTOWER_HTTP_API_URL`、`WATCHTOWER_HTTP_API_TOKEN`
 - Watchtower 调用：`POST /v1/update?async=true&container=<锚定且转义的容器名>`
 - 更新状态：`idle|running|restarting|completed|failed`，Watchtower 接管终态为 `completed / watchtower-triggered`
@@ -1024,11 +1024,11 @@ pythonVersion.value = resolveDisplayPythonVersion(
 - `latest-3.10`、`latest-3.11`、`debian-3.10`、`debian-3.11` 分别只内置对应 Python 小版本；`latest-all`、`debian-all` 同时安装 `3.10 / 3.11 / 3.12`。
 - `latest-full` 与 `debian-full` 仍只保留一套 Python 3.12；`INSTALL_FULL_TOOLS=true` 只增加 Go、Docker CLI、wget 和原生编译工具，不能重新引入发行版 Python。
 - Alpine 的 `latest-3.10`、`latest-3.11`、`latest-all` 只发布 `amd64 / arm64`；如果某个平台没有 python-build-standalone 资产，脚本必须失败而不是回退成错误版本。默认 `latest` / `latest-full` 可以在 32 位平台使用经过小版本校验的发行版 Python 3.12。
-- Debian 所有变体和 Alpine 64 位变体只使用 `/opt/daidai-python` 独立运行时；all 镜像只能有三套目标 Python，不能再附带系统 Python。
+- Debian 所有变体和 Alpine 64 位变体只使用 `/opt/panel-python` 独立运行时；all 镜像只能有三套目标 Python，不能再附带系统 Python。
 - 六个旧无连字符浮动标签和 Debian 旧固定版本格式必须与新标签由同一个 build-push 矩阵项推送，不能增加重复构建任务。
 - 精简镜像的页面手动更新、静默自动更新和 `ddp update` 统一调用 Watchtower HTTP API；请求必须使用 `async=true` 并精确限定当前容器，202 纯文本响应也属于“已接管”成功态。
 - Watchtower 只能刷新容器当前镜像引用。官方固定版本标签和 digest 必须禁用一键/自动更新并提示切换到同族浮动标签，不能把“请求已接管”误报成能够跨版本升级。
-- Compose 的实际 `image` 与容器内 `IMAGE_NAME` 必须共用 `DAIDAI_PANEL_IMAGE`；Watchtower API 地址使用稳定服务名 `http://watchtower:8080`。
+- Compose 的实际 `image` 与容器内 `IMAGE_NAME` 必须共用 `PANEL_IMAGE`；Watchtower API 地址使用稳定服务名 `http://watchtower:8080`。
 - 单版本镜像启动后，后端 `SupportedPythonVersions()` / 依赖安装版本 / 任务表单选项必须只暴露当前镜像小版本。
 - 单版本镜像启动后，必须把 `python_default_version` 和历史任务 `python_version` 切回当前镜像小版本；默认 `latest` / `debian` 即 `3.12`。
 - 单版本镜像启动清理只能删除 `data/deps/python/<不支持版本>` 这类面板托管 Python 小版本目录，不能删除脚本、日志、备份、Node.js 依赖或未知目录。
@@ -1055,7 +1055,7 @@ pythonVersion.value = resolveDisplayPythonVersion(
 
 ### 6. Tests Required
 
-- `SupportedPythonVersions()` 在 `DAIDAI_PYTHON_RUNTIME_MODE=single` 时只返回当前版本。
+- `SupportedPythonVersions()` 在 `PANEL_PYTHON_RUNTIME_MODE=single` 时只返回当前版本。
 - `CleanupManagedPythonArtifactsOnStartup()` 在 single `3.12` 时删除 `3.10 / 3.11` 目录并保留 `3.12`。
 - `CleanupManagedPythonArtifactsOnStartup()` 在 `all` 时保留三个版本目录。
 - `ApplySinglePythonRuntimePolicyOnStartup()` 必须把旧默认版本和旧任务版本切回镜像版本。
@@ -1087,7 +1087,7 @@ Watchtower -> /v1/update?image=<可能过期的 IMAGE_NAME>
 
 ```text
 full_tools=true -> 只增加开发工具，Python 仍只有目标运行时
-Watchtower -> /v1/update?async=true&container=^daidai-panel$
+Watchtower -> /v1/update?async=true&container=^panel$
 固定标签 / digest -> 明确提示先切换到 debian-full 等同族浮动标签
 ```
 
@@ -1150,24 +1150,24 @@ newTrimmedStringConfig("auto_update_last_checked_at", "上次检查更新时间"
 ### 1. Scope / Trigger
 
 - 触发：修改 Windows 打包、`server/*.exe`、README Windows 发布说明、release workflow 时必须看本节。
-- 原因：仓库源码目录如果长期保留手工构建或调试阶段的 `server/daidai-panel.exe`，很容易和当前源码脱节，导致“源码已修复，但本地 exe 仍是旧行为”。
+- 原因：仓库源码目录如果长期保留手工构建或调试阶段的 `server/panel.exe`，很容易和当前源码脱节，导致“源码已修复，但本地 exe 仍是旧行为”。
 
 ### 2. Signatures
 
 - GitHub Release Windows 构建：`.github/workflows/release.yml`
-- Windows 正式产物名：`daidai-server.exe`
-- 仓库开发态忽略：`.gitignore` 中应忽略 `server/daidai-panel.exe`、`server/ddp.exe`
+- Windows 正式产物名：`panel-server.exe`
+- 仓库开发态忽略：`.gitignore` 中应忽略 `server/panel.exe`、`server/ddp.exe`
 
 ### 3. Contracts
 
 - 仓库源码目录中的本地 Windows 可执行文件不作为可信发布产物。
-- 正式 Windows 发布包必须以 release workflow 使用 `-ldflags "-X daidai-panel/handler.Version=..."` 产出的 zip 为准。
-- 本地开发产生的 `server/daidai-panel.exe`、`server/ddp.exe` 必须被 `.gitignore` 忽略，避免把旧二进制误提交到仓库。
+- 正式 Windows 发布包必须以 release workflow 使用 `-ldflags "-X panel/handler.Version=..."` 产出的 zip 为准。
+- 本地开发产生的 `server/panel.exe`、`server/ddp.exe` 必须被 `.gitignore` 忽略，避免把旧二进制误提交到仓库。
 
 ### 4. Validation & Error Matrix
 
 - 源码 `handler.Version` 已更新，但本地 exe 行为仍是旧接口 / 旧版本 → 优先检查是否误用了仓库里旧 exe，而不是当前源码构建产物。
-- 工作树中出现 `server/daidai-panel.exe` 脏改动 → 视为发布一致性风险，不要混进功能提交。
+- 工作树中出现 `server/panel.exe` 脏改动 → 视为发布一致性风险，不要混进功能提交。
 
 ### 5. Good/Base/Bad Cases
 
@@ -1186,7 +1186,7 @@ newTrimmedStringConfig("auto_update_last_checked_at", "上次检查更新时间"
 #### Wrong
 
 ```text
-源码修完后直接使用仓库里已有的 server/daidai-panel.exe 做验收或发版
+源码修完后直接使用仓库里已有的 server/panel.exe 做验收或发版
 ```
 
 #### Correct
@@ -1246,7 +1246,7 @@ return defaultPythonRuntimeVersion
 ```
 
 ```sh
-python3 -m venv "$DAIDAI_DIR/deps/python/3.12"
+python3 -m venv "$PANEL_DIR/deps/python/3.12"
 ```
 
 #### Correct
@@ -1256,7 +1256,7 @@ return resolveEffectivePythonVersionForCurrentRuntime(version)
 
 ```sh
 PY_MINOR=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-python3 -m venv "$DAIDAI_DIR/deps/python/$PY_MINOR"
+python3 -m venv "$PANEL_DIR/deps/python/$PY_MINOR"
 ```
 
 ---
@@ -1583,7 +1583,7 @@ if closeAt := findClosingQuote(value[1:], quote); closeAt < 0 {
 - 差集合并：`func mergeHookEnvExports(envVars, baseline, final map[string]string) (applied, ignored, notices []string)`
 - 保护判定：`func hookEnvProtection(name string) (protected, report bool)`
 - 放行但提示：`var hookEnvRuntimeCriticalNames` + `func hookEnvRuntimeOverrideNotice(name, before, after string) string`
-- 开关常量：`const hookEnvDumpPathEnvKey = "DAIDAI_HOOK_ENV_DUMP"`
+- 开关常量：`const hookEnvDumpPathEnvKey = "PANEL_HOOK_ENV_DUMP"`
 - shell 侧：`const shellEnvBootstrap`（`runtime_exec.go`）
 
 ### 3. Contracts
@@ -1592,10 +1592,10 @@ if closeAt := findClosingQuote(value[1:], quote); closeAt < 0 {
 - **必须采两次快照做差集**：source 用户脚本之前落 `.base` 基线，`trap` 里落最终快照。只采一次会把 bootstrap 进程自身就有的 `PATH` / `HOME` / `LANG` / `HTTP_PROXY` 当成「前置脚本新增的变量」合并进任务环境；代理地址还会被**冻结成快照**（它本来是命令创建时从 `system_configs` 实时读的）。
 - **纯增量覆盖，禁止用 dump 结果替换 `envVars`。** `planShellEnvExport` 会把单条超过 `MAX_ARG_STRLEN`、或累计超出导出预算的变量「只赋值不 export」，这类变量在钩子进程里 `env -0` 根本看不到；替换式合并会让它们在目标脚本里凭空消失，表现成「加了前置脚本之后某个账号变量突然没了」。
 - **`unset` 不传导。** 差集只能区分「新增」和「变更」，「缺席」既可能是被 unset，也可能是上面那批从来没进过钩子环境的大变量 —— 按缺席删键会直接删掉用户的账号变量。想清空写 `export VAR=`。
-- **保护名单 = `TZ` + 全部 `DAIDAI_` 前缀 + shell 内部易变量。** 前两类是用户**有意**去改的运行时契约（时区链路、脚本令牌、`DAIDAI_NOTIFY_CHANNEL_ID` 的渠道绑定），拦下来必须往任务日志写一行「已忽略受保护变量: …」，否则用户会一直以为改生效了；`PWD` / `SHLVL` / `IFS` / `BASH_*` / `COMP_*` 这类静默拦，报出来纯属噪音。
+- **保护名单 = `TZ` + 全部 `PANEL_` 前缀 + shell 内部易变量。** 前两类是用户**有意**去改的运行时契约（时区链路、脚本令牌、`PANEL_NOTIFY_CHANNEL_ID` 的渠道绑定），拦下来必须往任务日志写一行「已忽略受保护变量: …」，否则用户会一直以为改生效了；`PWD` / `SHLVL` / `IFS` / `BASH_*` / `COMP_*` 这类静默拦，报出来纯属噪音。
 - **`PATH` 不在保护名单里。** 托管解释器用 `resolveManagedBinary` + `sanitizeManagedPath` 算出绝对路径再 exec，完全不受 `envVars["PATH"]` 影响；`envVars["PATH"]` 只决定脚本自己 fork 出来的 `pip` / `npm` / `git` 用哪个 PATH，那正是 shell 语义下用户想要的。
 - **`PATH` / `PYTHONPATH` / `NODE_OPTIONS` / `NODE_PATH` 属于「放行但提示」，不属于保护名单。** 它们都是面板注入的运行时关键变量（`PYTHONPATH` / `NODE_PATH` / `NODE_OPTIONS` 由 `AppendScriptHelperPaths` 注入 venv 的 site-packages、托管 `node_modules` 与 `sendNotify.js` 的 `--require`；`PATH` 由 `BuildManagedRuntimeEnvMapWithScriptToken` 注入），但覆盖 PATH 类变量是 shell 语义、也是用户的合法诉求（追加写法必须能用），所以**照常生效**，只在「面板注入的旧值确实被整体冲掉」时额外打一行带**追加写法**的诊断提示（`hookEnvRuntimeOverrideNotice`）。判定复用 `applied`：没改动的键、用追加写法改的键都不提示，避免刷屏。这类覆盖的失败模式极隐蔽 —— `PYTHONPATH` 被冲掉后目标脚本会突然找不到全部已装依赖；`NODE_OPTIONS` 被冲掉后只有脚本自己 fork 出来的**嵌套** node 进程失去 notify 注入（目标脚本本身走 `createManagedNodeCommand` 里显式的 `--require`，不受影响，所以更难联想）。
-- **开关是「`DAIDAI_HOOK_ENV_DUMP` 非空」**且**「同名 `.ok` 标记文件存在」两个条件同时成立**。只有第二道能挡住这种情况：用户在「环境变量」页手建一条同名变量、值随手填成某个真实路径（比如 `/app/config.yaml`），那样每个 bash 任务都会用 `>` 把那个文件截断。`.ok` 只有面板自己会创建，误设的值就只是个空转。
+- **开关是「`PANEL_HOOK_ENV_DUMP` 非空」**且**「同名 `.ok` 标记文件存在」两个条件同时成立**。只有第二道能挡住这种情况：用户在「环境变量」页手建一条同名变量、值随手填成某个真实路径（比如 `/app/config.yaml`），那样每个 bash 任务都会用 `>` 把那个文件截断。`.ok` 只有面板自己会创建，误设的值就只是个空转。
 - **`RunInlineScript` 还有订阅钩子（`subscription_hook.go`）这个调用方**，`RunHookScript` 也同时服务 `task_after.sh` / `extra.sh`。采集逻辑必须对它们完全 no-op（靠上面那个门禁），不得改变这些调用方的输出与退出码。
 - 后置脚本自身的 `export` **不回传** —— 它跑完任务就结束了，没有下游消费方。
 - 失败分级要精确：基线没落盘 = bootstrap 压根没跑（绝大多数用户没有全局 `task_before.sh`），必须**完全静默**；基线在但最终快照缺失 = 钩子跑了而 `trap` 没能落盘（用户自己装了 EXIT trap，或进程被 SIGKILL），必须**出声**，否则用户以为 `export` 生效了。
@@ -1605,14 +1605,14 @@ if closeAt := findClosingQuote(value[1:], quote); closeAt < 0 {
 
 - 前置脚本 `export A=1` 后 `exit 0` → `A` 仍然回传（`trap EXIT` 兜住）
 - 前置脚本 `export PATH=/custom:$PATH` → 生效（`PATH` 不保护）
-- 前置脚本 `export TZ=UTC` / `export DAIDAI_TOKEN=x` → 被忽略，任务日志出现「已忽略受保护变量: …」
+- 前置脚本 `export TZ=UTC` / `export PANEL_TOKEN=x` → 被忽略，任务日志出现「已忽略受保护变量: …」
 - 前置脚本 `export PYTHONPATH=/my/lib`（整体覆盖）→ 生效，且任务日志多一行「注意：PYTHONPATH 是面板注入的运行时变量…请改用 `export PYTHONPATH=...:$PYTHONPATH` 的追加写法」
 - 前置脚本 `export PYTHONPATH=/my/lib:$PYTHONPATH`（追加写法）→ 生效且**不提示**
 - 前置脚本 `cd /tmp` → `PWD` 变了但静默丢弃，不进日志
 - 前置脚本 `unset X` → 不传导，`X` 保持原值
 - 只赋值未 export 的超大账号变量 → 合并后仍然存在（增量合并，不是替换）
 - 临时目录建不出来 → 退回「执行但不回传」的旧行为并写一行日志，**不得连钩子都不跑**
-- 订阅钩子 / `task_after.sh` / `extra.sh` → 不注入 `DAIDAI_HOOK_ENV_DUMP`，采集代码整段不装
+- 订阅钩子 / `task_after.sh` / `extra.sh` → 不注入 `PANEL_HOOK_ENV_DUMP`，采集代码整段不装
 
 ### 5. Good/Base/Bad Cases
 
@@ -1645,7 +1645,7 @@ go test ./...
 ```sh
 # 错误：dump 追加在 source 之后。用户脚本一句 exit 0 就永远走不到这里。
 . "$__dd_script" "$@"
-__dd_dump_env "$DAIDAI_HOOK_ENV_DUMP"
+__dd_dump_env "$PANEL_HOOK_ENV_DUMP"
 ```
 
 ```go
@@ -1662,8 +1662,8 @@ for key, value := range final {
 
 ```sh
 # 正确：先落基线，再把 dump 装成 EXIT trap，最后才 source 用户脚本。
-__dd_dump_env "${DAIDAI_HOOK_ENV_DUMP}.base"
-trap '__dd_dump_env "$DAIDAI_HOOK_ENV_DUMP"' EXIT
+__dd_dump_env "${PANEL_HOOK_ENV_DUMP}.base"
+trap '__dd_dump_env "$PANEL_HOOK_ENV_DUMP"' EXIT
 . "$__dd_script" "$@"
 ```
 
@@ -2026,10 +2026,10 @@ if !ok {
 
 | 位置 | 路径 | 在线升级能不能改到 |
 |---|---|---|
-| 模块本体（宿主 Android 侧） | `/data/adb/modules/daidai-panel/` | 能（best-effort，只写三样） |
-| 容器 rootfs | `/data/daidai` 或 `/data/local/daidai` | 不动 |
-| 面板实际运行的文件（容器内） | `/usr/local/bin/daidai-server`、`/app/web`、`/app/Dumb-Panel` | 能 |
-| 宿主持久目录 | `/data/adb/daidai-panel/`（`ports.conf`、`service.log`、`deps-snapshot/`、`stopped`、`watchdog.gen`） | 不动 |
+| 模块本体（宿主 Android 侧） | `/data/adb/modules/panel/` | 能（best-effort，只写三样） |
+| 容器 rootfs | `/data/panel` 或 `/data/local/panel` | 不动 |
+| 面板实际运行的文件（容器内） | `/usr/local/bin/panel-server`、`/app/web`、`/app/Panel` | 能 |
+| 宿主持久目录 | `/data/adb/panel/`（`ports.conf`、`service.log`、`deps-snapshot/`、`stopped`、`watchdog.gen`） | 不动 |
 
 `Magisk/service.sh` 每次开机把第 1 处拷进第 3 处。所以在线升级必须**两处都写**。
 **模块脚本（`*.sh`）本身在线升级永远改不到** —— 由模块脚本实现的能力只能靠重刷 zip 获得，这一点必须在 UI 提示、README、release notes 三处如实说明，不要写成「外壳有变更会被自检拦下」。
@@ -2042,11 +2042,11 @@ if !ok {
 - 未命中哨兵：`var errMagiskRuntimeNotDetected = errors.New(...)`
 - 执行入口：`func executeMagiskPanelUpdateWithOptions(plan *panelUpdatePlan, options panelUpdateExecutionOptions)`
 - 面板进程定位：`func findMagiskPanelServerPID() int`
-- 外壳版本：Go `const currentMagiskShellVersion`（= service.sh 当前 export 的值）与 `const requiredMagiskShellVersion`（在线升级放行的最低值）↔ shell `export DAIDAI_MAGISK_SHELL_VERSION`
+- 外壳版本：Go `const currentMagiskShellVersion`（= service.sh 当前 export 的值）与 `const requiredMagiskShellVersion`（在线升级放行的最低值）↔ shell `export PANEL_MAGISK_SHELL_VERSION`
 - plan 新增字段：`DataDir` / `WebDir` / `ModuleDir`
 - 升级窗口哨兵：`<DataDir>/.updating`（Go 常量 `magiskUpdatingSentinelName` ↔ service.sh 的 `UPDATING_FLAG`）
-- 手动停止开关：`/data/adb/daidai-panel/stopped`（Go 常量 `magiskStopFlagPath` ↔ 四个 shell 的 `STOP_FLAG` / `$PERSIST_DIR/stopped`）
-- 守护代次标记：`/data/adb/daidai-panel/watchdog.gen`（Go 常量 `magiskWatchdogGenName` ↔ service.sh 的 `WATCHDOG_GEN_FILE`）
+- 手动停止开关：`/data/adb/panel/stopped`（Go 常量 `magiskStopFlagPath` ↔ 四个 shell 的 `STOP_FLAG` / `$PERSIST_DIR/stopped`）
+- 守护代次标记：`/data/adb/panel/watchdog.gen`（Go 常量 `magiskWatchdogGenName` ↔ service.sh 的 `WATCHDOG_GEN_FILE`）
 - 停止接口：`func (h *SystemHandler) StopPanel(c *gin.Context)` + `func writeMagiskStopFlag() error` + `const magiskStopSupportedShellVersion`
 - 进程退出注入点：`var panelProcessExit` / `var panelProcessExitDelay`（Restart 与 StopPanel 共用，仅为可测）
 
@@ -2054,34 +2054,34 @@ if !ok {
 
 - **判定顺序固定**：Watchtower → **magisk** → Docker → binary。magisk 必须排在 Docker 探测之前，否则模块版会拿到「未提供 Docker CLI，请配置 Watchtower」这段与 Android 完全无关的报错（`buildPanelUpdatePlanForRelease` 会把 Docker 与 binary 两段错误拼起来抛出，用户看到的第一句必然是 Docker 那句）。
 - **只有 `errMagiskRuntimeNotDetected` 才继续往下走**。模块版自身的失败（例如外壳版本过旧）必须原样抛给用户，用 `errors.Is` 判定，不要包装它。
-- **升级范围严格限定三样**：`daidai-server`、`ddp`、前端目录。容器 rootfs、apt/apk 系统包、Python venv、`config.yaml`、`ports.conf` 一概不动。更新包里自带的 `config.yaml` 必须跳过——它会覆盖模块生成的端口配置。
-- **进程路径与名字必须是 `/usr/local/bin/daidai-server`**（这条 argv0 是三方共同依赖的契约）：容器启动脚本用 `pgrep -f /usr/local/bin/daidai-server` 去重；`service.sh` 的守护（`panel_is_running`）与 `action.sh` 的 `panel_pids` 逐个读 `/proc/<pid>/cmdline` 按这条前缀匹配；Go 侧 `findMagiskPanelServerPID` 拿 argv0 与 `magiskPanelBinaryPath` 做全等比较。改名会让下次开机再拉起一个实例抢同一个端口，也会让动作按钮永远探不到面板、停止功能直接失效。
-  - 注意 `action.sh` / `service.sh` **不用 `pkill -f daidai-server` 停面板**：执行它的 `sh -c` 自身 cmdline 就含这串字符、会被自己命中。停止路径必须先探到 PID 再 `kill -TERM` / `kill -KILL`。
+- **升级范围严格限定三样**：`panel-server`、`ddp`、前端目录。容器 rootfs、apt/apk 系统包、Python venv、`config.yaml`、`ports.conf` 一概不动。更新包里自带的 `config.yaml` 必须跳过——它会覆盖模块生成的端口配置。
+- **进程路径与名字必须是 `/usr/local/bin/panel-server`**（这条 argv0 是三方共同依赖的契约）：容器启动脚本用 `pgrep -f /usr/local/bin/panel-server` 去重；`service.sh` 的守护（`panel_is_running`）与 `action.sh` 的 `panel_pids` 逐个读 `/proc/<pid>/cmdline` 按这条前缀匹配；Go 侧 `findMagiskPanelServerPID` 拿 argv0 与 `magiskPanelBinaryPath` 做全等比较。改名会让下次开机再拉起一个实例抢同一个端口，也会让动作按钮永远探不到面板、停止功能直接失效。
+  - 注意 `action.sh` / `service.sh` **不用 `pkill -f panel-server` 停面板**：执行它的 `sh -c` 自身 cmdline 就含这串字符、会被自己命中。停止路径必须先探到 PID 再 `kill -TERM` / `kill -KILL`。
 - **启动前必须 `cd` 到数据目录**。否则 `appboot.ResolveConfigPath()` 四个候选全落空，`main.go` 直接 `log.Fatalf`。
 - **二进制必须 rename 覆盖**，不能直接写正在执行的文件（`ETXTBSY`）。
 - **前端换完必须重启进程**，不能指望热生效：`main.go` 只在启动时对 `assets` / `monaco` / `sponsor-portal` 三个子目录调 `engine.Static`，新版 dist 多出顶层目录时不重启会走 SPA fallback，静态资源等于坏掉。
-- **运行态判定只校验目录、不校验文件名**：`ddp` 装在 `/usr/local/bin/ddp`，写死 `daidai-server` 会让 CLI 分支全成死代码。相应地 plan 必须记录真正的面板 PID，CLI 发起时由 helper 显式 `kill -TERM`，且此时**不得**自杀（会截断 CLI 输出）。
+- **运行态判定只校验目录、不校验文件名**：`ddp` 装在 `/usr/local/bin/ddp`，写死 `panel-server` 会让 CLI 分支全成死代码。相应地 plan 必须记录真正的面板 PID，CLI 发起时由 helper 显式 `kill -TERM`，且此时**不得**自杀（会截断 CLI 输出）。
 - **`os.Executable()` 要剥掉 `" (deleted)"` 后缀**：二进制被替换后 `/proc/self/exe` 会带这个后缀。
 - **外壳版本是两个常量，别当成一个**：
-  - `DAIDAI_MAGISK_SHELL_VERSION`（service.sh）↔ `currentMagiskShellVersion`（Go）：**每改一次 `Magisk/*.sh` 或 rootfs 结构就一起加一**，`magisk_assets_test.go` 静态断言两者逐字相等。它只描述「仓库里的外壳长什么样」。
+  - `PANEL_MAGISK_SHELL_VERSION`（service.sh）↔ `currentMagiskShellVersion`（Go）：**每改一次 `Magisk/*.sh` 或 rootfs 结构就一起加一**，`magisk_assets_test.go` 静态断言两者逐字相等。它只描述「仓库里的外壳长什么样」。
   - `requiredMagiskShellVersion`（Go）：在线升级放行的**最低**外壳版本，**只有当新面板无法在旧外壳上运行时才提**。提了就意味着所有还在跑旧外壳的用户必须先手动重刷一次模块 zip 才能继续在面板内一键升级——这是很贵的操作，不要因为「改了 shell」就顺手提。
   - 不变式：`requiredMagiskShellVersion <= currentMagiskShellVersion`（有测试钉死）。反过来会让刚打出来的 zip 装上去就被自己的外壳自检拦住。
   - 外壳只是多了增量能力时（例如 v2 的手动停止），保持 required 不动，改由**接口层 + 前端按外壳版本 gating** 并提示重刷 ZIP，提示里必须带上实际外壳版本号。
   - ⚠️ 版本门禁本身有 off-by-one：`resolveMagiskShellVersion` 读的是**当前进程**的 env，而门禁在**发起升级的旧进程**里执行，所以提高 required 也挡不住本次升级、只挡下一次。别把它当成能拦住「本次」的手段。
 - **手动停止开关（v2 外壳）的四条契约**：
-  - 路径固定 `/data/adb/daidai-panel/stopped`。**绝不能**放进 `$rootfs/app/Dumb-Panel/`：那里的 `.updating` 每次开机被无条件删除，同目录的跨重启标记迟早被同类清理误伤；rootfs 重装还会整体删除它。
+  - 路径固定 `/data/adb/panel/stopped`。**绝不能**放进 `$rootfs/app/Panel/`：那里的 `.updating` 每次开机被无条件删除，同目录的跨重启标记迟早被同类清理误伤；rootfs 重装还会整体删除它。
   - `service.sh` 的早退点必须在「模块→容器条件同步 + deps 回填」**之后**、「进容器拉起面板」**之前**。放太靠前 → 停止状态下刷入新 zip 再重启，新二进制同步不进容器，点启动跑的还是旧版本，表现成「刷了新版但版本号没变」。
   - `uninstall.sh` 必须**无条件**删除停止开关与守护代次标记（放在 `.keep_on_uninstall` 判断之外）。落进 KEEP 分支的话，「停止 → 保留数据卸载 → 重装」会得到一个永远起不来的新模块，且零线索。`customize.sh` 安装收尾同样无条件清掉开关：「刚装完的模块必须能起来」优先级更高。
   - `/system/restart` **绝对不能**写这个开关。restart 的语义是「重来一次」，写了开关就变成永久停机，而此时 Web 已经没了，用户在面板上再无自救手段。这条有回归测试（`system_stop_panel_test.go`）。
-- **守护子 shell 必须有代次去重**。`service.sh` 只对 `daidai-server` 做了 pgrep 去重，对自己 fork 的守护没有任何去重手段；文档与 `action.sh` 又在教用户重跑 `service.sh`。做法是 fork 前写 `watchdog.gen`，守护每轮比对、值变即自退。结束守护**不能**用 `pkill -f service.sh`（会误杀正在执行的 service.sh 本身）。
+- **守护子 shell 必须有代次去重**。`service.sh` 只对 `panel-server` 做了 pgrep 去重，对自己 fork 的守护没有任何去重手段；文档与 `action.sh` 又在教用户重跑 `service.sh`。做法是 fork 前写 `watchdog.gen`，守护每轮比对、值变即自退。结束守护**不能**用 `pkill -f service.sh`（会误杀正在执行的 service.sh 本身）。
 - **`service.sh` 的模块→容器同步必须是条件覆盖**（模块内文件更新才 cp）。这是模块目录写不进去时（KernelSU 下分区可能只读）唯一的防回滚保险。`-nt` 不被支持时必须回落成无条件同步——宁可丢一次在线升级，也不能让刷入新模块后同步不进容器。
 - **构建方案失败时也要回填 `deployment_type`**（`detectPanelDeploymentTypeHint`）。否则前端只能看到空对象，会退回到「请在宿主机执行 docker compose pull」那句兜底，对 Android 模块版和裸机二进制部署都是误导。
 
 ### 4. Validation & Error Matrix
 
 - 非模块版 -> `errMagiskRuntimeNotDetected`，继续走 Docker / binary，**不算升级失败**。
-- `DAIDAI_MAGISK_SHELL_VERSION` 缺失或小于 required -> 不生成 plan，返回「请重新刷入模块 zip」。
-- Release 缺少本机架构的 `daidai-linux-<arch>.tar.gz` -> 明确报缺哪个包。
+- `PANEL_MAGISK_SHELL_VERSION` 缺失或小于 required -> 不生成 plan，返回「请重新刷入模块 zip」。
+- Release 缺少本机架构的 `panel-linux-<arch>.tar.gz` -> 明确报缺哪个包。
 - 更新包里没有 `web/` 目录 -> 直接终止，不做半截替换。
 - 模块目录不存在 / 不可写 -> **只告警不中断**，提示「本次升级只在容器内生效」，靠 `service.sh` 的条件同步兜底。
 - `module.prop` 缺 `version=` 行 -> 报错（说明模块结构已被改动，不该盲写）。
@@ -2102,13 +2102,13 @@ if !ok {
 
 见 `server/handler/system_update_magisk_test.go` 与 `magisk_assets_test.go`：
 
-- helper 脚本必须包含 `TARGET_BIN='/usr/local/bin/daidai-server'`、`mv -f "$TARGET_BIN.new" "$TARGET_BIN"`，且 `cd "$DATA_DIR"` 出现在 `nohup "$TARGET_BIN"` **之前**。
+- helper 脚本必须包含 `TARGET_BIN='/usr/local/bin/panel-server'`、`mv -f "$TARGET_BIN.new" "$TARGET_BIN"`，且 `cd "$DATA_DIR"` 出现在 `nohup "$TARGET_BIN"` **之前**。
 - CLI 场景（`CurrentPID != ServerPID`）：`kill -TERM` → `kill -KILL` → 替换文件，三者顺序不能乱。
 - `rewriteMagiskModuleProp` 只改 `version` / `versionCode` 两行，`updateJson`、`id`、`author` 必须原样保留（debian flavor 的 `updateJson` 与 alpine 不同，整体重写会抹平它）。
 - `replaceDirAtomically` 必须清掉旧的 hash 产物，且不留 `.new` / `.old` 残留。
 - `buildPanelUpdateTarget` 的 magisk 分支不得带出 `image_name` / `container_name`。
 - 非模块版必须返回 `errMagiskRuntimeNotDetected` 本身（用 `errors.Is` 判定的前提）。
-- `service.sh` 必须包含 `file_needs_sync`、`panel_is_running`、`UPDATING_FLAG`，且 `DAIDAI_MAGISK_SHELL_VERSION` 与 `currentMagiskShellVersion` 逐字一致；同时断言 `requiredMagiskShellVersion <= currentMagiskShellVersion`。
+- `service.sh` 必须包含 `file_needs_sync`、`panel_is_running`、`UPDATING_FLAG`，且 `PANEL_MAGISK_SHELL_VERSION` 与 `currentMagiskShellVersion` 逐字一致；同时断言 `requiredMagiskShellVersion <= currentMagiskShellVersion`。
 - 停止开关链路（`TestMagiskScriptsShareStopFlagPath`）：Go 常量与四个 shell 的字面量同路径；`service.sh` 的早退点位置（同步之后、拉起容器之前）；`action.sh` 的停/启两条路径且不得出现 `pkill -f service.sh`；`uninstall.sh` 的两条 `rm -f` 排在 `KEEP_FLAG` 分支之后；`customize.sh` 先写开关再 `rm -rf "$rootfs"`、收尾无条件清开关。
 - 停止接口行为（`system_stop_panel_test.go`）：`/system/restart` 不写停止开关且退出码仍是 1；`/system/stop` 在模块版 + 外壳 >= 2 时写开关并以 0 退出；非模块版、旧外壳一律 400 且不留文件；`/system/info` 平铺返回 `deployment_type` / `magisk_shell_version` 且老字段位置不变。
 
@@ -2126,13 +2126,13 @@ if !ok {
 # 覆盖 config.yaml、放开目录权限，还持续累积 ruri 挂载 —— 全程静默。
 read -r proc_cmdline < "$proc_dir/cmdline" 2>/dev/null || continue
 case "$proc_cmdline" in
-  /usr/local/bin/daidai-server*) return 0 ;;
+  /usr/local/bin/panel-server*) return 0 ;;
 esac
 ```
 
 ```sh
 # 错误：无条件覆盖，会把面板内在线升级的结果在下次开机悄悄回滚掉。
-cp -f $MODDIR/system/bin/daidai-server $rootfs/usr/local/bin/daidai-server
+cp -f $MODDIR/system/bin/panel-server $rootfs/usr/local/bin/panel-server
 ```
 
 #### Correct
@@ -2142,14 +2142,14 @@ cp -f $MODDIR/system/bin/daidai-server $rootfs/usr/local/bin/daidai-server
 proc_cmdline=""
 read -r proc_cmdline 2>/dev/null < "$proc_dir/cmdline"
 case "$proc_cmdline" in
-  /usr/local/bin/daidai-server*) return 0 ;;
+  /usr/local/bin/panel-server*) return 0 ;;
 esac
 ```
 
 ```sh
 # 正确：只有模块里的文件确实更新（或容器里没有）才同步。
-if file_needs_sync "$MODDIR/system/bin/daidai-server" "$rootfs/usr/local/bin/daidai-server"; then
-  cp -f "$MODDIR/system/bin/daidai-server" "$rootfs/usr/local/bin/daidai-server"
+if file_needs_sync "$MODDIR/system/bin/panel-server" "$rootfs/usr/local/bin/panel-server"; then
+  cp -f "$MODDIR/system/bin/panel-server" "$rootfs/usr/local/bin/panel-server"
 fi
 ```
 
@@ -2537,7 +2537,7 @@ fi
   裸写 `env` 会被一个同名的 npm bin 劫持，表现成「容器每 2 秒重启、只有一个退出码」。
 - **必须以 `user:group` 形式降权**：只给用户名时两个工具都取 passwd 里的**主组**，
   用户填的 `PGID` 被静默丢掉（群晖 / OMV 常见 `PUID=1000 PGID=100`）。
-- **跨层契约**：entrypoint 的 `DAIDAI_HOME` 必须与 Go 侧 `resolveWritableHome` 的回落目录
+- **跨层契约**：entrypoint 的 `PANEL_HOME` 必须与 Go 侧 `resolveWritableHome` 的回落目录
   是同一个（`${DATA_DIR}/.home`），否则会变成「entrypoint 建在 A、代码写到 B」。
 - **`HOME` 为空时不要重定向**：那时 npm / pip 会按 uid 解析家目录，结果通常是对的
   （裸机 systemd 以 root 跑、没写 `Environment=HOME`）。重定向会把用户手写在
@@ -2563,11 +2563,11 @@ fi
 ### 4. Tests Required
 
 - `docker/test-entrypoint-puid.sh`（已接进 CI）：把 entrypoint 原样跑起来，
-  只桩掉 nginx / find / su-exec / gosu / daidai-server，覆盖八种组合并验到最终 uid、gid、
+  只桩掉 nginx / find / su-exec / gosu / panel-server，覆盖八种组合并验到最终 uid、gid、
   HOME 指向、以及**在 `$HOME/.npm/_cacache` 下真的建出目录**。
   脚本自己 `unshare --mount` + tmpfs on `/tmp`：entrypoint 有一句 `chown -R ... /tmp`，
   不隔离会改掉宿主 / runner 的 `/tmp` 属主。
-  **收尾要 userdel，所以本机已存在 `daidai` 账号时必须直接退出**（仓库推荐的 systemd
+  **收尾要 userdel，所以本机已存在 `panel` 账号时必须直接退出**（仓库推荐的 systemd
   部署就会建这么一个服务账号）。
 - 撞车用例的前提条件要由脚本**自己预置**，并且让现成账号的主组**不等于** `PGID`，
   否则在某些机器上会静默退化成「无冲突」，把复用逻辑整段删掉也照样绿。
@@ -2583,18 +2583,18 @@ fi
 ```sh
 # 错误一：声明了家目录却从不创建；错误二：只传用户名，PGID 被丢掉；
 # 错误三：裸写 env，会被 node_modules/.bin 里的同名包劫持。
-adduser -D -H -u "${TARGET_UID}" -G daidai daidai
-su-exec "${RUN_AS_USER}" env "HOME=${DAIDAI_HOME}" /app/daidai-server &
+adduser -D -H -u "${TARGET_UID}" -G panel panel
+su-exec "${RUN_AS_USER}" env "HOME=${PANEL_HOME}" /app/panel-server &
 ```
 
 #### Correct
 
 ```sh
 # 家目录真的建出来并纳入 chown；带兜底，只读目录下让后面的预检去报错。
-mkdir -p "${DAIDAI_HOME}" 2>/dev/null || true
+mkdir -p "${PANEL_HOME}" 2>/dev/null || true
 chown -R "${TARGET_UID}:${TARGET_GID}" "${DATA_DIR}" /tmp 2>/dev/null || true
 RUN_AS_SPEC="${TARGET_USER}:${TARGET_GID}"
-su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server &
+su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${PANEL_HOME}" /app/panel-server &
 ```
 
 ## 场景：Magisk 容器内 sshd 的配置托管与可观测性
@@ -2648,7 +2648,7 @@ su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server &
 - `magisk_assets_test.go` 的静态断言查禁用字面量时要**逐行跳过注释**
   （`assertNotInExecutableLines`）：脚本里常有注释专门解释「为什么不能再这么写」，
   整文件 `Contains` 会把它当成违规。
-- 改 `Magisk/*.sh` 必须同步 `DAIDAI_MAGISK_SHELL_VERSION` 与
+- 改 `Magisk/*.sh` 必须同步 `PANEL_MAGISK_SHELL_VERSION` 与
   `currentMagiskShellVersion`；`requiredMagiskShellVersion` **只有当新面板无法在旧外壳上
   运行时**才提 —— 提了就意味着所有老用户必须先重刷 ZIP 才能继续在面板内一键升级。
 - 能离线验的一定要离线验：`sshd_config` 的重写逻辑可以对着 Debian / Alpine 的**真实出厂

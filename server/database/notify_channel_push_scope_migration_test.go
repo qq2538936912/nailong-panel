@@ -3,9 +3,9 @@ package database_test
 import (
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // TestEnsureColumnsAddsNotifyChannelPushScopeToLegacyDatabase 验证老库补列后，

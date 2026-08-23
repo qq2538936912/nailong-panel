@@ -10,7 +10,7 @@ import (
 
 	"database/sql"
 
-	"daidai-panel/config"
+	"panel/config"
 
 	_ "github.com/glebarez/sqlite"
 )

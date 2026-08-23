@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
+	"panel/database"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

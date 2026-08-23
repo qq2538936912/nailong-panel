@@ -3,13 +3,13 @@ package handler
 import (
 	"strconv"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/crypto"
-	"daidai-panel/pkg/response"
-	"daidai-panel/pkg/validator"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/crypto"
+	"panel/pkg/response"
+	"panel/pkg/validator"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )

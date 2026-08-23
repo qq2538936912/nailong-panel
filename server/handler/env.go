@@ -12,11 +12,11 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -950,7 +950,7 @@ func groupEnvs(envs []model.EnvVar) map[string]string {
 func exportShell(envs map[string]string) string {
 	var b strings.Builder
 	b.WriteString("#!/bin/bash\n")
-	b.WriteString("# 呆呆面板 - 环境变量\n\n")
+	b.WriteString("# 面板 - 环境变量\n\n")
 
 	keys := sortedKeys(envs)
 	for _, k := range keys {
@@ -963,7 +963,7 @@ func exportShell(envs map[string]string) string {
 
 func exportJS(envs map[string]string) string {
 	var b strings.Builder
-	b.WriteString("// 呆呆面板 - 环境变量\n\n")
+	b.WriteString("// 面板 - 环境变量\n\n")
 
 	keys := sortedKeys(envs)
 	for _, k := range keys {
@@ -979,7 +979,7 @@ func exportJS(envs map[string]string) string {
 func exportPython(envs map[string]string) string {
 	var b strings.Builder
 	b.WriteString("# -*- coding: utf-8 -*-\n")
-	b.WriteString("# 呆呆面板 - 环境变量\n")
+	b.WriteString("# 面板 - 环境变量\n")
 	b.WriteString("import os\n\n")
 
 	keys := sortedKeys(envs)

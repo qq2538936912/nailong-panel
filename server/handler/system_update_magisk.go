@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/service"
 )
 
 // ============================================================================
@@ -20,21 +20,21 @@ import (
 //
 // 模块版的文件分布在三个互不相同的位置，这是理解本文件的前提：
 //
-//	1. 模块本体（宿主 Android 侧）：/data/adb/modules/daidai-panel/
-//	   里面有 system/bin/daidai-server、system/bin/ddp、web/、module.prop。
-//	2. 容器 rootfs：/data/daidai 或 /data/local/daidai。
-//	3. 面板真正运行的文件（容器内）：/usr/local/bin/daidai-server、/app/web。
+//	1. 模块本体（宿主 Android 侧）：/data/adb/modules/panel/
+//	   里面有 system/bin/panel-server、system/bin/ddp、web/、module.prop。
+//	2. 容器 rootfs：/data/panel 或 /data/local/panel。
+//	3. 面板真正运行的文件（容器内）：/usr/local/bin/panel-server、/app/web。
 //
 // Magisk/service.sh 每次开机都会把 (1) 拷贝进 (3)。所以在线升级必须【两处都写】：
 // 只写 (3) 会在下次开机被旧版覆盖；只写 (1) 则本次不生效。
 //
 // 容器是 chroot 模式（ruri -p -N -S -A），但宿主的 /data/adb 在容器内可见可写
-// —— 面板的 Android 运行时安装功能就是直接往 /data/adb/daidai-panel/bin 落
+// —— 面板的 Android 运行时安装功能就是直接往 /data/adb/panel/bin 落
 // Python/Node 的（见 handler/android_runtime.go）。写模块目录仍按 best-effort 处理：
 // KernelSU 下 /data 可能以只读挂载，写不进去时不能中断升级，靠 service.sh 的
 // 「模块内文件更新才覆盖」兜底。
 //
-// 升级范围严格限定为三样：daidai-server、ddp、web/。
+// 升级范围严格限定为三样：panel-server、ddp、web/。
 // 容器 rootfs、apt 依赖、Python venv、config.yaml、ports.conf 一概不动。
 // 在线升级覆盖不到模块外壳（service.sh / customize.sh / action.sh / rootfs 结构），
 // 所以外壳带来的新能力只能靠重刷 zip 拿到 —— 见下面两个版本常量的分工。
@@ -55,12 +55,12 @@ const (
 	//
 	// 所以这里【不是】必须等于 currentMagiskShellVersion，只要求 <= 它。
 	requiredMagiskShellVersion = 1
-	magiskShellVersionEnv      = "DAIDAI_MAGISK_SHELL_VERSION"
+	magiskShellVersionEnv      = "PANEL_MAGISK_SHELL_VERSION"
 
 	// 容器内的固定运行路径。名字和路径都不能变：
-	// Magisk/service.sh 与 action.sh 都靠 `/usr/local/bin/daidai-server` 这个 argv0
+	// Magisk/service.sh 与 action.sh 都靠 `/usr/local/bin/panel-server` 这个 argv0
 	// 判断面板是否在跑，改名会让开机时重复拉起第二个实例抢同一个端口。
-	magiskPanelBinaryPath = "/usr/local/bin/daidai-server"
+	magiskPanelBinaryPath = "/usr/local/bin/panel-server"
 	magiskPanelCLIPath    = "/usr/local/bin/ddp"
 
 	// 升级窗口哨兵。service.sh 的存活守护看到它就不插手，
@@ -69,7 +69,7 @@ const (
 
 	// magiskPersistDir 是模块的宿主侧持久目录，service.sh / customize.sh /
 	// action.sh / uninstall.sh 四个脚本用的都是它。
-	magiskPersistDir = "/data/adb/daidai-panel"
+	magiskPersistDir = "/data/adb/panel"
 
 	// magiskStopFlagName 是跨重启的「手动停止」开关文件名。
 	//
@@ -101,19 +101,19 @@ var errMagiskRuntimeNotDetected = errors.New("当前不是 Magisk 模块版运�
 
 // magiskModuleDirCandidates 与 Magisk/service.sh 的模块目录探测顺序保持一致。
 var magiskModuleDirCandidates = []string{
-	"/data/adb/modules/daidai-panel",
-	"/data/adb/magisk/modules/daidai-panel",
-	"/sbin/.magisk/modules/daidai-panel",
+	"/data/adb/modules/panel",
+	"/data/adb/magisk/modules/panel",
+	"/sbin/.magisk/modules/panel",
 }
 
 // isMagiskPanelUpdateRuntime 判断当前进程是否跑在 Magisk 模块的容器里。
 //
 // 判据取合取而不是单看环境变量：误判成模块版会让普通 Linux 部署往
-// /usr/local/bin 写文件。DAIDAI_MAGISK_MODULE 只由 service.sh 生成的容器
+// /usr/local/bin 写文件。PANEL_MAGISK_MODULE 只由 service.sh 生成的容器
 // 启动脚本 export（ddp 从面板终端起时同样继承得到）。
 //
 // 这里只校验「可执行文件在 /usr/local/bin 下」，不校验具体文件名：
-// ddp CLI 装在 /usr/local/bin/ddp，写死 daidai-server 会让 `ddp check` / `ddp update`
+// ddp CLI 装在 /usr/local/bin/ddp，写死 panel-server 会让 `ddp check` / `ddp update`
 // 在模块版上永远判定成「不是模块版」，CLI 里的 magisk 分支变成死代码。
 func isMagiskPanelUpdateRuntime() bool {
 	if runtime.GOOS != "linux" {
@@ -127,7 +127,7 @@ func isMagiskPanelUpdateRuntime() bool {
 		return false
 	}
 	// Linux 上 os.Executable() 读的是 /proc/self/exe。二进制被替换（在线升级、手动 mv）之后，
-	// 这个链接会变成 "/usr/local/bin/daidai-server (deleted)"。旧进程在退出前若还接到一次
+	// 这个链接会变成 "/usr/local/bin/panel-server (deleted)"。旧进程在退出前若还接到一次
 	// 检查更新请求，就会因为路径对不上而被判成"不是模块版"，再退回去报 Docker 的错。
 	executablePath = strings.TrimSuffix(strings.TrimSpace(executablePath), " (deleted)")
 	executableDir := filepath.ToSlash(filepath.Dir(filepath.Clean(executablePath)))
@@ -369,7 +369,7 @@ func syncMagiskModuleDir(plan *panelUpdatePlan, packageRoot string) string {
 		return fmt.Sprintf("模块目录不可写（%v），本次升级只在容器内生效", err)
 	}
 
-	if err := copyFilePreservingMode(filepath.Join(packageRoot, plan.BinaryName), filepath.Join(binDir, "daidai-server"), 0o755); err != nil {
+	if err := copyFilePreservingMode(filepath.Join(packageRoot, plan.BinaryName), filepath.Join(binDir, "panel-server"), 0o755); err != nil {
 		return fmt.Sprintf("写入模块目录的面板程序失败（%v），本次升级只在容器内生效", err)
 	}
 
@@ -568,7 +568,7 @@ func clearMagiskUpdatingSentinel(dataDir string) {
 //
 // 三条必须遵守的约束，改这段前先读：
 //  1. 二进制必须用 rename 覆盖，不能 cp 直写 —— 目标文件正在被执行，会 ETXTBSY。
-//  2. 新进程必须仍是 /usr/local/bin/daidai-server，否则 service.sh 的 pgrep 去重失效。
+//  2. 新进程必须仍是 /usr/local/bin/panel-server，否则 service.sh 的 pgrep 去重失效。
 //  3. 启动前必须 cd 到数据目录，否则 appboot.ResolveConfigPath 找不到 config.yaml，
 //     main.go 会直接 log.Fatalf，而模块版没有守护进程会把它拉起来。
 func writeMagiskUpdateHelperScript(plan *panelUpdatePlan, sourceRoot, workDir string) (string, error) {
@@ -659,7 +659,7 @@ rm -f "$SENTINEL" 2>/dev/null
 # 必须 cd 到数据目录再启动：config.yaml 在这里，换个工作目录会直接启动失败。
 log "启动新面板进程"
 cd "$DATA_DIR" || fail "进入数据目录失败"
-nohup "$TARGET_BIN" >> "$DATA_DIR/daidai.log" 2>&1 &
+nohup "$TARGET_BIN" >> "$DATA_DIR/panel.log" 2>&1 &
 log "新面板进程已拉起 PID=$!"
 `,
 		plan.CurrentPID,

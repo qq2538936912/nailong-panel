@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/testutil"
 )
 
 func TestParseCommandExecutionPlanSupportsTaskModesAndArgs(t *testing.T) {
@@ -245,7 +245,7 @@ func TestRunCommandSupportsManagedDependencyCommand(t *testing.T) {
 		config.C.Data.ScriptsDir,
 		5,
 		map[string]string{
-			"DAIDAI_PYTHON_VERSION": pythonVersion,
+			"PANEL_PYTHON_VERSION": pythonVersion,
 			"DD_TEST_VALUE":         "ok",
 		},
 		1024,

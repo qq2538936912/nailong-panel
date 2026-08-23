@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 用户复现路径：建订阅 → 拉取生成任务 → 手改任务 cron → 再拉一次 → cron 被打回订阅源自带时间。

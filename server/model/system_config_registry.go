@@ -9,8 +9,8 @@ import (
 
 	_ "time/tzdata"
 
-	panelcron "daidai-panel/pkg/cron"
-	"daidai-panel/pkg/netutil"
+	panelcron "panel/pkg/cron"
+	"panel/pkg/netutil"
 )
 
 type SystemConfigValueType string
@@ -153,7 +153,7 @@ var registeredSystemConfigSpecs = finalizeSystemConfigSpecs([]systemConfigSpec{
 	newTrimmedStringConfig("notify_panel_label", "通知面板名称", "", "通知标题前缀的面板名称（多面板区分用，留空不附带）", "alerts"),
 	newBoolConfig("notify_on_login", "登录成功发送通知", "false", "登录成功发送通知", "security"),
 	newValidatedStringConfig("proxy_url", "代理地址", "", "出站请求代理地址", "network", normalizeProxyURL),
-	newValidatedStringConfig("update_image_mirror", "系统更新镜像源", "", "旧 Docker Socket 更新链路使用的可选镜像源（Watchtower 部署请通过 DAIDAI_PANEL_IMAGE 配置仓库）", "network", normalizeUpdateImageMirror),
+	newValidatedStringConfig("update_image_mirror", "系统更新镜像源", "", "旧 Docker Socket 更新链路使用的可选镜像源（Watchtower 部署请通过 PANEL_IMAGE 配置仓库）", "network", normalizeUpdateImageMirror),
 	newValidatedStringConfig("binary_update_proxy", "二进制更新加速源", "", "二进制更新下载加速源（留空直连 GitHub Release）", "network", normalizeBinaryUpdateProxy),
 	newValidatedStringConfig(
 		"trusted_proxy_cidrs",
@@ -163,7 +163,7 @@ var registeredSystemConfigSpecs = finalizeSystemConfigSpecs([]systemConfigSpec{
 		"network",
 		normalizeTrustedProxyCIDRs,
 	),
-	newTrimmedStringConfig("panel_title", "面板标题", "呆呆面板", "面板标题", "branding"),
+	newTrimmedStringConfig("panel_title", "面板标题", "面板", "面板标题", "branding"),
 	newValidatedStringConfig(PanelTimezoneConfigKey, "面板时区", DefaultPanelTimezone, "面板时区（影响日志、定时任务日期判断和脚本 TZ）", "branding", normalizeTimezoneValue),
 	newTrimmedStringConfig("panel_icon", "面板图标 (SVG)", "", "面板图标（SVG data URL）", "branding"),
 	newTrimmedStringConfig("editor_background_color", "编辑器背景颜色", "", "脚本编辑器背景颜色（留空使用默认样式）", "branding"),
@@ -233,7 +233,7 @@ var registeredSystemConfigSpecs = finalizeSystemConfigSpecs([]systemConfigSpec{
 			{Value: "systemd", Label: "systemd"},
 		},
 	),
-	newTrimmedStringConfig("panel_service_name", "systemd 服务名", "daidai-panel", "systemd 服务名称", "branding"),
+	newTrimmedStringConfig("panel_service_name", "systemd 服务名", "panel", "systemd 服务名称", "branding"),
 	newIntConfig("max_web_sessions", "网页端会话上限", "1", "同一用户最大网页端会话数（多设备同时在线）", "security", 1, 20),
 	newIntConfig("max_app_sessions", "APP 端会话上限", "1", "同一用户最大 APP 端会话数（多设备同时在线）", "security", 1, 20),
 	newBoolConfig("captcha_enabled", "启用极验验证码", "false", "极验验证码开关（开启后每次登录触发）", "security"),

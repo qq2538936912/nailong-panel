@@ -1,8 +1,8 @@
 package router
 
 import (
-	"daidai-panel/handler"
-	"daidai-panel/middleware"
+	"panel/handler"
+	"panel/middleware"
 
 	"github.com/gin-gonic/gin"
 )

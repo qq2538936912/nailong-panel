@@ -11,11 +11,11 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -874,7 +874,7 @@ func buildDependencyFailureHint(logText string) string {
 		return "[检测到镜像源不可达或网络中断（域名能解析但连不上/下载失败），" +
 			"请检查 Linux 镜像源配置、代理设置和网络连通性，必要时更换镜像源后重试]"
 	case isAlpineGlibcIncompatible(lower):
-		return "[当前容器使用 Alpine 镜像（musl libc），该依赖需要 glibc 环境，无法在 Alpine 上安装。请切换到 Debian 版镜像（如 linzixuanzz/daidai-panel:debian）后重试]"
+		return "[当前容器使用 Alpine 镜像（musl libc），该依赖需要 glibc 环境，无法在 Alpine 上安装。请切换到 Debian 版镜像（如 xiaofeilong2/panel:debian）后重试]"
 	default:
 		return ""
 	}

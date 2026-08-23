@@ -33,7 +33,7 @@ func TestRestoreProgressLifecycle(t *testing.T) {
 	}
 
 	UpdateRestoreProgress("extracting", "正在解包...", 28)
-	BindRestoreProgressPlan("daidai-panel", BackupSelection{
+	BindRestoreProgressPlan("panel", BackupSelection{
 		Configs:      true,
 		Tasks:        true,
 		Dependencies: true,
@@ -45,8 +45,8 @@ func TestRestoreProgressLifecycle(t *testing.T) {
 	if updated.Percent != 28 {
 		t.Fatalf("expected percent 28, got %d", updated.Percent)
 	}
-	if updated.Source != "daidai-panel" {
-		t.Fatalf("expected source daidai-panel, got %q", updated.Source)
+	if updated.Source != "panel" {
+		t.Fatalf("expected source panel, got %q", updated.Source)
 	}
 	if updated.Selection == nil || !updated.Selection.Configs || !updated.Selection.Tasks || !updated.Selection.Dependencies {
 		t.Fatalf("expected restore selection to be bound, got %+v", updated.Selection)

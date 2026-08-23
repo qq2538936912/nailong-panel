@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 type ScriptFile struct {

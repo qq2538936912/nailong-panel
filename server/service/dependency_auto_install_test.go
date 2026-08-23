@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/testutil"
+	"panel/testutil"
 )
 
 func TestDetectAutoInstallCandidate(t *testing.T) {
@@ -195,8 +195,8 @@ func TestPipCommandForRequestedVersionDoesNotFallbackToPip3(t *testing.T) {
 
 func TestPipCommandRejectsUnsupportedSingleRuntimeVersion(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.12")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.12")
 
 	// 单版本镜像里不能偷偷把 3.10 的安装请求 fallback 到 pip3，
 	// 否则用户看到的是 3.10 依赖，实际却装进了 3.12 环境。

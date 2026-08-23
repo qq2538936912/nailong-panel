@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 func TestGetRelativeLogPathForTaskUsesReadableSafeDirectory(t *testing.T) {

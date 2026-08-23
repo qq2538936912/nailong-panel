@@ -34,6 +34,6 @@ log/
 !scripts/
 !scripts/release-preflight.ps1
 
-server/daidai-panel.exe
+server/panel.exe
 server/ddp.exe
 .trellis/workspace/*.exe

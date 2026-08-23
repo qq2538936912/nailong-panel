@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/middleware"
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/middleware"
+	"panel/service"
+	"panel/testutil"
 )
 
 // 守卫缺口 1：ddp python / ddp shell 历史上自己定义了一个 365 天的 TTL，
@@ -19,12 +19,12 @@ func TestBuildRuntimeEnvReusesUntimedTaskScriptTokenTTL(t *testing.T) {
 	before := time.Now()
 	envMap, scriptToken := buildRuntimeEnv(rt, config.C.Data.ScriptsDir)
 
-	token := envMap["DAIDAI_TOKEN"]
+	token := envMap["PANEL_TOKEN"]
 	if token == "" {
-		t.Fatalf("expected DAIDAI_TOKEN in ddp runtime env, got %#v", envMap)
+		t.Fatalf("expected PANEL_TOKEN in ddp runtime env, got %#v", envMap)
 	}
-	if envMap["DAIDAI_NOTIFY_TOKEN"] != token {
-		t.Fatalf("expected DAIDAI_NOTIFY_TOKEN and DAIDAI_TOKEN to share one credential")
+	if envMap["PANEL_NOTIFY_TOKEN"] != token {
+		t.Fatalf("expected PANEL_NOTIFY_TOKEN and PANEL_TOKEN to share one credential")
 	}
 
 	claims, err := middleware.ParseToken(token)
@@ -51,7 +51,7 @@ func TestBuildRuntimeEnvTokenIsRevocable(t *testing.T) {
 	rt := &cliRuntime{cfg: config.C}
 
 	envMap, scriptToken := buildRuntimeEnv(rt, config.C.Data.ScriptsDir)
-	claims, err := middleware.ParseToken(envMap["DAIDAI_TOKEN"])
+	claims, err := middleware.ParseToken(envMap["PANEL_TOKEN"])
 	if err != nil {
 		t.Fatalf("parse ddp runtime token: %v", err)
 	}

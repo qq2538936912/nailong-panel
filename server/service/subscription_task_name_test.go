@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // 用户实际在用的三种注释头写法（js 带空格、mjs 不带空格、sh 用 ##），

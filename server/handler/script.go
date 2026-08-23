@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"daidai-panel/config"
-	"daidai-panel/pkg/pathutil"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/pkg/pathutil"
+	"panel/service"
 )
 
 var allowedExtensions = map[string]bool{

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // depend_on（青龙 `ql repo` 的第 4 个位置参数 dependence）在本次改造前是纯备注字段，

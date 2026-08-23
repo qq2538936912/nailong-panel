@@ -38,7 +38,7 @@ const (
 
 	// domain 做域分隔。面板复用同一把 JWT secret 做多种签名，
 	// 加上固定域前缀可以避免票据签名被挪用到别的 HMAC 场景。
-	domain = "daidai-panel/download-ticket/v1"
+	domain = "panel/download-ticket/v1"
 )
 
 var (

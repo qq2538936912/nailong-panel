@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/handler"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/handler"
+	"panel/model"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )

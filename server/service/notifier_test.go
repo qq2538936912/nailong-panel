@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestSplitNotificationTargets(t *testing.T) {

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // TestBroadcastWithoutDefaultChannelLogsWarning 锁住「严格不兜底 + 留痕」这条产品决策。

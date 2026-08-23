@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/middleware"
-	"daidai-panel/pkg/response"
+	"panel/middleware"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,7 +34,7 @@ type AndroidRuntimeHandler struct{}
 func NewAndroidRuntimeHandler() *AndroidRuntimeHandler { return &AndroidRuntimeHandler{} }
 
 // bin 目录约定：Magisk service.sh 会把这里加入 PATH / LD_LIBRARY_PATH。
-const defaultAndroidRuntimeBinDir = "/data/adb/daidai-panel/bin"
+const defaultAndroidRuntimeBinDir = "/data/adb/panel/bin"
 
 // androidRuntimePreset 定义了面板预置的运行时下载源。
 type androidRuntimePreset struct {
@@ -118,17 +118,17 @@ func androidSupported() bool {
 	if runtime.GOOS == "android" {
 		return true
 	}
-	if strings.TrimSpace(os.Getenv("DAIDAI_MAGISK_MODULE")) != "" {
+	if strings.TrimSpace(os.Getenv("PANEL_MAGISK_MODULE")) != "" {
 		return true
 	}
-	if _, err := os.Stat("/data/adb/modules/daidai-panel"); err == nil {
+	if _, err := os.Stat("/data/adb/modules/panel"); err == nil {
 		return true
 	}
 	return false
 }
 
 func resolveAndroidRuntimeBinDir() string {
-	if dir := strings.TrimSpace(os.Getenv("DAIDAI_ANDROID_RUNTIME_BIN_DIR")); dir != "" {
+	if dir := strings.TrimSpace(os.Getenv("PANEL_ANDROID_RUNTIME_BIN_DIR")); dir != "" {
 		return dir
 	}
 	return defaultAndroidRuntimeBinDir

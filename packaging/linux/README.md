@@ -4,22 +4,22 @@
 
 ## 安装步骤
 
-1. 下载二进制 `daidai-server` 与前端静态资源到 `/opt/daidai-panel`。
+1. 下载二进制 `panel-server` 与前端静态资源到 `/opt/panel`。
 2. 复制 systemd 单元：
    ```bash
-   sudo cp daidai-panel.service /etc/systemd/system/daidai-panel.service
+   sudo cp panel.service /etc/systemd/system/panel.service
    ```
 3. （推荐）创建专用用户：
    ```bash
-   sudo useradd -r -s /sbin/nologin -d /opt/daidai-panel daidai
-   sudo chown -R daidai:daidai /opt/daidai-panel
+   sudo useradd -r -s /sbin/nologin -d /opt/panel panel
+   sudo chown -R panel:panel /opt/panel
    ```
-   然后取消 `daidai-panel.service` 中 `User=daidai` 和 `Group=daidai` 的注释。
+   然后取消 `panel.service` 中 `User=panel` 和 `Group=panel` 的注释。
 4. 启动：
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl enable --now daidai-panel
-   sudo systemctl status daidai-panel
+   sudo systemctl enable --now panel
+   sudo systemctl status panel
    ```
 
 ## 飞牛 OS / 群晖等 NAS 注意事项
@@ -38,21 +38,21 @@ cors:
   origins:
     - https://panel.your-domain.com
 ```
-然后 `sudo systemctl restart daidai-panel`。
+然后 `sudo systemctl restart panel`。
 
 ### 3. 反向代理后 IP 显示为本地
 
 如果面板放在 NAS 反代之后，请配置信任代理 CIDR：
 ```ini
-# /etc/systemd/system/daidai-panel.service
-Environment=DAIDAI_TRUSTED_PROXY_CIDRS=127.0.0.1/32,192.168.0.0/16
+# /etc/systemd/system/panel.service
+Environment=PANEL_TRUSTED_PROXY_CIDRS=127.0.0.1/32,192.168.0.0/16
 ```
 
 ### 4. SQLite 写入失败
 
-确保 `WorkingDirectory` 及其 `data/` 子目录对运行用户可写。如果用 `User=daidai`：
+确保 `WorkingDirectory` 及其 `data/` 子目录对运行用户可写。如果用 `User=panel`：
 ```bash
-sudo chown -R daidai:daidai /opt/daidai-panel
+sudo chown -R panel:panel /opt/panel
 ```
 
 ### 5. SSE 长连接（任务实时日志）

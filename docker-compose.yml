@@ -1,28 +1,28 @@
-name: daidai-panel
+name: panel
 
 services:
-  daidai-panel:
+  panel:
     # 没有 build 时 `docker compose up --build` 是空操作，容器会继续跑仓库里的现成镜像。
     # 改过前端/后端源码后必须在这台机器上用当前目录重新编一次，才会看到终端页等本地改动。
     build:
       context: .
       dockerfile: Dockerfile
-    image: ${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
-    container_name: daidai-panel
+    image: ${PANEL_IMAGE:-xiaofeilong2/panel:latest}
+    container_name: panel
     restart: unless-stopped
     ports:
       - "15700:5700" # 宿主机端口:容器内 Nginx 端口
     volumes:
-      - ./Dumb-Panel:/app/Dumb-Panel
+      - ./Panel:/app/Panel
     environment:
       - TZ=Asia/Shanghai
-      - CONTAINER_NAME=daidai-panel
+      - CONTAINER_NAME=panel
       # 镜像地址与上面的 image 共用一个变量，切换标签时只需要改一处。
-      - IMAGE_NAME=${DAIDAI_PANEL_IMAGE:-linzixuanzz/daidai-panel:latest}
+      - IMAGE_NAME=${PANEL_IMAGE:-xiaofeilong2/panel:latest}
       - PANEL_UPDATE_MANAGER=watchtower
       # 面板通过容器网络触发 Watchtower，API 不向宿主机开放端口。
       - WATCHTOWER_HTTP_API_URL=${WATCHTOWER_HTTP_API_URL:-http://watchtower:8080}
-      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-daidai-panel-watchtower-token}
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-panel-watchtower-token}
       - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
       # === 飞牛 OS / 群晖 / 绿联等 NAS 可选环境变量 ===========================
       # 让容器以宿主机用户身份运行，使 SMB/NFS 共享的目录权限一致。
@@ -43,7 +43,7 @@ services:
 
   watchtower:
     image: nickfedor/watchtower:latest
-    container_name: daidai-watchtower
+    container_name: panel-watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -51,7 +51,7 @@ services:
       - com.centurylinklabs.watchtower.enable=false
     environment:
       # 开放 update endpoint，并与面板共用令牌；服务地址只需要配置在面板容器。
-      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-daidai-panel-watchtower-token}
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN:-panel-watchtower-token}
       - WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
       - WATCHTOWER_HTTP_API_ENDPOINTS=update
     command:

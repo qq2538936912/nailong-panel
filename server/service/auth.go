@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/crypto"
-	"daidai-panel/pkg/validator"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/crypto"
+	"panel/pkg/validator"
 )
 
 var (

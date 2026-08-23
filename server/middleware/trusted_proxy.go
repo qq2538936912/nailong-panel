@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"daidai-panel/pkg/netutil"
+	"panel/pkg/netutil"
 )
 
 type trustedProxyConfigState struct {

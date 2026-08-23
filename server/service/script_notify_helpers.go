@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
+	"panel/database"
+	"panel/middleware"
 )
 
 const (
-	managedNotifyHelperToken = "DAIDAI_PANEL_MANAGED_NOTIFY_HELPER v1"
+	managedNotifyHelperToken = "PANEL_MANAGED_NOTIFY_HELPER v1"
 	notifyPyFilename         = "notify.py"
 	sendNotifyJSFilename     = "sendNotify.js"
 )
@@ -26,7 +26,7 @@ type managedNotifyArtifact struct {
 var managedNotifyPyContent = strings.Join([]string{
 	"# " + managedNotifyHelperToken,
 	"#!/usr/bin/env python3",
-	"\"\"\"Daidai Panel managed notification helper.",
+	"\"\"\"Panel managed notification helper.",
 	"",
 	"Usage:",
 	"    from notify import send",
@@ -40,13 +40,13 @@ var managedNotifyPyContent = strings.Join([]string{
 	"- Keep send(title, content, ignore_default_config=False, **kwargs).",
 	"- channel_id / channel_ids select panel notification channels.",
 	"- Extra kwargs are merged into context for content_template variables.",
-	"- ignore_default_config=True skips DAIDAI_NOTIFY_CHANNEL_ID fallback.",
+	"- ignore_default_config=True skips PANEL_NOTIFY_CHANNEL_ID fallback.",
 	"",
 	"Runtime environment variables:",
-	"- DAIDAI_NOTIFY_URL: panel notify API URL",
-	"- DAIDAI_NOTIFY_TOKEN: temporary bearer token",
-	"- DAIDAI_NOTIFY_TIMEOUT: timeout in ms or seconds, default 15000ms",
-	"- DAIDAI_NOTIFY_CHANNEL_ID: default notification channel ID for current task",
+	"- PANEL_NOTIFY_URL: panel notify API URL",
+	"- PANEL_NOTIFY_TOKEN: temporary bearer token",
+	"- PANEL_NOTIFY_TIMEOUT: timeout in ms or seconds, default 15000ms",
+	"- PANEL_NOTIFY_CHANNEL_ID: default notification channel ID for current task",
 	"\"\"\"",
 	"import json",
 	"import os",
@@ -58,7 +58,7 @@ var managedNotifyPyContent = strings.Join([]string{
 	"",
 	"def _resolve_timeout_seconds(timeout=None):",
 	"    \"\"\"Normalize timeout values from ms/seconds/env to seconds.\"\"\"",
-	"    raw = timeout if timeout is not None else os.getenv(\"DAIDAI_NOTIFY_TIMEOUT\", \"15000\")",
+	"    raw = timeout if timeout is not None else os.getenv(\"PANEL_NOTIFY_TIMEOUT\", \"15000\")",
 	"    text = str(raw).strip().lower()",
 	"    if not text:",
 	"        return DEFAULT_TIMEOUT_SECONDS",
@@ -85,7 +85,7 @@ var managedNotifyPyContent = strings.Join([]string{
 	"    \"\"\"Return the configured default channel ID for the running task.\"\"\"",
 	"    if not use_default_channel:",
 	"        return None",
-	"    raw = os.getenv(\"DAIDAI_NOTIFY_CHANNEL_ID\", \"\").strip()",
+	"    raw = os.getenv(\"PANEL_NOTIFY_CHANNEL_ID\", \"\").strip()",
 	"    if not raw:",
 	"        return None",
 	"    try:",
@@ -146,15 +146,15 @@ var managedNotifyPyContent = strings.Join([]string{
 	"        channel_id: Single target channel ID.",
 	"        channel_ids: Multiple target channel IDs.",
 	"        context: Extra template variables for content_template.",
-	"        use_default_channel: Whether DAIDAI_NOTIFY_CHANNEL_ID should be used.",
-	"        url: Override DAIDAI_NOTIFY_URL.",
-	"        token: Override DAIDAI_NOTIFY_TOKEN.",
-	"        timeout: Override DAIDAI_NOTIFY_TIMEOUT.",
+	"        use_default_channel: Whether PANEL_NOTIFY_CHANNEL_ID should be used.",
+	"        url: Override PANEL_NOTIFY_URL.",
+	"        token: Override PANEL_NOTIFY_TOKEN.",
+	"        timeout: Override PANEL_NOTIFY_TIMEOUT.",
 	"    \"\"\"",
-	"    notify_url = (url or os.getenv(\"DAIDAI_NOTIFY_URL\", \"\")).strip()",
-	"    notify_token = (token or os.getenv(\"DAIDAI_NOTIFY_TOKEN\", \"\")).strip()",
+	"    notify_url = (url or os.getenv(\"PANEL_NOTIFY_URL\", \"\")).strip()",
+	"    notify_token = (token or os.getenv(\"PANEL_NOTIFY_TOKEN\", \"\")).strip()",
 	"    if not notify_url or not notify_token:",
-	"        raise RuntimeError(\"DAIDAI_NOTIFY_URL 或 DAIDAI_NOTIFY_TOKEN 未配置\")",
+	"        raise RuntimeError(\"PANEL_NOTIFY_URL 或 PANEL_NOTIFY_TOKEN 未配置\")",
 	"",
 	"    timeout_seconds = _resolve_timeout_seconds(timeout)",
 	"    payload = _build_payload(",
@@ -235,7 +235,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	"'use strict';",
 	"/**",
 	" * " + managedNotifyHelperToken,
-	" * Daidai Panel managed notification helper.",
+	" * Panel managed notification helper.",
 	" *",
 	" * Usage:",
 	" *   const { sendNotify } = require('./sendNotify');",
@@ -248,7 +248,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	" * - Keep sendNotify(text, desp, params) and send(text, desp, params).",
 	" * - params.channel_id / params.channel_ids select panel channels.",
 	" * - Extra params are merged into context for content_template variables.",
-	" * - params.ignore_default_config = true skips DAIDAI_NOTIFY_CHANNEL_ID.",
+	" * - params.ignore_default_config = true skips PANEL_NOTIFY_CHANNEL_ID.",
 	" */",
 	"const fs = require('node:fs');",
 	"const http = require('node:http');",
@@ -259,7 +259,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	"",
 	"const DEFAULT_TIMEOUT_MS = 15000;",
 	"const RESERVED_PARAM_KEYS = new Set(['channel_id', 'channel_ids', 'context', 'ignore_default_config', 'url', 'token', 'timeout']);",
-	"const SCRIPTS_DIR = String(process.env.DAIDAI_SCRIPTS_DIR || __dirname).trim() || __dirname;",
+	"const SCRIPTS_DIR = String(process.env.PANEL_SCRIPTS_DIR || __dirname).trim() || __dirname;",
 	"const MANAGED_HELPER_PATH = path.join(SCRIPTS_DIR, 'sendNotify.js');",
 	"",
 	"function isPlainObject(value) {",
@@ -267,7 +267,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	"}",
 	"",
 	"function installManagedSendNotifyAlias() {",
-	"  if (global.__DAIDAI_SEND_NOTIFY_ALIAS_PATCHED__) {",
+	"  if (global.__PANEL_SEND_NOTIFY_ALIAS_PATCHED__) {",
 	"    return;",
 	"  }",
 	"  const originalResolveFilename = Module._resolveFilename;",
@@ -284,7 +284,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	"    }",
 	"    return originalResolveFilename.call(this, request, parent, isMain, options);",
 	"  };",
-	"  global.__DAIDAI_SEND_NOTIFY_ALIAS_PATCHED__ = true;",
+	"  global.__PANEL_SEND_NOTIFY_ALIAS_PATCHED__ = true;",
 	"}",
 	"",
 	"installManagedSendNotifyAlias();",
@@ -293,7 +293,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	" * Normalize timeout values from env or params into milliseconds.",
 	" */",
 	"function resolveTimeoutMs(timeout) {",
-	"  const raw = timeout ?? process.env.DAIDAI_NOTIFY_TIMEOUT ?? DEFAULT_TIMEOUT_MS;",
+	"  const raw = timeout ?? process.env.PANEL_NOTIFY_TIMEOUT ?? DEFAULT_TIMEOUT_MS;",
 	"  const text = String(raw).trim().toLowerCase();",
 	"  if (!text) return DEFAULT_TIMEOUT_MS;",
 	"  if (text.endsWith('ms')) {",
@@ -316,7 +316,7 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	"  if (params.ignore_default_config === true) {",
 	"    return null;",
 	"  }",
-	"  const raw = String(process.env.DAIDAI_NOTIFY_CHANNEL_ID || '').trim();",
+	"  const raw = String(process.env.PANEL_NOTIFY_CHANNEL_ID || '').trim();",
 	"  if (!raw) {",
 	"    return null;",
 	"  }",
@@ -378,11 +378,11 @@ var managedSendNotifyJSContent = strings.Join([]string{
 	" * @returns {Promise<object>} Parsed JSON response from the panel API.",
 	" */",
 	"function requestNotify(title, content, params = {}) {",
-	"  const notifyUrl = String(params.url || process.env.DAIDAI_NOTIFY_URL || '').trim();",
-	"  const notifyToken = String(params.token || process.env.DAIDAI_NOTIFY_TOKEN || '').trim();",
+	"  const notifyUrl = String(params.url || process.env.PANEL_NOTIFY_URL || '').trim();",
+	"  const notifyToken = String(params.token || process.env.PANEL_NOTIFY_TOKEN || '').trim();",
 	"  const timeoutMs = resolveTimeoutMs(params.timeout);",
 	"  if (!notifyUrl || !notifyToken) {",
-	"    return Promise.reject(new Error('DAIDAI_NOTIFY_URL 或 DAIDAI_NOTIFY_TOKEN 未配置'));",
+	"    return Promise.reject(new Error('PANEL_NOTIFY_URL 或 PANEL_NOTIFY_TOKEN 未配置'));",
 	"  }",
 	"",
 	"  const payload = JSON.stringify(buildPayload(title, content, params));",
@@ -604,22 +604,22 @@ func BuildNotifyHelperEnv(scriptsDir string, workDir string, serverPort int, def
 
 	apiBase := fmt.Sprintf("http://127.0.0.1:%d/api/v1", serverPort)
 
-	// DAIDAI_NOTIFY_URL / DAIDAI_NOTIFY_TOKEN 是历史契约，内置 notify.py、sendNotify.js
+	// PANEL_NOTIFY_URL / PANEL_NOTIFY_TOKEN 是历史契约，内置 notify.py、sendNotify.js
 	// 以及用户既有脚本都在读，只能新增别名、不能改名。
-	// DAIDAI_API_BASE / DAIDAI_TOKEN 是通用入口：脚本不必再对 DAIDAI_NOTIFY_URL
+	// PANEL_API_BASE / PANEL_TOKEN 是通用入口：脚本不必再对 PANEL_NOTIFY_URL
 	// 做字符串截断去拼别的接口，两枚 token 是同一枚凭据。
 	env := map[string]string{
-		"DAIDAI_NOTIFY_URL":     apiBase + "/notifications/send",
-		"DAIDAI_NOTIFY_TOKEN":   tokenInfo.Token,
-		"DAIDAI_NOTIFY_TIMEOUT": "15000",
-		"DAIDAI_SCRIPTS_DIR":    scriptsDir,
-		"DAIDAI_NOTIFY_PY":      filepath.Join(scriptsDir, notifyPyFilename),
-		"DAIDAI_SEND_NOTIFY_JS": filepath.Join(scriptsDir, sendNotifyJSFilename),
-		"DAIDAI_API_BASE":       apiBase,
-		"DAIDAI_TOKEN":          tokenInfo.Token,
+		"PANEL_NOTIFY_URL":     apiBase + "/notifications/send",
+		"PANEL_NOTIFY_TOKEN":   tokenInfo.Token,
+		"PANEL_NOTIFY_TIMEOUT": "15000",
+		"PANEL_SCRIPTS_DIR":    scriptsDir,
+		"PANEL_NOTIFY_PY":      filepath.Join(scriptsDir, notifyPyFilename),
+		"PANEL_SEND_NOTIFY_JS": filepath.Join(scriptsDir, sendNotifyJSFilename),
+		"PANEL_API_BASE":       apiBase,
+		"PANEL_TOKEN":          tokenInfo.Token,
 	}
 	if defaultChannelID != nil && *defaultChannelID > 0 {
-		env["DAIDAI_NOTIFY_CHANNEL_ID"] = fmt.Sprintf("%d", *defaultChannelID)
+		env["PANEL_NOTIFY_CHANNEL_ID"] = fmt.Sprintf("%d", *defaultChannelID)
 	}
 	return env, &ScriptTokenInfo{JTI: tokenInfo.JTI, ExpiresAt: tokenInfo.ExpiresAt}, nil
 }

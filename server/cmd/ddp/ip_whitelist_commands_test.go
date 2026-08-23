@@ -3,10 +3,10 @@ package main
 import (
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestRunIPWhitelistClearRestoresOpenAccess(t *testing.T) {

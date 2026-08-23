@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 func TestShouldIgnoreScriptEntryName(t *testing.T) {

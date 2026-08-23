@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestTaskExecutorAppliesConfiguredSuccessExitCodes(t *testing.T) {

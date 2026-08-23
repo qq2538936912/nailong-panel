@@ -211,7 +211,7 @@ function updateBackupScheduleSelection(key: keyof BackupSelection, value: boolea
     </el-table>
 
     <el-alert type="info" :closable="false" show-icon style="margin-top: 16px">
-      支持导入呆呆面板备份（`.tgz` / `.enc` / 旧版 `.json`）以及青龙面板导出的 `.tgz` 备份包
+      支持导入面板备份（`.tgz` / `.enc` / 旧版 `.json`）以及青龙面板导出的 `.tgz` 备份包
     </el-alert>
 
     <el-divider />

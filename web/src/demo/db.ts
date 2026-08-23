@@ -395,7 +395,7 @@ export function buildLogContent(log: DemoTaskLog): string {
   const lines: string[] = [
     `[${stamp(0)}] ## 开始执行 ${log.task_name}`,
     `[${stamp(0)}] ## 命令：${command}`,
-    `[${stamp(0)}] ## 工作目录：/opt/daidai/scripts`,
+    `[${stamp(0)}] ## 工作目录：/opt/panel/scripts`,
     '',
   ]
 

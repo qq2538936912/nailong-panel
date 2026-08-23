@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/service"
+	"panel/testutil"
 )
 
 func TestEnableTaskAcceptsMultipleCronExpressions(t *testing.T) {

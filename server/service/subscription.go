@@ -13,10 +13,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/cron"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/cron"
 
 	"gorm.io/gorm"
 )
@@ -262,7 +262,7 @@ func pullGitRepoWithCallback(ctx context.Context, sub *model.Subscription, authC
 				return fullOutput.String(), err
 			}
 			if hasStash {
-				cmd = exec.CommandContext(ctx, "git", "stash", "push", "--include-untracked", "-m", "daidai-panel-subscription-update")
+				cmd = exec.CommandContext(ctx, "git", "stash", "push", "--include-untracked", "-m", "panel-subscription-update")
 				cmd.Dir = destDir
 				cmd.Env = env
 				output, err = runCmdWithCallback(ctx, cmd, emit)

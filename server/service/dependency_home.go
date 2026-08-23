@@ -6,13 +6,13 @@ import (
 	"runtime"
 	"strings"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 // EffectiveHomeDir 返回一个确定可写的 HOME 目录。
 //
 // 背景（v3.0.7）：容器配了 PUID/PGID 降权之后，面板进程拿到的 HOME 可能根本不存在
-// —— su-exec 会按 /etc/passwd 把 HOME 覆写成 /home/daidai，而那个目录从来没被创建过
+// —— su-exec 会按 /etc/passwd 把 HOME 覆写成 /home/panel，而那个目录从来没被创建过
 // （建用户用的是 adduser -D -H / useradd -M，都是「不创建家目录」）；
 // 也可能存在但属于 root —— gosu 只在 HOME 为空时才设置，于是保持 Docker 注入的 /root。
 // 两种情况下 npm 的 cache（$HOME/.npm）、$HOME/.npmrc 与 pip 的 pip.conf 都写不进去，
@@ -51,7 +51,7 @@ func resolveWritableHome(home, dataDir string) string {
 	// 表现成「升级之后私有包突然 401 / 404」，而且没有任何日志。
 	//
 	// 本次要修的那个 bug 里 HOME 一定是有值的（Docker 会注入 HOME=/root，
-	// su-exec 会按 passwd 覆写成 /home/daidai），所以收窄到「有值但不可写」
+	// su-exec 会按 passwd 覆写成 /home/panel），所以收窄到「有值但不可写」
 	// 既能覆盖问题，又不会波及上面那类部署。
 	if home == "" {
 		return home
@@ -64,7 +64,7 @@ func resolveWritableHome(home, dataDir string) string {
 		return home
 	}
 
-	// 与 entrypoint.sh 里的 DAIDAI_HOME 指向同一个位置，两层修复落在同一处，
+	// 与 entrypoint.sh 里的 PANEL_HOME 指向同一个位置，两层修复落在同一处，
 	// 不会出现「entrypoint 建在 A、代码写到 B」的割裂。
 	// docker_entrypoint_assets_test.go 里有一条断言专门锁这个契约。
 	fallback := filepath.Join(dataDir, ".home")
@@ -135,7 +135,7 @@ func isWritableDir(dir string) bool {
 	if err != nil || !info.IsDir() {
 		return false
 	}
-	probe, err := os.CreateTemp(dir, ".daidai-write-probe-")
+	probe, err := os.CreateTemp(dir, ".panel-write-probe-")
 	if err != nil {
 		return false
 	}

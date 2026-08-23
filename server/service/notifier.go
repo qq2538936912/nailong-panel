@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 var (

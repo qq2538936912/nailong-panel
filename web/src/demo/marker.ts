@@ -19,4 +19,4 @@
  *    ⇒ 每个入口都要在自己的【活代码】里引用一次这个常量。
  *      光 import 不引用是没用的，会被 tree-shaking 掉。
  */
-export const DEMO_BUILD_MARKER = '__DAIDAI_DEMO_MOCK__'
+export const DEMO_BUILD_MARKER = '__PANEL_DEMO_MOCK__'

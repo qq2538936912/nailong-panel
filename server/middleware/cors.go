@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
+	"panel/config"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

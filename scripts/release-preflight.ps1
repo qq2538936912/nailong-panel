@@ -98,7 +98,7 @@ if (($moduleProp -notmatch [regex]::Escape("version=$tagVersion")) -or ($moduleP
 $updateJson = Get-Content -Path (Join-Path $repoRoot "Magisk\update.json") -Raw -Encoding UTF8
 if (($updateJson -notmatch [regex]::Escape('"version": "' + $tagVersion + '"')) `
     -or ($updateJson -notmatch [regex]::Escape('"versionCode": ' + $versionCode)) `
-    -or ($updateJson -notmatch [regex]::Escape("/releases/download/$tagVersion/daidai-panel-magisk-$tagVersion.zip")) `
+    -or ($updateJson -notmatch [regex]::Escape("/releases/download/$tagVersion/panel-magisk-$tagVersion.zip")) `
     -or ($updateJson -notmatch [regex]::Escape("/docs/release-notes/$tagVersion.md"))) {
     Fail-Step "Magisk update.json version block not synced."
 }
@@ -107,7 +107,7 @@ if (($updateJson -notmatch [regex]::Escape('"version": "' + $tagVersion + '"')) 
 $updateJsonDebian = Get-Content -Path (Join-Path $repoRoot "Magisk\update-debian.json") -Raw -Encoding UTF8
 if (($updateJsonDebian -notmatch [regex]::Escape('"version": "' + $tagVersion + '"')) `
     -or ($updateJsonDebian -notmatch [regex]::Escape('"versionCode": ' + $versionCode)) `
-    -or ($updateJsonDebian -notmatch [regex]::Escape("/releases/download/$tagVersion/daidai-panel-magisk-debian-$tagVersion.zip")) `
+    -or ($updateJsonDebian -notmatch [regex]::Escape("/releases/download/$tagVersion/panel-magisk-debian-$tagVersion.zip")) `
     -or ($updateJsonDebian -notmatch [regex]::Escape("/docs/release-notes/$tagVersion.md"))) {
     Fail-Step "Magisk update-debian.json version block not synced."
 }
@@ -252,7 +252,7 @@ foreach ($job in @(
     }
 }
 
-Assert-FileTextContains -Path $workflowPath -Text "DOCKER_IMAGE_REPOSITORY: linzixuanzz/daidai-panel" -Description "official Docker image repository"
+Assert-FileTextContains -Path $workflowPath -Text "DOCKER_IMAGE_REPOSITORY: xiaofeilong2/panel" -Description "official Docker image repository"
 
 foreach ($dockerfileName in @("Dockerfile", "Dockerfile.debian")) {
     $dockerfilePath = Join-Path $repoRoot $dockerfileName
@@ -272,8 +272,8 @@ foreach ($compose in @(
         Fail-Step "Missing Docker Compose file: $($compose.Name)"
     }
     $composeText = Get-Content -Path $composePath -Raw -Encoding UTF8
-    if ([regex]::Matches($composeText, [regex]::Escape('${DAIDAI_PANEL_IMAGE:-')).Count -ne 2) {
-        Fail-Step "$($compose.Name) must use DAIDAI_PANEL_IMAGE for both image and IMAGE_NAME."
+    if ([regex]::Matches($composeText, [regex]::Escape('${PANEL_IMAGE:-')).Count -ne 2) {
+        Fail-Step "$($compose.Name) must use PANEL_IMAGE for both image and IMAGE_NAME."
     }
     # 这里数的是“赋值处”，不是变量名的出现次数，(?<!\$\{) 这个负向后顾不能删。
     # 这个变量允许用户覆盖（见 .env.watchtower.prod.example），compose 里的写法是

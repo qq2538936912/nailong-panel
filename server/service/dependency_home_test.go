@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 // 这一组用例锁的是 v3.0.7 修的那个 bug：容器配了 PUID/PGID 降权之后，
-// 面板进程拿到的 HOME 要么不存在（su-exec 按 passwd 覆写成从没被创建过的 /home/daidai），
+// 面板进程拿到的 HOME 要么不存在（su-exec 按 passwd 覆写成从没被创建过的 /home/panel），
 // 要么属于 root（gosu 保持 Docker 注入的 /root）。两种情况下 npm 的 cache、.npmrc
 // 与 pip 的 pip.conf 都写不进去，装依赖必报 EACCES。
 //
@@ -88,10 +88,10 @@ func TestRedirectHomeEnvReplacesHomeAndCache(t *testing.T) {
 	home := filepath.Join(t.TempDir(), ".home")
 	env := redirectHomeEnv([]string{
 		"PATH=/usr/bin",
-		"HOME=/home/daidai",
+		"HOME=/home/panel",
 		"npm_config_cache=/root/.npm",
 		"NOT_A_KV_PAIR",
-	}, home, "/home/daidai")
+	}, home, "/home/panel")
 
 	wantHome := "HOME=" + home
 	wantCache := "npm_config_cache=" + filepath.Join(home, ".npm")
@@ -104,7 +104,7 @@ func TestRedirectHomeEnvReplacesHomeAndCache(t *testing.T) {
 
 	// 旧取值必须被剔掉，不能靠 os/exec 的去重语义兜底。
 	for _, entry := range env {
-		if entry == "npm_config_cache=/root/.npm" || entry == "HOME=/home/daidai" {
+		if entry == "npm_config_cache=/root/.npm" || entry == "HOME=/home/panel" {
 			t.Fatalf("旧的不可写取值必须被剔除，env=%v", env)
 		}
 	}

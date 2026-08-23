@@ -44,7 +44,7 @@ export const DEMO_PANEL_VERSION = String(import.meta.env.VITE_DEMO_VERSION || ''
  * 给一个取不到的地址就是一个破图（同 fixtures/business.ts 里 avatar_url 的处理）。
  */
 const DEMO_PANEL_SETTINGS: PanelSettingsPayload = {
-  panel_title: '呆呆面板',
+  panel_title: '面板',
   panel_icon: '',
 }
 

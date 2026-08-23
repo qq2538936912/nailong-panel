@@ -56,8 +56,8 @@ const sourceLabel = computed(() => {
   switch (props.source) {
     case 'qinglong':
       return '青龙备份'
-    case 'daidai-panel':
-      return '呆呆面板备份'
+    case 'panel':
+      return '面板备份'
     default:
       return props.source ? `${props.source} 备份` : '面板备份'
   }

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestTaskSuccessExitCodesCreateUpdateCopyAndExport(t *testing.T) {

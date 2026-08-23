@@ -393,7 +393,7 @@ function handleSubmit() {
                 <code>export VAR=</code>，不要用 <code>unset VAR</code>。
               </li>
               <li>
-                <code>TZ</code> 和所有 <code>DAIDAI_</code> 开头的变量属于面板运行时契约（面板时区、通知渠道绑定、脚本令牌等），
+                <code>TZ</code> 和所有 <code>PANEL_</code> 开头的变量属于面板运行时契约（面板时区、通知渠道绑定、脚本令牌等），
                 在前置脚本里改了不会生效，任务日志里会写明被忽略了哪些。
               </li>
               <li>

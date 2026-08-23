@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 const (
@@ -72,12 +72,12 @@ func ResolvePanelServiceName() string {
 	}
 
 	if database.DB == nil {
-		return "daidai-panel"
+		return "panel"
 	}
 
 	name := strings.TrimSpace(model.GetRegisteredConfig("panel_service_name"))
 	if name == "" {
-		return "daidai-panel"
+		return "panel"
 	}
 	return name
 }

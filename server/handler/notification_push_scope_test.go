@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 这一组用例补的是「广播语义」这块长期的测试真空。

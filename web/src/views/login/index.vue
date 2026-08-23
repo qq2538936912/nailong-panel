@@ -516,7 +516,7 @@ const themeIcon = computed(() => (themeStore.isDark ? Sunny : Moon));
         <template v-else>
           <div class="login-header">
             <div class="login-logo">
-              <img src="/favicon-512.webp" alt="呆呆面板" width="48" height="48" />
+              <img src="/favicon-512.webp" alt="面板" width="48" height="48" />
             </div>
             <h2>{{ titleText }}</h2>
             <p>{{ subtitleText }}</p>
@@ -588,7 +588,7 @@ const themeIcon = computed(() => (themeStore.isDark ? Sunny : Moon));
           </p>
 
           <div class="login-version">
-            呆呆面板{{ panelVersion ? ` v${panelVersion}` : "" }}
+            面板{{ panelVersion ? ` v${panelVersion}` : "" }}
           </div>
         </template>
       </div>

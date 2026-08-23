@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/netutil"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/netutil"
 
 	"gorm.io/gorm"
 )

@@ -58,7 +58,7 @@ jobs:
       # 里那些静态字符串断言只能防住关键行被删掉，防不住 shell 逻辑写错。
       #
       # 这一步把 entrypoint.sh 原样跑起来（只桩掉 nginx / find / su-exec / gosu /
-      # daidai-server），验证八种 PUID/PGID 组合下的最终 uid、gid、HOME 指向、
+      # panel-server），验证八种 PUID/PGID 组合下的最终 uid、gid、HOME 指向、
       # 「HOME 到底能不能写」，以及只读数据目录下有没有给出友好诊断。
       # 需要 root：要建用户、chown、用 setpriv 降权。
       #
@@ -101,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d dist/assets
-          if grep -rl '__DAIDAI_DEMO_MOCK__' dist/assets; then
+          if grep -rl '__PANEL_DEMO_MOCK__' dist/assets; then
             echo "::error::发布版产物里混进了 Demo mock 代码，请检查 web/src/demo 的引用方式是否仍是动态 import + VITE_DEMO 守卫"
             exit 1
           fi
@@ -196,7 +196,7 @@ jobs:
         run: |
           set -euo pipefail
           test -d dist/assets
-          if ! grep -rl '__DAIDAI_DEMO_MOCK__' dist/assets; then
+          if ! grep -rl '__PANEL_DEMO_MOCK__' dist/assets; then
             echo "::error::Demo 产物里找不到 mock 哨兵。要么 mock 层没被打进去（演示站会真打网络），要么哨兵被改名/被 tree-shake 掉，此时发布版那条门禁也已失效"
             exit 1
           fi
@@ -218,15 +218,15 @@ jobs:
 
       # 子路径部署 × 自托管字体的组合验证。
       # index.html 里写的是 /fonts/fonts.css，要靠 Vite 按 --base 重写成
-      # /daidai-panel/fonts/fonts.css。漏了重写就会打到 github.io 站点根上 404，
+      # /panel/fonts/fonts.css。漏了重写就会打到 github.io 站点根上 404，
       # 而 font-display: swap 让这件事【静默】发生：页面不白屏、Console 不报错，
       # 只是字形不对 —— 一轮人工验收基本发现不了，所以必须由机器守。
       - name: 断言 Demo 产物的字体引用带 base 前缀
         working-directory: web
         run: |
           set -euo pipefail
-          if ! grep -q '/daidai-panel/fonts/fonts.css' dist/index.html; then
-            echo "::error::Demo 产物 index.html 里的字体样式表没带 /daidai-panel/ 前缀，线上会 404 并静默退回系统字体"
+          if ! grep -q '/panel/fonts/fonts.css' dist/index.html; then
+            echo "::error::Demo 产物 index.html 里的字体样式表没带 /panel/ 前缀，线上会 404 并静默退回系统字体"
             exit 1
           fi
           test -f dist/fonts/fonts.css

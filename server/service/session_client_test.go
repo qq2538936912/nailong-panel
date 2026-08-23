@@ -5,7 +5,7 @@ import "testing"
 func TestDetectSessionClientInfoBuildsAppDisplayNameFromHeaders(t *testing.T) {
 	info := DetectSessionClientInfo(
 		"app",
-		"daidai-panel-app",
+		"panel-app",
 		"android",
 		"Xiaomi 15 Pro",
 		"umi",

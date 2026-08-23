@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // GitHub Pages 没有 docker/nginx.conf 里 `try_files $uri /index.html` 的等价物：
-// 访客直接打开深链（如 /daidai-panel/tasks）或在深链上刷新时，Pages 找不到同名文件，
+// 访客直接打开深链（如 /panel/tasks）或在深链上刷新时，Pages 找不到同名文件，
 // 会去取站点根的 404.html。这份 404.html 必须就是 SPA 的入口页，前端路由才能接管。
 //
 // 为什么不是把 404.html 放进 web/public/：

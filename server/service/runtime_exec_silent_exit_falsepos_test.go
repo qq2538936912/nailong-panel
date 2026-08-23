@@ -74,16 +74,16 @@ func TestSilentExitProbeExemptionsWorkOnCommonIdioms(t *testing.T) {
 		})
 
 		// 通道一：脚本末尾声明「我跑完了」。
-		t.Run(tc.name+"/daidaiDone 可豁免", func(t *testing.T) {
-			out, exitCode := runNodeWithProbe(t, nodeBin, tc.script+"\nglobalThis.daidaiDone?.();\n", true)
+		t.Run(tc.name+"/panelDone 可豁免", func(t *testing.T) {
+			out, exitCode := runNodeWithProbe(t, nodeBin, tc.script+"\nglobalThis.panelDone?.();\n", true)
 			if strings.Contains(out, "[任务疑似半路结束]") || exitCode != 0 {
-				t.Fatalf("daidaiDone 没能豁免，exit=%d output=%q", exitCode, out)
+				t.Fatalf("panelDone 没能豁免，exit=%d output=%q", exitCode, out)
 			}
 		})
 
 		// 通道二：给这个任务单独配环境变量关掉。
 		t.Run(tc.name+"/任务级环境变量可豁免", func(t *testing.T) {
-			out, exitCode := runNodeWithProbeEnv(t, nodeBin, tc.script, true, []string{"DAIDAI_SILENT_EXIT_DETECT=0"})
+			out, exitCode := runNodeWithProbeEnv(t, nodeBin, tc.script, true, []string{"PANEL_SILENT_EXIT_DETECT=0"})
 			if strings.Contains(out, "[任务疑似半路结束]") || exitCode != 0 {
 				t.Fatalf("任务级开关没能豁免，exit=%d output=%q", exitCode, out)
 			}
@@ -91,7 +91,7 @@ func TestSilentExitProbeExemptionsWorkOnCommonIdioms(t *testing.T) {
 	}
 }
 
-// daidaiDone 挂在 globalThis 上，脚本里如果出现同名赋值不能把脚本打断。
+// panelDone 挂在 globalThis 上，脚本里如果出现同名赋值不能把脚本打断。
 func TestSilentExitProbeDaidaiDoneIsNotBrittle(t *testing.T) {
 	nodeBin, err := exec.LookPath("node")
 	if err != nil {
@@ -100,7 +100,7 @@ func TestSilentExitProbeDaidaiDoneIsNotBrittle(t *testing.T) {
 
 	// configurable:true 才允许被重定义；若写成 false，这行赋值会抛 TypeError。
 	script := `
-globalThis.daidaiDone = function () {};
+globalThis.panelDone = function () {};
 console.log('脚本没被打断');
 `
 	out, exitCode := runNodeWithProbe(t, nodeBin, script, true)
@@ -126,7 +126,7 @@ const childFile = path.join(__dirname, 'child.js');
 fs.writeFileSync(childFile, 'new Promise(() => {});\nconsole.log("子进程跑完");\n');
 const child = fork(childFile, [], { stdio: 'inherit' });
 child.on('exit', () => { console.log('父进程跑完'); });
-globalThis.daidaiDone?.();
+globalThis.panelDone?.();
 `
 	out, exitCode := runNodeWithProbe(t, nodeBin, script, true)
 	if !strings.Contains(out, "子进程跑完") || !strings.Contains(out, "父进程跑完") {

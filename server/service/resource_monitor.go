@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 var panelStartTime = time.Now()

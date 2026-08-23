@@ -1,6 +1,6 @@
 #!/system/bin/sh
 ##########################################################################
-# 呆呆面板 Magisk / KernelSU / APatch 模块安装脚本
+# 面板 Magisk / KernelSU / APatch 模块安装脚本
 #
 # 方案：借鉴 v2.0.5 的容器方案
 #   1. 释放 rurima (静态 arm64) 到 /system/bin （由 Magisk 魔挂）
@@ -8,9 +8,9 @@
 #        alpine —— Alpine 3.18 minirootfs（NJU 镜像站，musl）
 #        debian —— CI 自建的 Debian bookworm 精简 rootfs（Release 资产，glibc）
 #   3. 通过 rurima ruri 进入容器，用 apk / apt-get 安装 python3 / nodejs / npm / git / curl / bash 等
-#   4. 面板后端 daidai-server (CGO_ENABLED=0 静态 Go 二进制) 放进容器 /usr/local/bin/
-#   5. 运行时由 service.sh 通过 rurima ruri 进入容器启动 daidai-server，
-#      单端口 5700 由 daidai-server 直接托管 API + 前端静态文件 (web_dir)
+#   4. 面板后端 panel-server (CGO_ENABLED=0 静态 Go 二进制) 放进容器 /usr/local/bin/
+#   5. 运行时由 service.sh 通过 rurima ruri 进入容器启动 panel-server，
+#      单端口 5700 由 panel-server 直接托管 API + 前端静态文件 (web_dir)
 ##########################################################################
 
 SKIPUNZIP=0
@@ -19,13 +19,13 @@ REPLACE=""
 # ---- 基础变量 ------------------------------------------------------------
 export PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH:$MODPATH/system/bin
 
-# rootfs 优先使用 /data/daidai（若历史已存在），否则 /data/local/daidai
-export rootfs=/data/local/daidai
-if [ -d "/data/daidai" ]; then
-  export rootfs=/data/daidai
+# rootfs 优先使用 /data/panel（若历史已存在），否则 /data/local/panel
+export rootfs=/data/local/panel
+if [ -d "/data/panel" ]; then
+  export rootfs=/data/panel
 fi
 
-MODID=daidai-panel
+MODID=panel
 PERSIST_DIR=/data/adb/$MODID
 UPDATE_FLAG="$PERSIST_DIR/.updated_from"
 INSTALL_BACKUP_DIR="$PERSIST_DIR/update-data-backup"
@@ -72,7 +72,7 @@ if [ "$FLAVOR" = "debian" ]; then
   CTR_BASHRC="/etc/bash.bashrc"
   # rootfs 与面板版本没有任何耦合，所以用 releases/latest/download/ 这个固定跳转地址，
   # 不拼版本号：URL 可硬编码，本地构建一个尚未发版的版本也照样装得上。
-  ROOTFS_URL="https://github.com/linzixuanzz/daidai-panel/releases/latest/download/daidai-debian-rootfs-arm64.tar.gz"
+  ROOTFS_URL="https://gitee.com/xiaofeilong2/panel/releases/latest/download/panel-debian-rootfs-arm64.tar.gz"
 else
   CTR_SHELL=/bin/ash
   CTR_NAME="Alpine 3.18"
@@ -150,14 +150,14 @@ if [ "$API" -lt 26 ]; then
   ui_print "! 安装过程中会实际探测一次，起不来会当场中止并说明原因。"
 fi
 
-# ---- 挑选 daidai-server 二进制 ------------------------------------------
+# ---- 挑选 panel-server 二进制 ------------------------------------------
 # 架构检查已经保证只剩 arm64。build.sh 仍保留 amd64 / all 构建能力（属于构建
 # 基建，将来真有了 x86_64 的 rurima 只需改回 CI 参数和上面的架构检查），
 # 所以下面照旧清理可能存在的 amd64 产物。
 BIN_SUFFIX="arm64"
 
-if [ ! -f "$MODPATH/system/bin/daidai-server-${BIN_SUFFIX}" ]; then
-  abort "! 模块包缺少 system/bin/daidai-server-${BIN_SUFFIX}，无法安装"
+if [ ! -f "$MODPATH/system/bin/panel-server-${BIN_SUFFIX}" ]; then
+  abort "! 模块包缺少 system/bin/panel-server-${BIN_SUFFIX}，无法安装"
 fi
 
 # ---- 容器运行时前置检查 --------------------------------------------------
@@ -171,7 +171,7 @@ if [ ! -f "$RURIMA" ]; then
   ui_print "!"
   ui_print "! 没有它就无法创建 ${CTR_NAME} 容器，面板不可能运行。"
   ui_print "! 多半是 ZIP 下载不完整，或被解压 / 重新打包工具破坏了。"
-  ui_print "! 请从 GitHub Release 重新完整下载 daidai-panel-magisk ZIP 后再装。"
+  ui_print "! 请从 GitHub Release 重新完整下载 panel-magisk ZIP 后再装。"
   abort "! 安装已中止（未对设备上的任何数据做改动）"
 fi
 chmod +x "$RURIMA" 2>/dev/null
@@ -181,9 +181,9 @@ if [ ! -x "$RURIMA" ]; then
   abort "! 安装已中止（未对设备上的任何数据做改动）"
 fi
 
-mv -f "$MODPATH/system/bin/daidai-server-${BIN_SUFFIX}" "$MODPATH/system/bin/daidai-server"
-[ -f "$MODPATH/system/bin/daidai-server-arm64" ] && rm -f "$MODPATH/system/bin/daidai-server-arm64"
-[ -f "$MODPATH/system/bin/daidai-server-amd64" ] && rm -f "$MODPATH/system/bin/daidai-server-amd64"
+mv -f "$MODPATH/system/bin/panel-server-${BIN_SUFFIX}" "$MODPATH/system/bin/panel-server"
+[ -f "$MODPATH/system/bin/panel-server-arm64" ] && rm -f "$MODPATH/system/bin/panel-server-arm64"
+[ -f "$MODPATH/system/bin/panel-server-amd64" ] && rm -f "$MODPATH/system/bin/panel-server-amd64"
 
 # ddp CLI（如果有）
 if [ -f "$MODPATH/system/bin/ddp-${BIN_SUFFIX}" ]; then
@@ -202,7 +202,7 @@ else
 fi
 
 ui_print ""
-ui_print "------------呆呆面板安装环境----------"
+ui_print "------------面板安装环境----------"
 ui_print "容器基础系统：$CTR_NAME ($FLAVOR)"
 ui_print "设备：$(getprop ro.product.model)"
 ui_print "系统版本：$(getprop ro.build.version.release)"
@@ -224,7 +224,7 @@ new_ver=$(grep '^versionCode=' $MODPATH/module.prop 2>/dev/null | cut -d'=' -f2)
 if [ -d "$INSTALL_BACKUP_DIR" ]; then
   backup_count=$(ls -1 "$INSTALL_BACKUP_DIR/" 2>/dev/null | wc -l)
   if [ "$backup_count" -gt 0 ]; then
-    if [ -f "$INSTALL_IN_PROGRESS_FLAG" ] || [ ! -d "$rootfs/app/Dumb-Panel" ]; then
+    if [ -f "$INSTALL_IN_PROGRESS_FLAG" ] || [ ! -d "$rootfs/app/Panel" ]; then
       INSTALL_BACKUP_READY=1
       ui_print "- 检测到上次安装中断留下的数据备份"
       ui_print "- 本次安装完成后会自动恢复 $INSTALL_BACKUP_DIR ($backup_count 项)"
@@ -234,7 +234,7 @@ if [ -d "$INSTALL_BACKUP_DIR" ]; then
   fi
 fi
 
-if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Dumb-Panel" ]; then
+if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Panel" ]; then
   if [ "$current_ver" != "0" ] && [ "$current_ver" != "$new_ver" ] 2>/dev/null; then
     ui_print "- 检测到版本变更: $current_ver -> $new_ver"
   else
@@ -247,7 +247,7 @@ if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Dumb-Panel" ]; then
   fi
   mkdir -p "$INSTALL_BACKUP_DIR" || abort "! 无法创建数据备份目录 $INSTALL_BACKUP_DIR"
   # Magisk 安装器的 TMPDIR 经常落在 /dev/tmp，老设备空间很小；完整用户数据改放 /data/adb 持久化目录，避免更新时因 /dev/tmp 不足失败。
-  if ! cp -rf "$rootfs/app/Dumb-Panel/." "$INSTALL_BACKUP_DIR/" 2>/dev/null; then
+  if ! cp -rf "$rootfs/app/Panel/." "$INSTALL_BACKUP_DIR/" 2>/dev/null; then
     abort "! 用户数据备份失败（$INSTALL_BACKUP_DIR 所在 /data 空间可能不足），已中止安装以保护数据"
   fi
   backup_count=$(ls -1 "$INSTALL_BACKUP_DIR/" 2>/dev/null | wc -l)
@@ -273,7 +273,7 @@ if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Dumb-Panel" ]; then
   fi
   mkdir -p "$PERSIST_BACKUP_DIR"
   snapshot_items=0
-  for item in daidai.db daidai.db-shm daidai.db-wal scripts backups .jwt_secret config.yaml panel.log; do
+  for item in panel.db panel.db-shm panel.db-wal scripts backups .jwt_secret config.yaml panel.log; do
     src="$INSTALL_BACKUP_DIR/$item"
     if [ -e "$src" ]; then
       if cp -rf "$src" "$PERSIST_BACKUP_DIR/" 2>/dev/null; then
@@ -283,16 +283,16 @@ if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Dumb-Panel" ]; then
   done
   snapshot_size=$(du -sh "$PERSIST_BACKUP_DIR" 2>/dev/null | awk '{print $1}')
   cat > "$PERSIST_BACKUP_DIR/BACKUP_INFO.txt" <<META
-呆呆面板 - 上次更新前数据快照
+面板 - 上次更新前数据快照
 ================================================================
 备份时间: $(date '+%Y-%m-%d %H:%M:%S')
 源版本:   $current_ver
 目标版本: $new_ver
-源路径:   $rootfs/app/Dumb-Panel
+源路径:   $rootfs/app/Panel
 项目数:   $snapshot_items
 总大小:   ${snapshot_size:-?}
 
-包含: daidai.db (+wal/-shm)、scripts/、backups/、.jwt_secret、config.yaml、panel.log
+包含: panel.db (+wal/-shm)、scripts/、backups/、.jwt_secret、config.yaml、panel.log
 跳过: logs/、deps/（体积大且可重建，省存储空间）
 
 恢复方法（任选其一）：
@@ -303,7 +303,7 @@ if [ "$INSTALL_BACKUP_READY" != "1" ] && [ -d "$rootfs/app/Dumb-Panel" ]; then
     # 先停面板（点模块卡片的「运行 / Action」按钮，或用下面这条等价命令）。
     # 别用 pkill：存活守护 60 秒内就会把面板拉回来。
     su -c "sh /data/adb/modules/$MODID/action.sh"
-    su -c "cp -rf $PERSIST_BACKUP_DIR/. $rootfs/app/Dumb-Panel/"
+    su -c "cp -rf $PERSIST_BACKUP_DIR/. $rootfs/app/Panel/"
     # 再点一次动作按钮启动，或重启设备：
     su -c "sh /data/adb/modules/$MODID/action.sh"
 
@@ -324,7 +324,7 @@ if [ -e "$rootfs/sys/kernel" ] && [ "$current_ver" = "0" ]; then
 fi
 
 # ---- 先让存活守护自退 ----------------------------------------------------
-# 下面这段停容器的老写法只 pkill 了 daidai-server 和 ruri，**打不到守护子 shell**
+# 下面这段停容器的老写法只 pkill 了 panel-server 和 ruri，**打不到守护子 shell**
 # —— 它的 argv 继承自 service.sh。紧接着几行就要把整个 rootfs 删掉重装，
 # 也就是说刷 zip 的这几分钟里，守护仍在每轮进容器抢同一个 rootfs。
 #
@@ -356,7 +356,7 @@ sleep 12
 if [ -d "$rootfs" ]; then
   # $RURIMA 已在上面做过存在性 + 可执行性检查
   "$RURIMA" ruri -w -U "$rootfs" 2>/dev/null || true
-  pkill -f daidai-server 2>/dev/null || true
+  pkill -f panel-server 2>/dev/null || true
   pkill -f "ruri.*$rootfs" 2>/dev/null || true
 
   # 按 /proc/<pid>/root 归属再清一遍，上面两条 pkill 不够。
@@ -392,12 +392,12 @@ fi
 
 # ---- 清掉旧 rootfs 重装 -------------------------------------------------
 # 安全检查：如果面板数据存在但备份未完成，禁止继续
-if [ -d "$rootfs/app/Dumb-Panel" ] && [ "$INSTALL_BACKUP_READY" != "1" ]; then
+if [ -d "$rootfs/app/Panel" ] && [ "$INSTALL_BACKUP_READY" != "1" ]; then
   # 这条路径上 rootfs 还完好，用户原来的面板本来是能跑的。
   # 上面为了让守护自退而写下的停止开关必须在这里撤掉，
   # 否则「中止一次安装」= 永久停机（重启也不会自动起来），而且完全没有线索。
   rm -f "$PERSIST_DIR/stopped" 2>/dev/null
-  abort "! 面板数据存在但未成功备份，已中止安装以保护数据。请重试或手动备份 $rootfs/app/Dumb-Panel"
+  abort "! 面板数据存在但未成功备份，已中止安装以保护数据。请重试或手动备份 $rootfs/app/Panel"
 fi
 if [ "$INSTALL_BACKUP_READY" = "1" ]; then
   echo "$new_ver" > "$INSTALL_IN_PROGRESS_FLAG" 2>/dev/null || true
@@ -455,7 +455,7 @@ rm -f $MODPATH/rootfs.tar.gz 2>/dev/null
 # 阻塞 —— 这正是硬闸门敢从 API 24 降到 23 的技术依据。
 # 反过来，SELinux 策略和挂载限制无法靠静态分析排除（ruri 的挂载落在宿主全局
 # mount namespace，上面那段 umount 循环就是证据），只能靠这次实际探测发现。
-CONTAINER_PROBE_TOKEN="DAIDAI_CONTAINER_PROBE_OK"
+CONTAINER_PROBE_TOKEN="PANEL_CONTAINER_PROBE_OK"
 CONTAINER_PROBE_ERR="$TMPDIR/container-probe.err"
 
 ui_print "- 正在探测容器运行能力..."
@@ -465,7 +465,7 @@ ui_print "- 正在探测容器运行能力..."
 #
 # 这里的 shell 【必须】走 $CTR_SHELL，不能写死 /bin/ash：Debian 里没有 ash，
 # 写死的话 Debian 版会在这一步 100% 失败，而且报错完全指不到真正的原因。
-probe_out=$("$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" -c 'echo "DAIDAI_CONTAINER""_PROBE_OK"' 2>"$CONTAINER_PROBE_ERR")
+probe_out=$("$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" -c 'echo "PANEL_CONTAINER""_PROBE_OK"' 2>"$CONTAINER_PROBE_ERR")
 
 case "$probe_out" in
   *"$CONTAINER_PROBE_TOKEN"*)
@@ -593,14 +593,14 @@ fi
 # 后面账号 / SSH / 镜像源 / 目录初始化那一大段两个 flavor 完全一致，
 # 用追加(>>)的方式只保留一份 —— 不给两个 flavor 分叉留任何空间。
 mkdir -p "$rootfs/tmp"
-DEPS_SCRIPT="$rootfs/tmp/daidai-install-deps.sh"
+DEPS_SCRIPT="$rootfs/tmp/panel-install-deps.sh"
 
 if [ "$FLAVOR" = "debian" ]; then
   cat > "$DEPS_SCRIPT" << 'DEPS_PKG_DEBIAN_EOF'
 #!/bin/bash
 export HOME=/root
 export LANG=C.UTF-8
-export DAIDAI_DIR=/app/Dumb-Panel
+export PANEL_DIR=/app/Panel
 export DEBIAN_FRONTEND=noninteractive
 
 # apt 加固配置。写在任何 apt-get 调用之前，且【装完不删】——
@@ -618,7 +618,7 @@ export DEBIAN_FRONTEND=noninteractive
 #   附加组，加了也不生效，只会把问题掩盖掉。
 # ForceIPv4：手机上常见「有 IPv6 地址但出不去」，apt 会先试 AAAA 再慢慢回落。
 mkdir -p /etc/apt/apt.conf.d
-cat > /etc/apt/apt.conf.d/99-daidai-android << 'APTCONF_EOF'
+cat > /etc/apt/apt.conf.d/99-panel-android << 'APTCONF_EOF'
 APT::Sandbox::User "root";
 Acquire::Retries "3";
 Acquire::http::Timeout "30";
@@ -636,7 +636,7 @@ APTCONF_EOF
 # 就得知道「上一个源叫什么」，每多一个候选就多一层状态；从原始副本重改最省事。
 for _src in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do
   [ -f "$_src" ] || continue
-  [ -f "$_src.daidai-orig" ] || cp -f "$_src" "$_src.daidai-orig"
+  [ -f "$_src.panel-orig" ] || cp -f "$_src" "$_src.panel-orig"
 done
 
 # 顺便把 https 钉成 http：此刻 ca-certificates 还没装（debian-slim 不自带根证书），
@@ -645,8 +645,8 @@ done
 use_mirror() {
   _host="$1"
   for _src in /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources; do
-    [ -f "$_src.daidai-orig" ] || continue
-    cp -f "$_src.daidai-orig" "$_src"
+    [ -f "$_src.panel-orig" ] || continue
+    cp -f "$_src.panel-orig" "$_src"
     if [ "$_host" != "deb.debian.org" ]; then
       sed -i -e "s|deb.debian.org|$_host|g" \
              -e "s|security.debian.org|$_host|g" "$_src"
@@ -660,21 +660,21 @@ use_mirror() {
 _mirror_ok=0
 _mirror_used=""
 for _mirror in mirrors.nju.edu.cn mirrors.tuna.tsinghua.edu.cn mirrors.aliyun.com deb.debian.org; do
-  echo "[daidai] 正在尝试镜像源: $_mirror"
+  echo "[panel] 正在尝试镜像源: $_mirror"
   use_mirror "$_mirror"
   if apt-get update; then
     _mirror_ok=1
     _mirror_used="$_mirror"
-    echo "[daidai] 镜像源可用: $_mirror"
+    echo "[panel] 镜像源可用: $_mirror"
     break
   fi
-  echo "[daidai] 镜像源不可用，换下一个: $_mirror"
+  echo "[panel] 镜像源不可用，换下一个: $_mirror"
 done
 if [ "$_mirror_ok" = "1" ]; then
-  echo "MIRROR=$_mirror_used" > /tmp/daidai-deps-status
+  echo "MIRROR=$_mirror_used" > /tmp/panel-deps-status
 else
-  echo "MIRROR=FAIL" > /tmp/daidai-deps-status
-  echo "[daidai] 所有候选镜像源的 apt-get update 都失败了"
+  echo "MIRROR=FAIL" > /tmp/panel-deps-status
+  echo "[panel] 所有候选镜像源的 apt-get update 都失败了"
 fi
 
 # 装包期间禁止 dpkg 的 postinst 去拉起服务。
@@ -695,7 +695,7 @@ chmod +x /usr/sbin/policy-rc.d
 # 装完不把 sources 切回 https：apt 的包本来就有 GPG 签名，走 http 是 Debian 官方
 # 推荐做法，安全性不打折；少两轮 apt-get update，也少一处可能失败的分支。
 apt-get install -y --no-install-recommends ca-certificates || \
-  echo "[daidai] ca-certificates 安装失败，pip / npm / git 的 https 可能不可用"
+  echo "[panel] ca-certificates 安装失败，pip / npm / git 的 https 可能不可用"
 
 # 与 Alpine 版逐条对齐（左 Alpine / 右 Debian）：
 #   build-base -> build-essential      py3-pip -> python3-pip
@@ -725,7 +725,7 @@ apt-get install -y --no-install-recommends \
 # 实际上 postinst 里的「建 sshd 特权分离用户」和「ssh-keygen -A」根本没跑过 ——
 # 表现就是 SSH 端口压根没人监听，而安装界面一路打印「安装完成」。
 if ! dpkg-query -W -f='${db:Status-Abbrev}' openssh-server 2>/dev/null | grep -q '^ii'; then
-  echo "[daidai] openssh-server 未安装完整，正在重试"
+  echo "[panel] openssh-server 未安装完整，正在重试"
   apt-get install -y --no-install-recommends --reinstall openssh-server || true
   dpkg --configure -a || true
 fi
@@ -733,7 +733,7 @@ fi
 rm -f /usr/sbin/policy-rc.d
 
 # 缓存留着只会白占几百 MB，手机内部存储很贵。
-# 注意【不要】顺手删 /etc/apt/apt.conf.d/99-daidai-android：
+# 注意【不要】顺手删 /etc/apt/apt.conf.d/99-panel-android：
 # 面板运行期装 Linux 依赖用的是同一个容器里的 apt，那份配置对它同样有效，
 # 删了等于每次运行期装包又回到没有 Retries / 没有 Sandbox 覆写的裸状态。
 apt-get clean
@@ -744,7 +744,7 @@ else
 #!/bin/ash
 export HOME=/root
 export LANG=C.UTF-8
-export DAIDAI_DIR=/app/Dumb-Panel
+export PANEL_DIR=/app/Panel
 
 # 切到 NJU Alpine 镜像源
 sed -i 's|dl-cdn.alpinelinux.org|mirrors.nju.edu.cn|g' /etc/apk/repositories
@@ -789,7 +789,7 @@ case "$(awk -F: -v u="${SSH_USER}" '$1==u{print $2}' /etc/shadow 2>/dev/null)" i
   *)
     _pw_hash=$(openssl passwd -6 "${SSH_PASSWORD}" 2>/dev/null)
     if [ -n "$_pw_hash" ]; then
-      echo "[daidai] chpasswd 未写入密码哈希，改用 usermod -p 兜底"
+      echo "[panel] chpasswd 未写入密码哈希，改用 usermod -p 兜底"
       usermod -p "$_pw_hash" "${SSH_USER}" 2>/dev/null || true
     fi
     ;;
@@ -845,11 +845,11 @@ fi
 
 # 常用镜像源
 npm config set registry https://registry.npmmirror.com 2>/dev/null
-git config --global user.email "daidai@users.noreply.github.com"
-git config --global user.name "daidai"
+git config --global user.email "panel@users.noreply.gitee.com"
+git config --global user.name "panel"
 git config --global http.postBuffer 524288000
 
-mkdir -p /app /app/web /app/Dumb-Panel
+mkdir -p /app /app/web /app/Panel
 DEPS_COMMON_EOF
 
 chmod +x "$DEPS_SCRIPT" 2>/dev/null
@@ -871,7 +871,7 @@ chmod +x "$DEPS_SCRIPT" 2>/dev/null
 DNS_PROBE_VERDICT="skipped"
 if [ "$FLAVOR" = "debian" ]; then
   ui_print "- 正在探测容器内 DNS 解析能力..."
-  cat > "$rootfs/tmp/daidai-dns-probe.sh" << 'DNS_PROBE_EOF'
+  cat > "$rootfs/tmp/panel-dns-probe.sh" << 'DNS_PROBE_EOF'
 #!/bin/bash
 # 输出固定的 KEY=VALUE 行，宿主侧按前缀解析，不依赖任何语言/顺序
 probe_host="mirrors.nju.edu.cn"
@@ -896,10 +896,10 @@ else
   echo "PROBE_APT=FAIL(uid=$apt_uid)"
 fi
 DNS_PROBE_EOF
-  chmod +x "$rootfs/tmp/daidai-dns-probe.sh" 2>/dev/null
+  chmod +x "$rootfs/tmp/panel-dns-probe.sh" 2>/dev/null
   DNS_PROBE_OUT="$TMPDIR/dns-probe.txt"
   : > "$DNS_PROBE_OUT"
-  "$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/daidai-dns-probe.sh \
+  "$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/panel-dns-probe.sh \
     > "$DNS_PROBE_OUT" 2>/dev/null || true
 
   probe_dns=$(grep '^PROBE_DNS=' "$DNS_PROBE_OUT" 2>/dev/null | cut -d= -f2-)
@@ -937,7 +937,7 @@ DNS_PROBE_EOF
   esac
 fi
 
-"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/daidai-install-deps.sh
+"$RURIMA" ruri -p -N -S -A "$rootfs" "$CTR_SHELL" /tmp/panel-install-deps.sh
 
 # ---- 验证关键运行时真的装上了 --------------------------------------------
 # 不要只信包管理器的退出码：apk add / apt-get install 都可能部分成功（个别包 404、
@@ -980,8 +980,8 @@ if [ -n "$missing_runtimes" ]; then
   # Alpine 分支的文案与改动前逐字一致，不受这段影响。
   if [ "$FLAVOR" = "debian" ]; then
     deps_status=""
-    if [ -f "$rootfs/tmp/daidai-deps-status" ]; then
-      deps_status=$(grep '^MIRROR=' "$rootfs/tmp/daidai-deps-status" 2>/dev/null | cut -d= -f2-)
+    if [ -f "$rootfs/tmp/panel-deps-status" ]; then
+      deps_status=$(grep '^MIRROR=' "$rootfs/tmp/panel-deps-status" 2>/dev/null | cut -d= -f2-)
     fi
     case "$DNS_PROBE_VERDICT" in
       dns_down)
@@ -998,7 +998,7 @@ if [ -n "$missing_runtimes" ]; then
         ui_print "!"
         ui_print "! 判定：root 能解析域名，但 apt 的降权用户 _apt 不能 —— 是内核按 uid"
         ui_print "! 拦掉了网络（老内核的 PARANOID_NETWORK 策略）。本次安装已写入"
-        ui_print "! /etc/apt/apt.conf.d/99-daidai-android 让 apt 不再降权，若仍失败，"
+        ui_print "! /etc/apt/apt.conf.d/99-panel-android 让 apt 不再降权，若仍失败，"
         ui_print "! 请把上面这段判别输出反馈给开发者。"
         ;;
       *)
@@ -1087,20 +1087,20 @@ export HOME=/root
 export LANG=C.UTF-8
 export SHELL=/bin/bash
 export PS1='\u@\h:\w\$ '
-export DAIDAI_DIR=/app/Dumb-Panel
-export DAIDAI_MAGISK_MODULE=1
-export DAIDAI_ANDROID_RUNTIME_BIN_DIR=/data/adb/daidai-panel/bin
-export PATH=/data/adb/daidai-panel/bin/python/bin:/data/adb/daidai-panel/bin/node/bin:/data/adb/daidai-panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PANEL_DIR=/app/Panel
+export PANEL_MAGISK_MODULE=1
+export PANEL_ANDROID_RUNTIME_BIN_DIR=/data/adb/panel/bin
+export PATH=/data/adb/panel/bin/python/bin:/data/adb/panel/bin/node/bin:/data/adb/panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 export NODE_PATH=/usr/local/lib/node_modules
 BASHRC_EOF
 
 # ---- 回填用户数据 -------------------------------------------------------
 if [ "$INSTALL_BACKUP_READY" = "1" ] && [ -d "$INSTALL_BACKUP_DIR" ]; then
   ui_print "- 正在恢复用户数据..."
-  mkdir -p "$rootfs/app/Dumb-Panel"
+  mkdir -p "$rootfs/app/Panel"
   for item in "$INSTALL_BACKUP_DIR"/* "$INSTALL_BACKUP_DIR"/.[!.]* "$INSTALL_BACKUP_DIR"/..?*; do
     [ -e "$item" ] || continue
-    cp -rf "$item" "$rootfs/app/Dumb-Panel/" 2>/dev/null || \
+    cp -rf "$item" "$rootfs/app/Panel/" 2>/dev/null || \
       abort "! 用户数据恢复失败：$(basename "$item") 无法复制回容器数据目录"
   done
   rm -rf "$INSTALL_BACKUP_DIR" 2>/dev/null
@@ -1121,7 +1121,7 @@ cp -f "$MODPATH/module.prop" "$PERSIST_DIR/module.prop" 2>/dev/null || true
 # ---- 默认端口配置（用户可编辑 ports.conf 自定义端口，重启模块后生效） ----
 if [ ! -f "$PERSIST_DIR/ports.conf" ]; then
   cat > "$PERSIST_DIR/ports.conf" << 'PCONF'
-# 呆呆面板端口配置 —— 修改后重启模块生效
+# 面板端口配置 —— 修改后重启模块生效
 #
 # PANEL_PORT: 面板 HTTP 端口（浏览器访问端口），默认 5700
 #             后端绑定的是 0.0.0.0:PANEL_PORT，局域网 / 穿透都能直连
@@ -1156,14 +1156,14 @@ CUR_SSH_PORT="${SSH_PORT:-22}"
 # 每次安装都重写，保证脚本里硬编码的 rootfs / MODID 与本次一致。
 cat > "$PERSIST_DIR/restore-last-update.sh" <<RESTORE
 #!/system/bin/sh
-# 呆呆面板 - 一键恢复"上次更新前"的数据快照。
-# 使用：su -c "sh /data/adb/daidai-panel/restore-last-update.sh"
+# 面板 - 一键恢复"上次更新前"的数据快照。
+# 使用：su -c "sh /data/adb/panel/restore-last-update.sh"
 set -e
 
 MODID=$MODID
 PERSIST_DIR=$PERSIST_DIR
 BACKUP_DIR="\$PERSIST_DIR/last-update-backup"
-ROOTFS_CANDIDATES="/data/daidai /data/local/daidai"
+ROOTFS_CANDIDATES="/data/panel /data/local/panel"
 
 log()  { echo "[restore] \$*"; }
 fail() { echo "[restore][FATAL] \$*" >&2; exit 1; }
@@ -1178,14 +1178,14 @@ fi
 # 找当前 rootfs
 ROOTFS=""
 for candidate in \$ROOTFS_CANDIDATES; do
-  if [ -d "\$candidate/app/Dumb-Panel" ] || [ -d "\$candidate/app" ]; then
+  if [ -d "\$candidate/app/Panel" ] || [ -d "\$candidate/app" ]; then
     ROOTFS="\$candidate"
     break
   fi
 done
 [ -n "\$ROOTFS" ] || fail "找不到 rootfs（试过：\$ROOTFS_CANDIDATES）；请确认模块已安装"
 
-TARGET="\$ROOTFS/app/Dumb-Panel"
+TARGET="\$ROOTFS/app/Panel"
 log "rootfs: \$ROOTFS"
 log "目标: \$TARGET"
 
@@ -1209,11 +1209,11 @@ fi
 # 必须先写停止开关再 kill：service.sh fork 的存活守护每分钟探活一次，
 # 光 pkill 的话 60 秒内面板就会被拉回来，恢复到一半的数据目录会被新进程接管。
 # 收尾时会把开关删掉。
-log "停止 daidai-server ..."
+log "停止 panel-server ..."
 mkdir -p "\$PERSIST_DIR" 2>/dev/null || true
 echo "stopped by restore-last-update.sh" > "\$PERSIST_DIR/stopped" 2>/dev/null || true
-pkill -f /usr/local/bin/daidai-server 2>/dev/null || true
-pkill -f daidai-server 2>/dev/null || true
+pkill -f /usr/local/bin/panel-server 2>/dev/null || true
+pkill -f panel-server 2>/dev/null || true
 sleep 12
 
 # 回拷（覆盖式 cp，但用 -a 保留属性；不删 TARGET 里的额外文件）
@@ -1258,5 +1258,5 @@ ui_print "- 重启后面板将自动启动，访问 http://127.0.0.1:${CUR_PANEL
 ui_print "- 端口配置: $PERSIST_DIR/ports.conf (PANEL_PORT=${CUR_PANEL_PORT}, SSH_PORT=${CUR_SSH_PORT})"
 ui_print "- SSH 连接: ssh ${SSH_USER:-root}@<设备IP> -p ${CUR_SSH_PORT} (默认密码: ${SSH_PASSWORD:-123456})"
 ui_print "- rootfs 位置: $rootfs"
-ui_print "- 数据目录:   $rootfs/app/Dumb-Panel"
+ui_print "- 数据目录:   $rootfs/app/Panel"
 ui_print ""

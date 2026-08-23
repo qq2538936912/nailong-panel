@@ -31,7 +31,7 @@ const DEMO_ROBOTS = 'index, follow'
  */
 function robotsMetaPlugin(isDemoBuild: boolean): Plugin {
   return {
-    name: 'daidai-robots-meta',
+    name: 'panel-robots-meta',
     transformIndexHtml: {
       // post：等 Vite 注入完脚本/样式再改，避免与其它 HTML 处理抢同一段文本。
       order: 'post',
@@ -46,7 +46,7 @@ function robotsMetaPlugin(isDemoBuild: boolean): Plugin {
           // 这里必须 throw 而不是 warn。静默失配的后果是「Demo 站带着 noindex 上线」，
           // 而让 Demo 能被收录正是这段代码存在的唯一理由，失效了却不报错等于白写。
           throw new Error(
-            '[daidai-robots-meta] 在 index.html 中找不到 name="robots" 的 meta。\n' +
+            '[panel-robots-meta] 在 index.html 中找不到 name="robots" 的 meta。\n' +
               `发布版应当保持 content="${RELEASE_ROBOTS}"；删掉这一行会让 Demo 构建失去可索引改写。`
           )
         }
@@ -123,14 +123,14 @@ function localMonacoAssetsPlugin(): Plugin {
  */
 function selfHostedFontsPlugin(): Plugin {
   return {
-    name: 'daidai-selfhosted-fonts',
+    name: 'panel-selfhosted-fonts',
     // 只管构建。dev 时字体缺失最多是本地预览字形不对，不值得把 `npm run dev` 也堵死。
     apply: 'build',
     buildStart() {
       const fontsDir = path.resolve(process.cwd(), 'public/fonts')
       const cssFile = path.join(fontsDir, 'fonts.css')
       if (!fs.existsSync(cssFile)) {
-        throw new Error('[daidai-selfhosted-fonts] 缺少 web/public/fonts/fonts.css')
+        throw new Error('[panel-selfhosted-fonts] 缺少 web/public/fonts/fonts.css')
       }
 
       const css = fs.readFileSync(cssFile, 'utf8')
@@ -141,7 +141,7 @@ function selfHostedFontsPlugin(): Plugin {
 
       if (missing.length > 0) {
         throw new Error(
-          `[daidai-selfhosted-fonts] fonts.css 引用的 ${missing.length} 个 woff2 不在磁盘上：\n` +
+          `[panel-selfhosted-fonts] fonts.css 引用的 ${missing.length} 个 woff2 不在磁盘上：\n` +
             `  ${missing.join('\n  ')}\n` +
             '这些是进版本库的产物，请先跑一次：node scripts/fetch-fonts.mjs'
         )

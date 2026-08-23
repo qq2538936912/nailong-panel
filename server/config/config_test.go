@@ -73,13 +73,13 @@ func TestLoadResolvesRelativeDatabasePathBasedOnConfigDir(t *testing.T) {
   port: 5701
   mode: test
 database:
-  path: Dumb-Panel/daidai.db
+  path: Panel/panel.db
 jwt:
   secret: unit-test-secret
 data:
-  dir: ./Dumb-Panel
-  scripts_dir: ./Dumb-Panel/scripts
-  log_dir: ./Dumb-Panel/logs
+  dir: ./Panel
+  scripts_dir: ./Panel/scripts
+  log_dir: ./Panel/logs
 cors:
   origins: []
 `
@@ -94,18 +94,18 @@ cors:
 		t.Fatalf("load config: %v", err)
 	}
 
-	expectedDB := filepath.Join(configDir, "Dumb-Panel", "daidai.db")
+	expectedDB := filepath.Join(configDir, "Panel", "panel.db")
 	if cfg.Database.Path != expectedDB {
 		t.Fatalf("Database.Path should resolve relative to config dir (%q), got %q (cwd was %q)",
 			expectedDB, cfg.Database.Path, otherCwd)
 	}
-	expectedDataDir := filepath.Join(configDir, "Dumb-Panel")
+	expectedDataDir := filepath.Join(configDir, "Panel")
 	if cfg.Data.Dir != expectedDataDir {
 		t.Fatalf("Data.Dir should resolve relative to config dir (%q), got %q", expectedDataDir, cfg.Data.Dir)
 	}
 
 	// 反向断言：绝对不能基于 cwd 解析
-	wrongDB := filepath.Join(otherCwd, "Dumb-Panel", "daidai.db")
+	wrongDB := filepath.Join(otherCwd, "Panel", "panel.db")
 	if cfg.Database.Path == wrongDB {
 		t.Fatalf("Database.Path must NOT resolve to cwd-based %q", wrongDB)
 	}
@@ -160,8 +160,8 @@ func TestResolveDataPathLeavesAbsoluteUntouched(t *testing.T) {
 
 func TestResolveDataPathJoinsRelativeOnBaseDir(t *testing.T) {
 	base := filepath.FromSlash("/anchor/here")
-	got := resolveDataPath(base, "Dumb-Panel/daidai.db")
-	want := filepath.Join(base, "Dumb-Panel", "daidai.db")
+	got := resolveDataPath(base, "Panel/panel.db")
+	want := filepath.Join(base, "Panel", "panel.db")
 	if got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}

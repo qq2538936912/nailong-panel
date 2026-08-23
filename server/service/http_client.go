@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 
 	xproxy "golang.org/x/net/proxy"
 )

@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	panelcron "daidai-panel/pkg/cron"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/model"
+	panelcron "panel/pkg/cron"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

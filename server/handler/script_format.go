@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"daidai-panel/pkg/response"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

@@ -776,7 +776,7 @@ export const DEMO_SCRIPT_FILES: DemoScriptSeed[] = [
 ]
 
 /** 「配置文件」页（GET/PUT /system/config-script）的内容 */
-export const DEMO_CONFIG_SCRIPT = `# 呆呆面板 · 自定义配置文件
+export const DEMO_CONFIG_SCRIPT = `# 面板 · 自定义配置文件
 #
 # 这里的内容会在每个任务执行前被 source 一次，适合放全局开关与公共函数。
 # 敏感信息请放「环境变量」页，不要写在这里 —— 本文件会被完整包含进备份。

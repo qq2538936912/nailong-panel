@@ -3,7 +3,7 @@ package service
 import (
 	"sync"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // manualStopMarks 记录被主动停止过的任务 ID。

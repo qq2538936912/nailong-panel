@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/crypto"
+	"panel/config"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/crypto"
 
 	"github.com/gin-gonic/gin"
 )

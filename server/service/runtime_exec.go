@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/database"
+	"panel/model"
 )
 
 type managedRuntimePaths struct {
@@ -100,7 +100,7 @@ runpy.run_module(module_name, run_name="__main__", alter_sys=True)
 `
 
 // shellEnvBootstrap 里那段 __dd_dump_env 只为「任务前置钩子回传环境变量」服务，
-// 且**只有 DAIDAI_HOOK_ENV_DUMP 非空时才装**，其余 bash 任务、订阅钩子、后置钩子
+// 且**只有 PANEL_HOOK_ENV_DUMP 非空时才装**，其余 bash 任务、订阅钩子、后置钩子
 // 走的仍然是原来的两行逻辑（见 hookEnvDumpPathEnvKey 的注释）。
 //
 // 为什么必须用 trap EXIT、不能把 dump 代码追加在用户脚本尾部：
@@ -127,11 +127,11 @@ runpy.run_module(module_name, run_name="__main__", alter_sys=True)
 const shellEnvBootstrap = `__dd_env_file=$1
 __dd_script=$2
 shift 2
-export DAIDAI_RUNTIME_SHELL_ENV_FILE="$__dd_env_file"
+export PANEL_RUNTIME_SHELL_ENV_FILE="$__dd_env_file"
 if [ -f "$__dd_env_file" ]; then
   . "$__dd_env_file"
 fi
-if [ -n "$DAIDAI_HOOK_ENV_DUMP" ] && [ -f "${DAIDAI_HOOK_ENV_DUMP}.ok" ]; then
+if [ -n "$PANEL_HOOK_ENV_DUMP" ] && [ -f "${PANEL_HOOK_ENV_DUMP}.ok" ]; then
   __dd_dump_env() {
     if env -0 >"$1" 2>/dev/null; then
       return 0
@@ -144,8 +144,8 @@ if [ -n "$DAIDAI_HOOK_ENV_DUMP" ] && [ -f "${DAIDAI_HOOK_ENV_DUMP}.ok" ]; then
     env >"$1" 2>/dev/null || : >"$1" 2>/dev/null || true
     return 0
   }
-  __dd_dump_env "${DAIDAI_HOOK_ENV_DUMP}.base"
-  trap '__dd_dump_env "$DAIDAI_HOOK_ENV_DUMP"' EXIT
+  __dd_dump_env "${PANEL_HOOK_ENV_DUMP}.base"
+  trap '__dd_dump_env "$PANEL_HOOK_ENV_DUMP"' EXIT
 fi
 . "$__dd_script" "$@"
 `
@@ -164,7 +164,7 @@ import (
 )
 
 func init() {
-	envFile := os.Getenv("DAIDAI_RUNTIME_ENV_FILE")
+	envFile := os.Getenv("PANEL_RUNTIME_ENV_FILE")
 	if envFile == "" {
 		return
 	}
@@ -236,7 +236,7 @@ func BuildManagedRuntimeEnvMapWithScriptToken(workDir, scriptsDir string, defaul
 	if !PythonVersionSupportedByCurrentRuntime(pythonVersion) {
 		pythonVersion = DefaultPythonVersion()
 	}
-	envMap["DAIDAI_PYTHON_VERSION"] = pythonVersion
+	envMap["PANEL_PYTHON_VERSION"] = pythonVersion
 
 	runtimePaths := currentManagedRuntimePathsForPythonVersion(pythonVersion)
 	if runtimePaths.NodeModules != "" {
@@ -272,7 +272,7 @@ func CreateManagedCommand(interpreter, scriptPath string, scriptArgs []string, w
 	if versionFromInterpreter := ResolvePythonVersionFromInterpreter(interpreter); versionFromInterpreter != "" {
 		pythonVersion = versionFromInterpreter
 		if envVars != nil {
-			envVars["DAIDAI_PYTHON_VERSION"] = pythonVersion
+			envVars["PANEL_PYTHON_VERSION"] = pythonVersion
 		}
 	}
 	runtimePaths := currentManagedRuntimePathsForPythonVersion(pythonVersion)
@@ -825,7 +825,7 @@ func createManagedPythonModuleCommand(interpreter string, moduleName string, mod
 	if versionFromInterpreter := ResolvePythonVersionFromInterpreter(interpreter); versionFromInterpreter != "" {
 		pythonVersion = versionFromInterpreter
 		if envVars != nil {
-			envVars["DAIDAI_PYTHON_VERSION"] = pythonVersion
+			envVars["PANEL_PYTHON_VERSION"] = pythonVersion
 		}
 	}
 	pythonVersion = NormalizePythonVersionOrDefault(pythonVersion)
@@ -1012,7 +1012,7 @@ func createManagedGoCommand(scriptPath string, scriptArgs []string, workDir stri
 		return nil, nil, err
 	}
 
-	wrapperPath := filepath.Join(filepath.Dir(scriptPath), fmt.Sprintf("000000_daidai_env_bootstrap_%d.go", time.Now().UnixNano()))
+	wrapperPath := filepath.Join(filepath.Dir(scriptPath), fmt.Sprintf("000000_panel_env_bootstrap_%d.go", time.Now().UnixNano()))
 	if err := os.WriteFile(wrapperPath, []byte(goEnvBootstrapSource), 0o600); err != nil {
 		envCleanup()
 		return nil, nil, err
@@ -1028,7 +1028,7 @@ func createManagedGoCommand(scriptPath string, scriptArgs []string, workDir stri
 
 	cmd := exec.Command(binary, args...)
 	cmd.Dir = workDir
-	cmd.Env = append(buildBootstrapProcessEnv(envVars), "DAIDAI_RUNTIME_ENV_FILE="+envFile)
+	cmd.Env = append(buildBootstrapProcessEnv(envVars), "PANEL_RUNTIME_ENV_FILE="+envFile)
 	setPgid(cmd)
 	return cmd, cleanup, nil
 }
@@ -1185,7 +1185,7 @@ func appendPythonBootstrapEnv(env []string) []string {
 }
 
 func writeManagedRuntimeEnvFile(envVars map[string]string) (string, string, func(), error) {
-	tempDir, err := os.MkdirTemp("", "daidai-runtime-*")
+	tempDir, err := os.MkdirTemp("", "panel-runtime-*")
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -1218,7 +1218,7 @@ func writeManagedRuntimeEnvFile(envVars map[string]string) (string, string, func
 }
 
 func writeManagedRuntimeShellEnvFile(envVars map[string]string) (string, string, func(), error) {
-	tempDir, err := os.MkdirTemp("", "daidai-runtime-*")
+	tempDir, err := os.MkdirTemp("", "panel-runtime-*")
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -1228,7 +1228,7 @@ func writeManagedRuntimeShellEnvFile(envVars map[string]string) (string, string,
 	}
 
 	var b strings.Builder
-	b.WriteString("# daidai runtime environment\n")
+	b.WriteString("# panel runtime environment\n")
 	keys := make([]string, 0, len(envVars))
 	for key := range envVars {
 		keys = append(keys, key)
@@ -1372,11 +1372,11 @@ try {
   // ---- 三道闸，任一不满足就连 async_hooks 都不 require ----
   // 1) --require 会被 child_process.fork 继承（实测：子进程 execArgv 与父进程相同），
   //    不打戳的话每个子进程都会再武装一次，各自往同一条 stdout 刷重复告警。
-  const armedAlready = process.env.DAIDAI_SILENT_EXIT_ARMED === '1';
-  process.env.DAIDAI_SILENT_EXIT_ARMED = '1';
+  const armedAlready = process.env.PANEL_SILENT_EXIT_ARMED === '1';
+  process.env.PANEL_SILENT_EXIT_ARMED = '1';
   // 2) 任务级开关：给某个噪音脚本单独配一条同名环境变量填 0 / off / false 即可关掉，
   //    不必为了它把全局配置也关掉、连累其余任务。
-  const perTaskSwitch = String(process.env.DAIDAI_SILENT_EXIT_DETECT || '').toLowerCase();
+  const perTaskSwitch = String(process.env.PANEL_SILENT_EXIT_DETECT || '').toLowerCase();
   const disabledPerTask = perTaskSwitch === '0' || perTaskSwitch === 'off' || perTaskSwitch === 'false';
   // 3) worker 线程各自有独立事件循环，退出与主线程无关，判定没有意义。
   let isMainThread = true;
@@ -1388,13 +1388,13 @@ try {
     let probing = true;
     let declaredDone = false;
 
-    // 脚本主流程末尾调一次 globalThis.daidaiDone() 即永久判定为「跑完了」。
+    // 脚本主流程末尾调一次 globalThis.panelDone() 即永久判定为「跑完了」。
     // 这是唯一能做到零误报的手段：探针分不清「被抛弃的 promise」和「被卡住的 promise」
     // ——两者在依赖图上完全同构——只有脚本自己知道工作做没做完。
     // configurable 必须为 true：否则脚本里出现同名变量赋值会抛 TypeError 打断用户脚本。
     try {
-      Object.defineProperty(globalThis, 'daidaiDone', {
-        value: function daidaiDone() { declaredDone = true; },
+      Object.defineProperty(globalThis, 'panelDone', {
+        value: function panelDone() { declaredDone = true; },
         writable: false, enumerable: false, configurable: true,
       });
     } catch (_) {}
@@ -1420,8 +1420,8 @@ try {
         '\n[任务疑似半路结束] 脚本没跑完就退出了：还有 ' + stuck +
         ' 个异步操作永远不会完成，常见于请求在响应中途断开、而代码只监听了请求对象的错误。\n' +
         '[任务疑似半路结束] 已判定为失败。若该脚本本来就会留下未完成的异步操作（属于误报），' +
-        '有三种关法：脚本末尾加一行 globalThis.daidaiDone?.()；' +
-        '给该任务加环境变量 DAIDAI_SILENT_EXIT_DETECT=0；' +
+        '有三种关法：脚本末尾加一行 globalThis.panelDone?.()；' +
+        '给该任务加环境变量 PANEL_SILENT_EXIT_DETECT=0；' +
         '或在「系统设置 - 任务」里关闭「检测脚本半路静默结束」。\n'
       );
       // 不覆盖脚本自己设过的退出码：它已经表达了失败，保留它更有信息量。
@@ -1434,7 +1434,7 @@ try {
 `
 
 func writeNodePreloadScript(tempDir, envFile string, envVars map[string]string, detectSilentExit bool) (string, error) {
-	helperPath := filepath.ToSlash(strings.TrimSpace(envVars["DAIDAI_SEND_NOTIFY_JS"]))
+	helperPath := filepath.ToSlash(strings.TrimSpace(envVars["PANEL_SEND_NOTIFY_JS"]))
 	nodePathList := strings.Split(strings.TrimSpace(envVars["NODE_PATH"]), string(os.PathListSeparator))
 	filteredNodePaths := make([]string, 0, len(nodePathList))
 	for _, item := range nodePathList {

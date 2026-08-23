@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/testutil"
+	"panel/testutil"
 )
 
 func TestWindowsPythonPOSIXTimezoneUsesCurrentIANATimezoneOffset(t *testing.T) {

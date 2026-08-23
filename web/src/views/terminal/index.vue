@@ -114,7 +114,7 @@ function writeBanner(payload?: { work_dir?: string; shell?: string; python?: str
   const workDir = payload?.work_dir || info.value.work_dir
   const shell = payload?.shell || info.value.shell
   const python = payload?.python || info.value.python
-  term.writeln('\x1b[32m呆呆面板终端\x1b[0m  ·  与任务执行同一套运行环境')
+  term.writeln('\x1b[32m面板终端\x1b[0m  ·  与任务执行同一套运行环境')
   if (workDir) term.writeln(`工作目录：${workDir}`)
   if (shell) term.writeln(`Shell：${shell}`)
   if (python) term.writeln(`Python：${python}`)
@@ -171,7 +171,7 @@ function runShortcut(command: string) {
     term.write(`${command}\r\n`)
     handleDemoCommand(command)
     demoLine = ''
-    term.write('\x1b[32mdaidai\x1b[0m:/opt/daidai/scripts$ ')
+    term.write('\x1b[32mpanel\x1b[0m:/opt/panel/scripts$ ')
     return
   }
   if (socket && socket.readyState === WebSocket.OPEN) {
@@ -197,14 +197,14 @@ function startDemoTerminal() {
   status.value = 'connected'
   info.value = {
     available: true,
-    work_dir: '/opt/daidai/scripts',
+    work_dir: '/opt/panel/scripts',
     shell: '/bin/bash',
-    python: '/opt/daidai/data/deps/python/3.12/bin/python',
+    python: '/opt/panel/data/deps/python/3.12/bin/python',
     message: '演示环境不会在真实机器上执行命令',
   }
   writeBanner()
   demoLine = ''
-  term.write('\x1b[32mdaidai\x1b[0m:/opt/daidai/scripts$ ')
+  term.write('\x1b[32mpanel\x1b[0m:/opt/panel/scripts$ ')
 }
 
 function handleDemoInput(data: string) {
@@ -213,7 +213,7 @@ function handleDemoInput(data: string) {
     term.write('\r\n')
     handleDemoCommand(demoLine.trim())
     demoLine = ''
-    term.write('\x1b[32mdaidai\x1b[0m:/opt/daidai/scripts$ ')
+    term.write('\x1b[32mpanel\x1b[0m:/opt/panel/scripts$ ')
     return
   }
   if (data === '\u007f') {
@@ -233,7 +233,7 @@ function handleDemoCommand(command: string) {
   if (!command) return
   if (command.includes('playwright')) {
     term.writeln('Downloading Chromium 141.0.x (playwright build vxxxx)')
-    term.writeln('Chromium downloaded to /opt/daidai/data/.home/.cache/ms-playwright/chromium-xxxx')
+    term.writeln('Chromium downloaded to /opt/panel/data/.home/.cache/ms-playwright/chromium-xxxx')
     term.writeln('\x1b[33m演示环境未真正下载浏览器。\x1b[0m')
     return
   }

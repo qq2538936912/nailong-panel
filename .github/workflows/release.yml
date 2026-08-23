@@ -7,7 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  DOCKER_IMAGE_REPOSITORY: linzixuanzz/daidai-panel
+  DOCKER_IMAGE_REPOSITORY: xiaofeilong2/panel
 
 permissions:
   contents: write
@@ -79,8 +79,8 @@ jobs:
           GOOS: linux
           GOARCH: amd64
         run: |
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o daidai-linux-amd64 .
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-amd64 ./cmd/ddp
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o panel-linux-amd64 .
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-amd64 ./cmd/ddp
 
       - name: Build Linux arm64
         working-directory: server
@@ -89,8 +89,8 @@ jobs:
           GOOS: linux
           GOARCH: arm64
         run: |
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o daidai-linux-arm64 .
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-arm64 ./cmd/ddp
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o panel-linux-arm64 .
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-arm64 ./cmd/ddp
 
       - name: Build Linux 386
         working-directory: server
@@ -99,8 +99,8 @@ jobs:
           GOOS: linux
           GOARCH: '386'
         run: |
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o daidai-linux-386 .
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-386 ./cmd/ddp
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o panel-linux-386 .
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-386 ./cmd/ddp
 
       - name: Build Linux armv7
         working-directory: server
@@ -110,8 +110,8 @@ jobs:
           GOARCH: arm
           GOARM: '7'
         run: |
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o daidai-linux-armv7 .
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-armv7 ./cmd/ddp
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o panel-linux-armv7 .
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp-linux-armv7 ./cmd/ddp
 
       - name: Build Windows amd64
         working-directory: server
@@ -120,8 +120,8 @@ jobs:
           GOOS: windows
           GOARCH: amd64
         run: |
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o daidai-server.exe .
-          go build -ldflags="-s -w -X daidai-panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp.exe ./cmd/ddp
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o panel-server.exe .
+          go build -ldflags="-s -w -X panel/handler.Version=${{ steps.version.outputs.VERSION }}" -o ddp.exe ./cmd/ddp
 
       - name: Package
         run: |
@@ -131,31 +131,31 @@ jobs:
 
           # ddp CLI 在包内统一叫 ddp（不带架构后缀），解压后可直接放进 PATH，
           # 与 Docker 镜像里的 /usr/local/bin/ddp、Windows zip 里的 ddp.exe 保持同名。
-          cp server/daidai-linux-amd64 release/
+          cp server/panel-linux-amd64 release/
           cp server/ddp-linux-amd64 release/ddp
-          cd release && tar -czvf ../daidai-linux-amd64.tar.gz daidai-linux-amd64 ddp config.yaml web/
-          rm daidai-linux-amd64 ddp
+          cd release && tar -czvf ../panel-linux-amd64.tar.gz panel-linux-amd64 ddp config.yaml web/
+          rm panel-linux-amd64 ddp
 
-          cp ../server/daidai-linux-arm64 .
+          cp ../server/panel-linux-arm64 .
           cp ../server/ddp-linux-arm64 ./ddp
-          tar -czvf ../daidai-linux-arm64.tar.gz daidai-linux-arm64 ddp config.yaml web/
-          rm daidai-linux-arm64 ddp
+          tar -czvf ../panel-linux-arm64.tar.gz panel-linux-arm64 ddp config.yaml web/
+          rm panel-linux-arm64 ddp
 
-          cp ../server/daidai-linux-386 .
+          cp ../server/panel-linux-386 .
           cp ../server/ddp-linux-386 ./ddp
-          tar -czvf ../daidai-linux-386.tar.gz daidai-linux-386 ddp config.yaml web/
-          rm daidai-linux-386 ddp
+          tar -czvf ../panel-linux-386.tar.gz panel-linux-386 ddp config.yaml web/
+          rm panel-linux-386 ddp
 
-          cp ../server/daidai-linux-armv7 .
+          cp ../server/panel-linux-armv7 .
           cp ../server/ddp-linux-armv7 ./ddp
-          tar -czvf ../daidai-linux-armv7.tar.gz daidai-linux-armv7 ddp config.yaml web/
+          tar -czvf ../panel-linux-armv7.tar.gz panel-linux-armv7 ddp config.yaml web/
           cd ..
 
           # Windows 单机版：二进制 + 独立 config.yaml + start.bat + README，
           # 同梱前端 dist，整个解压即用；Go 后端通过 server.web_dir 直接托管前端。
-          win_staging="release-windows/daidai-panel-windows-amd64"
+          win_staging="release-windows/panel-windows-amd64"
           mkdir -p "$win_staging/web"
-          cp server/daidai-server.exe "$win_staging/"
+          cp server/panel-server.exe "$win_staging/"
           cp server/ddp.exe "$win_staging/"
           cp -r web/dist/. "$win_staging/web/"
           cp packaging/windows/config.yaml "$win_staging/config.yaml"
@@ -169,7 +169,7 @@ jobs:
           path.write_bytes(text.replace("\n", "\r\n").encode("utf-8"))
           PY
           cp packaging/windows/README.txt "$win_staging/README.txt"
-          (cd release-windows && zip -rq ../daidai-windows-amd64.zip daidai-panel-windows-amd64)
+          (cd release-windows && zip -rq ../panel-windows-amd64.zip panel-windows-amd64)
 
       - name: Create Or Update Release
         env:
@@ -182,19 +182,19 @@ jobs:
               --title "${{ steps.release_notes.outputs.title }}" \
               --notes-file "$NOTES_FILE"
             gh release upload "${GITHUB_REF_NAME}" \
-              daidai-linux-amd64.tar.gz \
-              daidai-linux-arm64.tar.gz \
-              daidai-linux-386.tar.gz \
-              daidai-linux-armv7.tar.gz \
-              daidai-windows-amd64.zip \
+              panel-linux-amd64.tar.gz \
+              panel-linux-arm64.tar.gz \
+              panel-linux-386.tar.gz \
+              panel-linux-armv7.tar.gz \
+              panel-windows-amd64.zip \
               --clobber
           else
             gh release create "${GITHUB_REF_NAME}" \
-              daidai-linux-amd64.tar.gz \
-              daidai-linux-arm64.tar.gz \
-              daidai-linux-386.tar.gz \
-              daidai-linux-armv7.tar.gz \
-              daidai-windows-amd64.zip \
+              panel-linux-amd64.tar.gz \
+              panel-linux-arm64.tar.gz \
+              panel-linux-386.tar.gz \
+              panel-linux-armv7.tar.gz \
+              panel-windows-amd64.zip \
               --title "${{ steps.release_notes.outputs.title }}" \
               --notes-file "$NOTES_FILE"
           fi
@@ -286,13 +286,13 @@ jobs:
           docker pull --platform linux/arm64 debian:bookworm-slim
 
           cid="$(docker create --platform linux/arm64 debian:bookworm-slim)"
-          docker export "$cid" | gzip -9 > daidai-debian-rootfs-arm64.tar.gz
+          docker export "$cid" | gzip -9 > panel-debian-rootfs-arm64.tar.gz
           docker rm "$cid"
 
           # 实测体积：未压缩 103 MB -> gzip 后约 27 MB。
           # 这里只做量级自检，偏差太大说明基础镜像或导出方式变了，值得当场发现。
-          ls -lh daidai-debian-rootfs-arm64.tar.gz
-          size=$(stat -c%s daidai-debian-rootfs-arm64.tar.gz)
+          ls -lh panel-debian-rootfs-arm64.tar.gz
+          size=$(stat -c%s panel-debian-rootfs-arm64.tar.gz)
           if [ "$size" -lt 10000000 ] || [ "$size" -gt 80000000 ]; then
             echo "::error::Debian rootfs 体积异常: ${size} 字节（预期 27MB 量级）"
             exit 1
@@ -303,7 +303,7 @@ jobs:
           # 先把清单落到文件再 grep —— 直接 `tar | grep -q` 会因为 grep 命中即退出
           # 让 tar 吃到 SIGPIPE，在 set -o pipefail 下把整步判成失败。
           # bookworm 已 usr-merge（/bin -> /usr/bin），所以按后缀匹配而不是全路径。
-          tar -tzf daidai-debian-rootfs-arm64.tar.gz > rootfs-listing.txt
+          tar -tzf panel-debian-rootfs-arm64.tar.gz > rootfs-listing.txt
           grep -q 'bin/apt-get$' rootfs-listing.txt || {
             echo "::error::导出的 rootfs 里找不到 apt-get，customize.sh 装依赖必然失败"; exit 1; }
           grep -q 'bin/bash$' rootfs-listing.txt || {
@@ -330,8 +330,8 @@ jobs:
           bash Magisk/build.sh "$VERSION" arm64
           bash Magisk/build.sh "$VERSION" arm64 debian
 
-          OUT="daidai-panel-magisk-v${VERSION}.zip"
-          OUT_DEBIAN="daidai-panel-magisk-debian-v${VERSION}.zip"
+          OUT="panel-magisk-v${VERSION}.zip"
+          OUT_DEBIAN="panel-magisk-debian-v${VERSION}.zip"
           cp -f "dist/${OUT}" "${OUT}"
           cp -f "dist/${OUT_DEBIAN}" "${OUT_DEBIAN}"
 
@@ -353,7 +353,7 @@ jobs:
             CHANGELOG_URL="https://github.com/${REPO}/releases/tag/v${VERSION}"
           fi
 
-          # 两个 flavor 共用同一个 module id（daidai-panel），而 updateJson 只能填一个
+          # 两个 flavor 共用同一个 module id（panel），而 updateJson 只能填一个
           # zipUrl，所以必须发两份 json：Alpine ZIP 里的 module.prop 指向 update.json，
           # Debian ZIP 里的指向 update-debian.json（由 Magisk/build.sh 改写）。
           # 否则 Debian 用户在管理器里点「更新」会被静默刷成 Alpine 版，
@@ -362,7 +362,7 @@ jobs:
           {
             "version": "v${VERSION}",
             "versionCode": ${VERSIONCODE},
-            "zipUrl": "https://github.com/${REPO}/releases/download/v${VERSION}/daidai-panel-magisk-v${VERSION}.zip",
+            "zipUrl": "https://github.com/${REPO}/releases/download/v${VERSION}/panel-magisk-v${VERSION}.zip",
             "changelog": "${CHANGELOG_URL}"
           }
           EOF
@@ -370,7 +370,7 @@ jobs:
           {
             "version": "v${VERSION}",
             "versionCode": ${VERSIONCODE},
-            "zipUrl": "https://github.com/${REPO}/releases/download/v${VERSION}/daidai-panel-magisk-debian-v${VERSION}.zip",
+            "zipUrl": "https://github.com/${REPO}/releases/download/v${VERSION}/panel-magisk-debian-v${VERSION}.zip",
             "changelog": "${CHANGELOG_URL}"
           }
           EOF
@@ -384,13 +384,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          # daidai-debian-rootfs-arm64.tar.gz 的下载地址在 customize.sh 里是硬编码的
+          # panel-debian-rootfs-arm64.tar.gz 的下载地址在 customize.sh 里是硬编码的
           # releases/latest/download/ 固定跳转 —— rootfs 只是一份 Debian 基础系统，
           # 与面板版本没有耦合，所以每次发版都用同名资产覆盖上传即可。
           gh release upload "${GITHUB_REF_NAME}" \
             "${ZIPFILE}" \
             "${ZIPFILE_DEBIAN}" \
-            daidai-debian-rootfs-arm64.tar.gz \
+            panel-debian-rootfs-arm64.tar.gz \
             Magisk/update.json \
             Magisk/update-debian.json \
             --clobber

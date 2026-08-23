@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 const (

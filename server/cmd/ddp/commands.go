@@ -11,14 +11,14 @@ import (
 	"syscall"
 	"time"
 
-	"daidai-panel/appboot"
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/handler"
-	"daidai-panel/model"
-	"daidai-panel/pkg/crypto"
-	"daidai-panel/pkg/validator"
-	"daidai-panel/service"
+	"panel/appboot"
+	"panel/config"
+	"panel/database"
+	"panel/handler"
+	"panel/model"
+	"panel/pkg/crypto"
+	"panel/pkg/validator"
+	"panel/service"
 
 	"gorm.io/gorm"
 )
@@ -92,7 +92,7 @@ func run(args []string) int {
 }
 
 func runVersion() error {
-	fmt.Printf("呆呆面板版本: %s\n", handler.Version)
+	fmt.Printf("面板版本: %s\n", handler.Version)
 	fmt.Println("命令工具: ddp")
 	return nil
 }
@@ -126,7 +126,7 @@ func runStatus(rt *cliRuntime) error {
 	if serverRunning {
 		fmt.Printf("服务状态: 运行中 (PID %d)\n", pid)
 	} else {
-		fmt.Println("服务状态: 未检测到运行中的 daidai-server 进程")
+		fmt.Println("服务状态: 未检测到运行中的 panel-server 进程")
 	}
 	fmt.Printf("后端探活: %s\n", boolLabel(backendReachable, "正常", "不可达"))
 	fmt.Printf("访问端口: 前端 %d / 后端 %d\n", rt.panelPort(), rt.backendPort())
@@ -345,7 +345,7 @@ func runRestart(rt *cliRuntime) error {
 		return err
 	}
 
-	fmt.Printf("已向 daidai-server (PID %d) 发送重启信号\n", pid)
+	fmt.Printf("已向 panel-server (PID %d) 发送重启信号\n", pid)
 	fmt.Println("入口脚本会自动拉起新进程")
 	return nil
 }
@@ -528,12 +528,12 @@ func runBackupRestore(rt *cliRuntime, args []string) error {
 	if pid, err := readServerPID(rt.serverPIDFile()); err == nil && isProcessRunning(pid) {
 		process, findErr := os.FindProcess(pid)
 		if findErr == nil && process.Signal(syscall.SIGTERM) == nil {
-			fmt.Printf("已自动重启 daidai-server (PID %d)，依赖恢复会在新进程启动后继续校验\n", pid)
+			fmt.Printf("已自动重启 panel-server (PID %d)，依赖恢复会在新进程启动后继续校验\n", pid)
 			return nil
 		}
 	}
 
-	fmt.Println("未检测到可自动重启的 daidai-server 进程，请手动重启面板")
+	fmt.Println("未检测到可自动重启的 panel-server 进程，请手动重启面板")
 	return nil
 }
 

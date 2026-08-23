@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/testutil"
+	"panel/testutil"
 )
 
 func TestIssueAndConsumeTerminalTicket(t *testing.T) {
@@ -113,7 +113,7 @@ func TestStartTerminalSessionUsesManagedPath(t *testing.T) {
 	}
 	defer session.Close()
 
-	if _, err := session.Write([]byte("echo daidai-terminal-ok\n")); err != nil {
+	if _, err := session.Write([]byte("echo panel-terminal-ok\n")); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -144,7 +144,7 @@ func TestStartTerminalSessionUsesManagedPath(t *testing.T) {
 			t.Fatalf("expected echo output, got %q", output.String())
 		case item := <-reads:
 			output.Write(item.data)
-			if strings.Contains(output.String(), "daidai-terminal-ok") {
+			if strings.Contains(output.String(), "panel-terminal-ok") {
 				return
 			}
 			if item.err != nil {

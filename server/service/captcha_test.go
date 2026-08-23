@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestIsCaptchaRequiredWhenEnabled(t *testing.T) {

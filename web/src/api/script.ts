@@ -3,7 +3,7 @@ import request from './request'
 function buildKeepaliveAuthHeaders() {
   const headers: Record<string, string> = {
     'X-Client-Type': 'web',
-    'X-Client-App': 'daidai-panel-web'
+    'X-Client-App': 'panel-web'
   }
 
   if (typeof window !== 'undefined') {

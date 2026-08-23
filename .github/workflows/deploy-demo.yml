@@ -73,7 +73,7 @@ jobs:
     # 有了手动触发之后，「发版部署」与「手动部署」存在同时打到 Pages 的可能。
     # 同组串行；cancel-in-progress: false 是刻意的——不要把一次已经开始的线上部署掐断。
     concurrency:
-      group: daidai-github-pages
+      group: panel-github-pages
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
@@ -114,7 +114,7 @@ jobs:
         working-directory: web
         run: npm ci
 
-      # build:demo = vite build --mode demo --base=/daidai-panel/
+      # build:demo = vite build --mode demo --base=/panel/
       #   --mode demo 让 web/.env.demo 生效（VITE_DEMO=1），mock 层才会被打进产物；
       #   --base 是 GitHub Pages 项目站的子路径，改仓库名时这里和 package.json 要一起改。
       # ⚠️ 不要改 outDir：web/scripts/copy-monaco-assets.mjs 把目标写死成 cwd 下的 dist。

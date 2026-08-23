@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )

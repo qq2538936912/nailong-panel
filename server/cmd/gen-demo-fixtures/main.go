@@ -34,7 +34,7 @@ import (
 	"sort"
 	"strings"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 const (

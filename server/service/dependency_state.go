@@ -6,18 +6,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 func SnapshotDepsToHost() {
 	depsDir := filepath.Join(config.C.Data.Dir, "deps")
-	persistDir := "/data/adb/daidai-panel/deps-snapshot"
+	persistDir := "/data/adb/panel/deps-snapshot"
 
 	if _, err := os.Stat(depsDir); err != nil {
 		return
 	}
-	if _, err := os.Stat("/data/adb/daidai-panel"); err != nil {
+	if _, err := os.Stat("/data/adb/panel"); err != nil {
 		return
 	}
 

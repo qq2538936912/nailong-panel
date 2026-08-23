@@ -37,7 +37,7 @@ export const authApi = {
       headers: {
         Authorization: `Bearer ${refreshToken}`,
         'X-Client-Type': 'web',
-        'X-Client-App': 'daidai-panel-web'
+        'X-Client-App': 'panel-web'
       }
     }).then(res => res.data) as Promise<{ access_token: string }>
   },

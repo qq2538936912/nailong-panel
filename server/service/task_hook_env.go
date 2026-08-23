@@ -16,9 +16,9 @@ import (
 // task_after.sh / extra.sh。把 dump 逻辑无条件做进 shell bootstrap 会改变这些调用方的
 // 输出与退出码，所以 shellEnvBootstrap 里那段采集代码以「这个变量是否非空」做 no-op 门禁。
 //
-// 名字带 DAIDAI_ 前缀还有第二重作用：它天然落在 hookEnvContractPrefixes 里，
+// 名字带 PANEL_ 前缀还有第二重作用：它天然落在 hookEnvContractPrefixes 里，
 // 前置脚本改它也回传不回来，不会自己把自己的采集路径改掉。
-const hookEnvDumpPathEnvKey = "DAIDAI_HOOK_ENV_DUMP"
+const hookEnvDumpPathEnvKey = "PANEL_HOOK_ENV_DUMP"
 
 // hookEnvVolatileNames 是 shell 自己维护、每一跳都会变的内部变量。
 //
@@ -66,19 +66,19 @@ var hookEnvContractNames = map[string]struct{}{
 	"TZ": {},
 }
 
-// hookEnvContractPrefixes 目前只有 DAIDAI_：面板注入的运行时契约变量，全部不接受回传。
+// hookEnvContractPrefixes 目前只有 PANEL_：面板注入的运行时契约变量，全部不接受回传。
 //
-// 这里最危险的一条是 DAIDAI_NOTIFY_CHANNEL_ID —— 前置脚本把它改空，任务通知就会从
+// 这里最危险的一条是 PANEL_NOTIFY_CHANNEL_ID —— 前置脚本把它改空，任务通知就会从
 // 「定向到绑定渠道」静默退化成广播，脚本里、日志里都不会有任何提示。同理还有
-// DAIDAI_TOKEN / DAIDAI_API_BASE / DAIDAI_NOTIFY_* / DAIDAI_SCRIPTS_DIR /
-// DAIDAI_PYTHON_VERSION，以及 DAIDAI_RUNTIME_SHELL_ENV_FILE 和上面那个 dump 路径本身。
+// PANEL_TOKEN / PANEL_API_BASE / PANEL_NOTIFY_* / PANEL_SCRIPTS_DIR /
+// PANEL_PYTHON_VERSION，以及 PANEL_RUNTIME_SHELL_ENV_FILE 和上面那个 dump 路径本身。
 // 真要支持「前置脚本切换通知渠道」，应该另开显式机制，不能让它从 env 漏进去。
 //
 // 注意 PATH **不在**任何保护名单里：托管解释器的解析只在面板自己 PATH 算出的目录里找、
 // 用绝对路径 exec（resolveManagedBinary + sanitizeManagedPath），完全不受 envVars["PATH"] 影响；
 // envVars["PATH"] 只决定脚本自己 fork 出来的 pip / npm / git 用哪个 PATH，
 // 那正是 shell 语义下用户想要的效果。
-var hookEnvContractPrefixes = []string{"DAIDAI_"}
+var hookEnvContractPrefixes = []string{"PANEL_"}
 
 // hookEnvRuntimeNotice 是一条「运行时关键变量被整体覆盖」的诊断提示素材：
 // symptom 说清坏掉之后会以什么现象出现，appendHint 给出用户真正需要的追加写法。
@@ -177,7 +177,7 @@ type hookEnvCapture struct {
 }
 
 func newHookEnvCapture(envVars map[string]string) (*hookEnvCapture, error) {
-	dir, err := os.MkdirTemp("", "daidai-hook-env-*")
+	dir, err := os.MkdirTemp("", "panel-hook-env-*")
 	if err != nil {
 		return nil, err
 	}

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/service"
+	"panel/testutil"
 )
 
 func seedEnabled2FA(t *testing.T, userID uint) string {

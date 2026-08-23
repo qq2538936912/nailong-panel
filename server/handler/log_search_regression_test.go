@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestLogListKeywordSearchMatchesTaskNameInsteadOfContent(t *testing.T) {

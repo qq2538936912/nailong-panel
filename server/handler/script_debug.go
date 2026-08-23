@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -201,7 +201,7 @@ func (h *ScriptHandler) DebugRun(c *gin.Context) {
 func prepareInlineDebugFile(requestPath, ext string) (full string, workDir string, cleanupFn func(), err error) {
 	cleanupFn = func() {}
 	fileName := fmt.Sprintf("debug_%d%s", time.Now().UnixMilli(), ext)
-	workDir = filepath.Join(os.TempDir(), "daidai-debug")
+	workDir = filepath.Join(os.TempDir(), "panel-debug")
 
 	if trimmedPath := strings.TrimSpace(requestPath); trimmedPath != "" {
 		resolvedPath, resolveErr := safePath(trimmedPath, true)
@@ -213,7 +213,7 @@ func prepareInlineDebugFile(requestPath, ext string) (full string, workDir strin
 		if baseName == "" {
 			baseName = "debug"
 		}
-		fileName = fmt.Sprintf(".%s.daidai-debug-%d%s", baseName, time.Now().UnixMilli(), ext)
+		fileName = fmt.Sprintf(".%s.panel-debug-%d%s", baseName, time.Now().UnixMilli(), ext)
 	}
 
 	if err := os.MkdirAll(workDir, 0o755); err != nil {

@@ -1,11 +1,11 @@
 #!/bin/sh
-# daidai-panel 容器入口脚本
+# panel 容器入口脚本
 # 兼容飞牛 OS / 群晖 / 绿联 / unRAID 等第三方 NAS 部署场景。
 
 set -e
 
-DATA_DIR=${DATA_DIR:-/app/Dumb-Panel}
-SERVER_PID_FILE="${DATA_DIR}/run/daidai-server.pid"
+DATA_DIR=${DATA_DIR:-/app/Panel}
+SERVER_PID_FILE="${DATA_DIR}/run/panel-server.pid"
 PANEL_PORT=${PANEL_PORT:-5700}
 APP_CONFIG_FILE=${APP_CONFIG_FILE:-/app/config.yaml}
 
@@ -35,19 +35,19 @@ chmod 1777 /tmp
 #
 # 这一段在 v3.0.7 重写，修的是三个会让 PUID 直接不可用的问题：
 #   1. 降权用户没有可写的 HOME。原来建用户用的是 adduser -D -H / useradd -M，
-#      两个参数都是「不创建家目录」，但 /etc/passwd 里的家目录字段照写 /home/daidai。
+#      两个参数都是「不创建家目录」，但 /etc/passwd 里的家目录字段照写 /home/panel。
 #      而 npm 的 cache（$HOME/.npm）、.npmrc，pip 的 pip.conf、pip --user 落点
-#      全都只认 HOME —— /home 是镜像层的 root:root 0755，daidai 建不出子目录，
-#      装依赖必然 EACCES: mkdir '/home/daidai'。这就是用户报障的原始现象。
+#      全都只认 HOME —— /home 是镜像层的 root:root 0755，panel 建不出子目录，
+#      装依赖必然 EACCES: mkdir '/home/panel'。这就是用户报障的原始现象。
 #   2. UID/GID 撞车会把容器直接带崩。原来的 addgroup/groupadd、adduser/useradd
 #      在 GID/UID 已被占用时全都失败，末尾又没有兜底，set -e 下整个脚本退出。
 #      Debian 镜像基于 node:20-bookworm-slim，自带 uid/gid 1000 的 node 用户，
 #      而 compose 注释里给的示例恰好就是最常见的 PUID=1000 / PGID=1000。
-#   3. 只设 PGID 不设 PUID 时 TARGET_UID 取到 0，造出一个 uid=0 的假 daidai：
+#   3. 只设 PGID 不设 PUID 时 TARGET_UID 取到 0，造出一个 uid=0 的假 panel：
 #      看起来降了权，实际仍是 root，chown 出来的属主也还是 root。
 RUN_AS_USER=""
 RUN_AS_SPEC=""
-DAIDAI_HOME=""
+PANEL_HOME=""
 if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
   TARGET_UID=${PUID:-0}
   TARGET_GID=${PGID:-${TARGET_UID}}
@@ -58,7 +58,7 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
   elif ! command -v su-exec >/dev/null 2>&1 && ! command -v gosu >/dev/null 2>&1; then
     log "未找到 su-exec/gosu，PUID/PGID 设置已忽略（继续以 root 运行）"
   else
-    DAIDAI_HOME="${DATA_DIR}/.home"
+    PANEL_HOME="${DATA_DIR}/.home"
 
     # ---- 组：GID 已被占用就直接复用那个组 ---------------------------------
     # 复用而不是新建，是因为「GID 已存在」在 NAS 上是常态（群晖的 users=100、
@@ -66,14 +66,14 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
     # 组叫什么名字无所谓。
     TARGET_GROUP=$(getent group "${TARGET_GID}" 2>/dev/null | cut -d: -f1)
     if [ -z "${TARGET_GROUP}" ]; then
-      if getent group daidai >/dev/null 2>&1; then
-        # daidai 组已存在但 GID 不是这次要的：用户改了 PGID 之后只做了 docker restart，
+      if getent group panel >/dev/null 2>&1; then
+        # panel 组已存在但 GID 不是这次要的：用户改了 PGID 之后只做了 docker restart，
         # 容器可写层还在，上一次建的组会原样保留。就地改 GID，不要重建。
-        groupmod -g "${TARGET_GID}" daidai >/dev/null 2>&1 || true
+        groupmod -g "${TARGET_GID}" panel >/dev/null 2>&1 || true
       elif command -v groupadd >/dev/null 2>&1; then
-        groupadd -g "${TARGET_GID}" daidai >/dev/null 2>&1 || true
+        groupadd -g "${TARGET_GID}" panel >/dev/null 2>&1 || true
       else
-        addgroup -g "${TARGET_GID}" daidai >/dev/null 2>&1 || true
+        addgroup -g "${TARGET_GID}" panel >/dev/null 2>&1 || true
       fi
       TARGET_GROUP=$(getent group "${TARGET_GID}" 2>/dev/null | cut -d: -f1)
     fi
@@ -81,12 +81,12 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
     # ---- 用户：UID 已被占用同样直接复用 -----------------------------------
     TARGET_USER=$(getent passwd "${TARGET_UID}" 2>/dev/null | cut -d: -f1)
     if [ -z "${TARGET_USER}" ]; then
-      if id -u daidai >/dev/null 2>&1; then
-        usermod -u "${TARGET_UID}" -g "${TARGET_GID}" -d "${DAIDAI_HOME}" daidai >/dev/null 2>&1 || true
+      if id -u panel >/dev/null 2>&1; then
+        usermod -u "${TARGET_UID}" -g "${TARGET_GID}" -d "${PANEL_HOME}" panel >/dev/null 2>&1 || true
       elif command -v useradd >/dev/null 2>&1; then
-        useradd -M -d "${DAIDAI_HOME}" -u "${TARGET_UID}" -g "${TARGET_GID}" -s /sbin/nologin daidai >/dev/null 2>&1 || true
+        useradd -M -d "${PANEL_HOME}" -u "${TARGET_UID}" -g "${TARGET_GID}" -s /sbin/nologin panel >/dev/null 2>&1 || true
       else
-        adduser -D -H -h "${DAIDAI_HOME}" -u "${TARGET_UID}" -G "${TARGET_GROUP:-daidai}" daidai >/dev/null 2>&1 || true
+        adduser -D -H -h "${PANEL_HOME}" -u "${TARGET_UID}" -G "${TARGET_GROUP:-panel}" panel >/dev/null 2>&1 || true
       fi
       TARGET_USER=$(getent passwd "${TARGET_UID}" 2>/dev/null | cut -d: -f1)
     fi
@@ -95,10 +95,10 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
       # 建不出来也拿不到现成账号：继续以 root 跑，比顶着一个不存在的用户名
       # 让 su-exec 在启动时报错要好，至少面板是可用的。
       log "无法创建或复用 uid=${TARGET_UID} 的用户，PUID/PGID 设置已忽略（继续以 root 运行）"
-      DAIDAI_HOME=""
+      PANEL_HOME=""
     else
       # ---- 家目录：本次修复的核心 -----------------------------------------
-      # 放在数据目录下而不是 /home/daidai，理由有三：
+      # 放在数据目录下而不是 /home/panel，理由有三：
       #   1. 已经被下面那条 chown -R "${DATA_DIR}" 覆盖，不会再漏掉一处属主；
       #   2. 在挂载卷里，容器重建后 npm 缓存与用户改过的镜像源配置都还在；
       #   3. 备份只收集 scripts/ 下带扩展名白名单的脚本文件，这个目录不会被打进备份包。
@@ -108,9 +108,9 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
       # 用户看到的是「容器无限重启、docker logs 一行输出都没有」，
       # 而下面那道可写性预检本来能给出「数据目录不可写 + 三条原因 + 修复命令」。
       # 建不出来不致命：预检会替我们报错并说清怎么办。
-      mkdir -p "${DAIDAI_HOME}" 2>/dev/null || true
+      mkdir -p "${PANEL_HOME}" 2>/dev/null || true
 
-      log "应用 PUID=${TARGET_UID} PGID=${TARGET_GID}（运行用户 ${TARGET_USER}，HOME=${DAIDAI_HOME}），正在调整数据目录所有权..."
+      log "应用 PUID=${TARGET_UID} PGID=${TARGET_GID}（运行用户 ${TARGET_USER}，HOME=${PANEL_HOME}），正在调整数据目录所有权..."
       chown -R "${TARGET_UID}:${TARGET_GID}" "${DATA_DIR}" /tmp 2>/dev/null || true
       RUN_AS_USER="${TARGET_USER}"
 
@@ -127,7 +127,7 @@ if [ -n "${PUID}" ] || [ -n "${PGID}" ]; then
 fi
 
 # --- 数据目录可写性预检 -----------------------------------------------------
-WRITE_PROBE="${DATA_DIR}/.daidai-write-probe-$$"
+WRITE_PROBE="${DATA_DIR}/.panel-write-probe-$$"
 PROBE_CMD="true"
 if [ -n "${RUN_AS_USER}" ]; then
   if command -v su-exec >/dev/null 2>&1; then
@@ -152,8 +152,8 @@ rm -f "${WRITE_PROBE}" 2>/dev/null || true
 # HOME 要单独再探一次：装依赖时 npm 的 cache（$HOME/.npm）、.npmrc 与 pip 的 pip.conf
 # 全落在这里，它不可写的表现是「面板能开、一装依赖就 EACCES」，
 # 跟上面那种「数据目录整体不可写、面板压根起不来」完全不是一回事，不能靠同一次探测代劳。
-if [ -n "${RUN_AS_USER}" ] && [ -n "${DAIDAI_HOME}" ]; then
-  HOME_PROBE="${DAIDAI_HOME}/.daidai-write-probe-$$"
+if [ -n "${RUN_AS_USER}" ] && [ -n "${PANEL_HOME}" ]; then
+  HOME_PROBE="${PANEL_HOME}/.panel-write-probe-$$"
   HOME_PROBE_CMD="touch ${HOME_PROBE}"
   if command -v su-exec >/dev/null 2>&1; then
     HOME_PROBE_CMD="su-exec ${RUN_AS_SPEC} touch ${HOME_PROBE}"
@@ -163,7 +163,7 @@ if [ -n "${RUN_AS_USER}" ] && [ -n "${DAIDAI_HOME}" ]; then
   if sh -c "${HOME_PROBE_CMD}" 2>/dev/null; then
     rm -f "${HOME_PROBE}" 2>/dev/null || true
   else
-    log "警告：运行用户 ${RUN_AS_USER} 对 HOME（${DAIDAI_HOME}）没有写权限，面板内安装 Node.js / Python 依赖会失败"
+    log "警告：运行用户 ${RUN_AS_USER} 对 HOME（${PANEL_HOME}）没有写权限，面板内安装 Node.js / Python 依赖会失败"
     log "  在宿主机执行：sudo chown -R ${TARGET_UID}:${TARGET_GID} <挂载点>，或去掉 PUID/PGID 改回 root 运行"
   fi
 fi
@@ -176,22 +176,22 @@ export LC_ALL="${LC_ALL:-C.UTF-8}"
 
 # --- PATH / NODE_PATH ------------------------------------------------------
 export NODE_PATH="${DATA_DIR}/deps/nodejs/node_modules"
-export DAIDAI_PYTHON_RUNTIME_ROOT="${DAIDAI_PYTHON_RUNTIME_ROOT:-/opt/daidai-python}"
-DAIDAI_PYTHON_BIN_PATH=""
-DAIDAI_PYTHON_LIB_PATH=""
+export PANEL_PYTHON_RUNTIME_ROOT="${PANEL_PYTHON_RUNTIME_ROOT:-/opt/panel-python}"
+PANEL_PYTHON_BIN_PATH=""
+PANEL_PYTHON_LIB_PATH=""
 for py_ver in 3.12 3.11 3.10; do
-  py_root="${DAIDAI_PYTHON_RUNTIME_ROOT}/${py_ver}"
+  py_root="${PANEL_PYTHON_RUNTIME_ROOT}/${py_ver}"
   if [ -d "${py_root}/bin" ]; then
-    DAIDAI_PYTHON_BIN_PATH="${DAIDAI_PYTHON_BIN_PATH:+${DAIDAI_PYTHON_BIN_PATH}:}${py_root}/bin"
+    PANEL_PYTHON_BIN_PATH="${PANEL_PYTHON_BIN_PATH:+${PANEL_PYTHON_BIN_PATH}:}${py_root}/bin"
   fi
   if [ -d "${py_root}/lib" ]; then
-    DAIDAI_PYTHON_LIB_PATH="${DAIDAI_PYTHON_LIB_PATH:+${DAIDAI_PYTHON_LIB_PATH}:}${py_root}/lib"
+    PANEL_PYTHON_LIB_PATH="${PANEL_PYTHON_LIB_PATH:+${PANEL_PYTHON_LIB_PATH}:}${py_root}/lib"
   fi
 done
-DEFAULT_PYTHON_VERSION="${DAIDAI_PYTHON_VERSION:-3.12}"
-export PATH="${DATA_DIR}/deps/nodejs/node_modules/.bin:${DATA_DIR}/deps/python/${DEFAULT_PYTHON_VERSION}/bin:${DAIDAI_PYTHON_BIN_PATH:+${DAIDAI_PYTHON_BIN_PATH}:}${PATH}"
-if [ -n "${DAIDAI_PYTHON_LIB_PATH}" ]; then
-  export LD_LIBRARY_PATH="${DAIDAI_PYTHON_LIB_PATH}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+DEFAULT_PYTHON_VERSION="${PANEL_PYTHON_VERSION:-3.12}"
+export PATH="${DATA_DIR}/deps/nodejs/node_modules/.bin:${DATA_DIR}/deps/python/${DEFAULT_PYTHON_VERSION}/bin:${PANEL_PYTHON_BIN_PATH:+${PANEL_PYTHON_BIN_PATH}:}${PATH}"
+if [ -n "${PANEL_PYTHON_LIB_PATH}" ]; then
+  export LD_LIBRARY_PATH="${PANEL_PYTHON_LIB_PATH}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 fi
 
 if [ -d "${DATA_DIR}/deps/python/${DEFAULT_PYTHON_VERSION}" ]; then
@@ -229,10 +229,10 @@ fi
 #   v2.2.5 及更早：每次启动 cat 覆盖 config.yaml，用户在面板里改过的 CORS /
 #     信任代理 / JWT 过期时间等会被强制丢失。
 #   v2.2.6：改成"幂等"——文件存在就不动。但 Dockerfile 把 server/config.yaml
-#     里的 `path: ./data/daidai.db` 这种相对路径占位 COPY 到了 /app/config.yaml，
-#     幂等逻辑保留了占位，daidai-server 按 cwd 解析得到 /app/data/daidai.db，
-#     新建空库，旧数据（/app/Dumb-Panel/daidai.db）找不到 → "面板像刚装好"。
-#   v2.2.7：用硬编码字符串 `./data/daidai.db` / `dir: ./data` 识别"占位"。
+#     里的 `path: ./data/panel.db` 这种相对路径占位 COPY 到了 /app/config.yaml，
+#     幂等逻辑保留了占位，panel-server 按 cwd 解析得到 /app/data/panel.db，
+#     新建空库，旧数据（/app/Panel/panel.db）找不到 → "面板像刚装好"。
+#   v2.2.7：用硬编码字符串 `./data/panel.db` / `dir: ./data` 识别"占位"。
 #     用户改过 config 但 path 仍是任意相对路径的情形仍会漏检。
 #
 # v2.2.9 修复策略（与代码层 cfg.Database.Path 也转绝对路径配合）：
@@ -294,15 +294,15 @@ config_needs_rewrite() {
 
 scan_legacy_db_locations() {
   # v2.2.6 受害用户的数据可能残留在两类位置：
-  #   1) /app/data/daidai.db —— v2.2.6 错位生成的空库/半库
+  #   1) /app/data/panel.db —— v2.2.6 错位生成的空库/半库
   #   2) 任意自定义挂载点下的旧库 —— 用户用 `-v /host/x:/data` + DATA_DIR=/data
-  #      或者类似 /config /opt/daidai /share/... 的 NAS 习惯挂载点。
+  #      或者类似 /config /opt/panel /share/... 的 NAS 习惯挂载点。
   #
   # 第一阶段：扫已知常见挂载点；第二阶段：浅 find 兜底覆盖任意自定义挂载点。
   # 用临时文件汇总而不是 shell 变量——pipe to while 在 POSIX sh 里跑在子 shell，
   # 父 shell 拿不到变量修改。
-  current="${DATA_DIR}/daidai.db"
-  tmp_scanned=$(mktemp 2>/dev/null || echo /tmp/.daidai-scan-$$)
+  current="${DATA_DIR}/panel.db"
+  tmp_scanned=$(mktemp 2>/dev/null || echo /tmp/.panel-scan-$$)
   : > "${tmp_scanned}"
 
   consider_candidate() {
@@ -315,18 +315,18 @@ scan_legacy_db_locations() {
 
   # 第一阶段：已知常见挂载点
   for candidate in \
-      /app/data/daidai.db \
-      /app/Dumb-Panel/daidai.db \
-      /data/daidai.db \
-      /config/daidai.db \
-      /opt/daidai/daidai.db \
-      /app/daidai.db; do
+      /app/data/panel.db \
+      /app/Panel/panel.db \
+      /data/panel.db \
+      /config/panel.db \
+      /opt/panel/panel.db \
+      /app/panel.db; do
     consider_candidate "${candidate}"
   done
 
   # 第二阶段：浅扫描兜底（深度 4 平衡性能与覆盖面）。跳过系统目录避免噪音。
   if command -v find >/dev/null 2>&1; then
-    find / -maxdepth 4 -name 'daidai.db' -type f \
+    find / -maxdepth 4 -name 'panel.db' -type f \
       -not -path '/proc/*' -not -path '/sys/*' -not -path '/tmp/*' \
       -not -path '/dev/*' -not -path '/run/*' -not -path '/var/cache/*' \
       2>/dev/null | while IFS= read -r found_path; do
@@ -377,7 +377,7 @@ server:
   mode: release
 
 database:
-  path: ${DATA_DIR}/daidai.db
+  path: ${DATA_DIR}/panel.db
 
 jwt:
   secret: ""
@@ -402,7 +402,7 @@ if [ $# -gt 0 ]; then
   exec "$@"
 fi
 
-# --- 启动 nginx + daidai-server ---------------------------------------------
+# --- 启动 nginx + panel-server ---------------------------------------------
 nginx
 
 shutdown() {
@@ -416,27 +416,27 @@ trap shutdown TERM INT
 
 # 降权时必须用 env 把 HOME 重新钉一遍，不能只靠 /etc/passwd 里的家目录字段：
 # su-exec 会按 passwd 覆写 HOME，gosu 则只在 HOME 为空时才设置（Docker 默认已经注入
-# HOME=/root，所以 gosu 那条路上 HOME 会原样保持 /root，daidai 照样写不进去）。
+# HOME=/root，所以 gosu 那条路上 HOME 会原样保持 /root，panel 照样写不进去）。
 # 两个工具行为不一致，靠 env 显式指定才能让两个镜像得到同一个结果。
 # env 是 exec 掉自己，PID 不变，下面的 SERVER_PID / wait / trap 全部照旧成立。
 #
 # 【必须写绝对路径 /usr/bin/env】上面 export 的 PATH 首位是
 # ${DATA_DIR}/deps/nodejs/node_modules/.bin —— 那是面板用户可写的目录。
 # 用户在依赖页装到一个 bin 名恰好叫 env 的 npm 包（或自己往那儿放个同名脚本），
-# 裸写 env 就会解析到它，daidai-server 根本不会被执行，
+# 裸写 env 就会解析到它，panel-server 根本不会被执行，
 # 表现成「容器每 2 秒重启一次、日志里只有一个看不懂的退出码」。
 # /usr/bin/env 在 Alpine（busybox）与 Debian（coreutils）上都在这个位置。
 while true; do
   if [ -n "${RUN_AS_USER}" ] && command -v su-exec >/dev/null 2>&1; then
-    su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server &
+    su-exec "${RUN_AS_SPEC}" /usr/bin/env "HOME=${PANEL_HOME}" /app/panel-server &
   elif [ -n "${RUN_AS_USER}" ] && command -v gosu >/dev/null 2>&1; then
-    gosu "${RUN_AS_SPEC}" /usr/bin/env "HOME=${DAIDAI_HOME}" /app/daidai-server &
+    gosu "${RUN_AS_SPEC}" /usr/bin/env "HOME=${PANEL_HOME}" /app/panel-server &
   else
-    /app/daidai-server &
+    /app/panel-server &
   fi
   SERVER_PID=$!
   echo "${SERVER_PID}" > "${SERVER_PID_FILE}"
-  # PID 文件是 root 写的，daidai 覆写会 EACCES —— 后端只打一行日志不影响功能，
+  # PID 文件是 root 写的，panel 覆写会 EACCES —— 后端只打一行日志不影响功能，
   # 但那行日志在排障时非常误导（看起来像数据目录权限没配好）。顺手把属主改过去。
   if [ -n "${RUN_AS_USER}" ]; then
     chown "${TARGET_UID}:${TARGET_GID}" "${SERVER_PID_FILE}" 2>/dev/null || true
@@ -448,6 +448,6 @@ while true; do
   set -e
   rm -f "${SERVER_PID_FILE}"
   [ ${EXIT_CODE} -eq 0 ] && exit 0
-  log "daidai-server 异常退出 (code=${EXIT_CODE})，2 秒后重启"
+  log "panel-server 异常退出 (code=${EXIT_CODE})，2 秒后重启"
   sleep 2
 done

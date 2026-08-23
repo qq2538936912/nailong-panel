@@ -301,7 +301,7 @@ function planTaskLogStream(taskId: number): DemoStreamScript {
     [
       [120, (at) => `[${at}] ## 开始执行 ${name}\n`],
       [160, (at) => `[${at}] ## 命令：${command}\n`],
-      [180, (at) => `[${at}] ## 工作目录：/opt/daidai/scripts\n`],
+      [180, (at) => `[${at}] ## 工作目录：/opt/panel/scripts\n`],
       ...taskBodySpecs(runnerOf(command), task),
       [220, (at, total) => `\n[${at}] ## 执行结束，退出码 0，耗时 ${total.toFixed(1)}s\n`],
     ],

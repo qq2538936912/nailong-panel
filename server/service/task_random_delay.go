@@ -1,6 +1,6 @@
 package service
 
-import "daidai-panel/model"
+import "panel/model"
 
 // shouldApplyRandomDelayForTrigger 判断某次执行是否应当应用随机延迟。
 // 定时(cron)与开机自启(startup)都属于无人值守的自动触发，需要随机延迟错峰；

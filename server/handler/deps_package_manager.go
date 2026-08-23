@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/service"
+	"panel/service"
 )
 
 type linuxPackageManager struct {

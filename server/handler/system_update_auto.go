@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/model"
-	"daidai-panel/service"
+	"panel/model"
+	"panel/service"
 )
 
 const (

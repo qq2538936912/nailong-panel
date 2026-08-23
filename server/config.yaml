@@ -3,7 +3,7 @@ server:
   mode: release
 
 database:
-  path: ./data/daidai.db
+  path: ./data/panel.db
 
 jwt:
   secret: ""

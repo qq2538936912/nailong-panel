@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 拉取前指令与拉取后钩子共用 RunInlineScript，它固定用 bash 跑临时 .sh。

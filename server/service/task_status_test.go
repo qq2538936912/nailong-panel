@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 
 	"github.com/robfig/cron/v3"
 )

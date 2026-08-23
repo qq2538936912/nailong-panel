@@ -1,23 +1,23 @@
 #!/system/bin/sh
 ##########################################################################
-# 呆呆面板 Magisk 模块 - late_start service
+# 面板 Magisk 模块 - late_start service
 #
-# 进入容器（Alpine 或 Debian，取决于 $MODDIR/flavor）启动 daidai-server，
-# 端口可通过 ports.conf 配置。前端静态资源由 daidai-server 直接托管，不依赖 nginx。
+# 进入容器（Alpine 或 Debian，取决于 $MODDIR/flavor）启动 panel-server，
+# 端口可通过 ports.conf 配置。前端静态资源由 panel-server 直接托管，不依赖 nginx。
 ##########################################################################
 
 export PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 
 # rootfs 位置探测
-rootfs=/data/daidai
+rootfs=/data/panel
 if [ ! -d "$rootfs" ]; then
-  rootfs=/data/local/daidai
+  rootfs=/data/local/panel
 fi
 
 # 模块目录探测
-MODDIR=${MODDIR:-/data/adb/modules/daidai-panel}
-[ ! -d "$MODDIR" ] && MODDIR=/data/adb/magisk/modules/daidai-panel
-[ ! -d "$MODDIR" ] && MODDIR=/sbin/.magisk/modules/daidai-panel
+MODDIR=${MODDIR:-/data/adb/modules/panel}
+[ ! -d "$MODDIR" ] && MODDIR=/data/adb/magisk/modules/panel
+[ ! -d "$MODDIR" ] && MODDIR=/sbin/.magisk/modules/panel
 [ ! -d "$MODDIR" ] && MODDIR=$(dirname "$0")
 RURIMA=$MODDIR/system/bin/rurima
 
@@ -35,16 +35,16 @@ fi
 CTR_SHELL=/bin/ash
 [ "$FLAVOR" = "debian" ] && CTR_SHELL=/bin/bash
 
-PERSIST_DIR=/data/adb/daidai-panel
+PERSIST_DIR=/data/adb/panel
 LOG_FILE="$PERSIST_DIR/service.log"
 PORTS_CONF="$PERSIST_DIR/ports.conf"
 
 # ---- 手动停止开关 / 守护代次标记 ----------------------------------------
 # 两个文件都必须放在 PERSIST_DIR（宿主侧持久目录）里，理由：
 #   1. 它不在 rootfs 内，customize.sh 重装时的 `rm -rf "$rootfs"` 碰不到；
-#   2. 容器内也可读写（面板的 Android 运行时就往 /data/adb/daidai-panel/bin 落 Python/Node），
+#   2. 容器内也可读写（面板的 Android 运行时就往 /data/adb/panel/bin 落 Python/Node），
 #      所以面板进程自己也能写停止开关；
-#   3. 绝不能放 $rootfs/app/Dumb-Panel/ 下 —— 那里的 .updating 每次开机被无条件删除，
+#   3. 绝不能放 $rootfs/app/Panel/ 下 —— 那里的 .updating 每次开机被无条件删除，
 #      跨重启的停止状态放在同一个目录迟早被同类清理误伤。
 #
 # STOP_FLAG      存在 = 用户显式停了面板，本脚本与守护都不许把它拉起来（跨重启保持）。
@@ -68,7 +68,7 @@ fi
 # 第一次运行时若文件缺失，自动补一份默认值
 if [ ! -f "$PORTS_CONF" ]; then
   cat > "$PORTS_CONF" << 'PCONF'
-# 呆呆面板端口配置 —— 修改后重启模块生效
+# 面板端口配置 —— 修改后重启模块生效
 PANEL_PORT=5700
 SSH_PORT=22
 SSH_USER=root
@@ -101,7 +101,7 @@ if ! validate_port "$SSH_PORT"; then
 fi
 
 log "========================================="
-log "呆呆面板模块启动 (MODDIR=$MODDIR, rootfs=$rootfs, flavor=$FLAVOR, shell=$CTR_SHELL)"
+log "面板模块启动 (MODDIR=$MODDIR, rootfs=$rootfs, flavor=$FLAVOR, shell=$CTR_SHELL)"
 log "端口: PANEL_PORT=$PANEL_PORT (绑定 0.0.0.0), SSH_PORT=$SSH_PORT (来源: $PORTS_CONF)"
 log "SSH 凭据: 用户=$SSH_USER"
 if [ -n "$EXTRA_CORS_ORIGINS" ]; then
@@ -138,8 +138,8 @@ if [ -d "/data/adb/ksu" ]; then
   mount -o remount,rw /data 2>/dev/null
 fi
 
-# ---- 把模块里的前端和 daidai-server 同步进容器 ---------------------------
-# 这里【不能】无条件覆盖。面板支持在面板内在线升级（只换 daidai-server / ddp / web），
+# ---- 把模块里的前端和 panel-server 同步进容器 ---------------------------
+# 这里【不能】无条件覆盖。面板支持在面板内在线升级（只换 panel-server / ddp / web），
 # 升级时会同时写模块目录和容器内路径；但 KernelSU 等场景下 /data 可能只读，
 # 模块目录写不进去，此时容器内是新版、模块里还是旧版 —— 无条件 cp 会在下一次开机
 # 把用户刚升上去的版本悄悄回滚掉。
@@ -158,11 +158,11 @@ file_needs_sync() {
   esac
 }
 
-mkdir -p $rootfs/app/web $rootfs/app/Dumb-Panel $rootfs/usr/local/bin
+mkdir -p $rootfs/app/web $rootfs/app/Panel $rootfs/usr/local/bin
 
 # 清理残留的在线升级哨兵。开机意味着上一次升级窗口一定已经结束；
 # 若升级途中掉电或重启，哨兵会永久留在盘上，让下面的存活守护再也不敢接管。
-rm -f "$rootfs/app/Dumb-Panel/.updating" 2>/dev/null
+rm -f "$rootfs/app/Panel/.updating" 2>/dev/null
 
 # web 是整个目录，用 index.html 当哨兵判断新旧
 if file_needs_sync "$MODDIR/web/index.html" "$rootfs/app/web/index.html"; then
@@ -172,19 +172,19 @@ else
   log "容器内前端不早于模块内版本，保留容器内版本（面板在线升级的结果）"
 fi
 
-if file_needs_sync "$MODDIR/system/bin/daidai-server" "$rootfs/usr/local/bin/daidai-server"; then
-  cp -f  $MODDIR/system/bin/daidai-server $rootfs/usr/local/bin/daidai-server 2>/dev/null
-  log "已从模块同步 daidai-server"
+if file_needs_sync "$MODDIR/system/bin/panel-server" "$rootfs/usr/local/bin/panel-server"; then
+  cp -f  $MODDIR/system/bin/panel-server $rootfs/usr/local/bin/panel-server 2>/dev/null
+  log "已从模块同步 panel-server"
 else
-  log "容器内 daidai-server 不早于模块内版本，保留容器内版本（面板在线升级的结果）"
+  log "容器内 panel-server 不早于模块内版本，保留容器内版本（面板在线升级的结果）"
 fi
-chmod 755 $rootfs/usr/local/bin/daidai-server 2>/dev/null
+chmod 755 $rootfs/usr/local/bin/panel-server 2>/dev/null
 
 # 恢复持久化的依赖目录（容器 overlayfs 重启后可能丢失写入层）
 DEPS_PERSIST="$PERSIST_DIR/deps-snapshot"
 if [ -d "$DEPS_PERSIST" ]; then
-  mkdir -p $rootfs/app/Dumb-Panel/deps
-  cp -rf "$DEPS_PERSIST/." $rootfs/app/Dumb-Panel/deps/ 2>/dev/null
+  mkdir -p $rootfs/app/Panel/deps
+  cp -rf "$DEPS_PERSIST/." $rootfs/app/Panel/deps/ 2>/dev/null
   log "已从持久化快照恢复 deps 目录"
 fi
 
@@ -205,7 +205,7 @@ cp -f "$PORTS_CONF" "$rootfs/tmp/ports.conf" 2>/dev/null
 # 【位置很关键，不要往上挪】必须在上面的「模块→容器条件同步 + deps 回填」之后、
 # 下面的「拉起容器」之前。
 #
-# 放太靠前的后果：用户在停止状态下刷入新模块 zip 再重启，新的 daidai-server / web
+# 放太靠前的后果：用户在停止状态下刷入新模块 zip 再重启，新的 panel-server / web
 # 根本同步不进容器；之后点动作按钮「启动」，跑起来的还是旧版本，
 # 表现成「刷了新版但面板里版本号没变」，几乎无法自查。
 #
@@ -225,7 +225,7 @@ echo "noSuspend" > /sys/power/wake_lock 2>/dev/null
 dumpsys deviceidle disable 2>/dev/null || true
 
 # ---- 生成容器启动脚本（全字面 heredoc，变量由容器内 . /tmp/ports.conf 注入） ----
-STARTUP=$rootfs/tmp/daidai-startup.sh
+STARTUP=$rootfs/tmp/panel-startup.sh
 
 # shebang 单独写：容器 shell 随 flavor 变（Alpine=/bin/ash，Debian=/bin/bash），
 # 不能烤死在 heredoc 里。脚本正文对两个 flavor 完全一致，只用 POSIX 语法。
@@ -239,13 +239,13 @@ SSH_PASSWORD=123456
 EXTRA_CORS_ORIGINS=""
 [ -f /tmp/ports.conf ] && . /tmp/ports.conf
 
-export DAIDAI_DIR=/app/Dumb-Panel
+export PANEL_DIR=/app/Panel
 export LANG=C.UTF-8
 export HOME=/root
 export SHELL=/bin/bash
-export DAIDAI_MAGISK_MODULE=1
+export PANEL_MAGISK_MODULE=1
 # 模块外壳（本脚本 + customize.sh + action.sh + rootfs 结构）的版本号。
-# 面板的在线升级只替换 daidai-server / ddp / web，覆盖不到外壳。
+# 面板的在线升级只替换 panel-server / ddp / web，覆盖不到外壳。
 #
 # 规则（Go 侧是两个常量，不要再当成一个）：
 #   - 每改一次 Magisk/*.sh 或 rootfs 结构，这个数字加一，
@@ -264,22 +264,22 @@ export DAIDAI_MAGISK_MODULE=1
 #   sshd_config 改成先删净再统一追加并同步写 drop-in、Debian 的 pam_loginuid 降为
 #   optional、chpasswd 回读校验、sshd 改用 -D -e 把日志落到 sshd.log，
 #   并每次开机写一份 SSH 状态快照。同样只影响外壳自身，requiredMagiskShellVersion 保持 1。
-export DAIDAI_MAGISK_SHELL_VERSION=4
-export DAIDAI_ANDROID_RUNTIME_BIN_DIR=/data/adb/daidai-panel/bin
-export PATH=/data/adb/daidai-panel/bin/python/bin:/data/adb/daidai-panel/bin/node/bin:/data/adb/daidai-panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app
+export PANEL_MAGISK_SHELL_VERSION=4
+export PANEL_ANDROID_RUNTIME_BIN_DIR=/data/adb/panel/bin
+export PATH=/data/adb/panel/bin/python/bin:/data/adb/panel/bin/node/bin:/data/adb/panel/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app
 export NODE_PATH=/usr/local/lib/node_modules
 
-mkdir -p $DAIDAI_DIR/scripts $DAIDAI_DIR/logs $DAIDAI_DIR/deps/nodejs $DAIDAI_DIR/deps/python $DAIDAI_DIR/backups
-chmod 777 $DAIDAI_DIR
+mkdir -p $PANEL_DIR/scripts $PANEL_DIR/logs $PANEL_DIR/deps/nodejs $PANEL_DIR/deps/python $PANEL_DIR/backups
+chmod 777 $PANEL_DIR
 
 # 容器内 service.log 的滚动。宿主侧那份（$PERSIST_DIR/service.log）本来就有滚动，
 # 这一份一直没有 —— 而面板起不来时守护每 ~6 分钟就会重跑一次本脚本，
 # 每次都要往里写十几行（v3.0.7 起还多了一份 SSH 状态快照）。
 # 手机内部存储很贵，脚本里其它地方（apt 缓存、sshd.log）都专门为此做过处理。
-if [ -f $DAIDAI_DIR/service.log ]; then
-  _svc_log_size=$(stat -c%s $DAIDAI_DIR/service.log 2>/dev/null || echo 0)
+if [ -f $PANEL_DIR/service.log ]; then
+  _svc_log_size=$(stat -c%s $PANEL_DIR/service.log 2>/dev/null || echo 0)
   if [ "${_svc_log_size:-0}" -gt 1048576 ]; then
-    mv -f $DAIDAI_DIR/service.log $DAIDAI_DIR/service.log.old 2>/dev/null
+    mv -f $PANEL_DIR/service.log $PANEL_DIR/service.log.old 2>/dev/null
   fi
 fi
 
@@ -294,9 +294,9 @@ if command -v python3 >/dev/null 2>&1; then
 fi
 case "$PY_MINOR" in
   3.10|3.11|3.12)
-    export DAIDAI_PYTHON_VERSION="$PY_MINOR"
-    if [ ! -d "$DAIDAI_DIR/deps/python/$PY_MINOR" ]; then
-      python3 -m venv "$DAIDAI_DIR/deps/python/$PY_MINOR" 2>/dev/null || true
+    export PANEL_PYTHON_VERSION="$PY_MINOR"
+    if [ ! -d "$PANEL_DIR/deps/python/$PY_MINOR" ]; then
+      python3 -m venv "$PANEL_DIR/deps/python/$PY_MINOR" 2>/dev/null || true
     fi
     ;;
 esac
@@ -304,14 +304,14 @@ esac
 # 按配置写入 config.yaml（每次启动都覆盖，保证端口与 ports.conf 一致）
 # 后端用 net.Listen(":PORT") 绑定 0.0.0.0，穿透/局域网直连均可；
 # CORS 列表只影响浏览器跨域检查，"同源请求"已由中间件自动放行。
-cat > $DAIDAI_DIR/config.yaml << YAML
+cat > $PANEL_DIR/config.yaml << YAML
 server:
   port: ${PANEL_PORT}
   mode: release
   web_dir: /app/web
 
 database:
-  path: /app/Dumb-Panel/daidai.db
+  path: /app/Panel/panel.db
 
 jwt:
   secret: ""
@@ -319,9 +319,9 @@ jwt:
   refresh_token_expire: 1440h
 
 data:
-  dir: /app/Dumb-Panel
-  scripts_dir: /app/Dumb-Panel/scripts
-  log_dir: /app/Dumb-Panel/logs
+  dir: /app/Panel
+  scripts_dir: /app/Panel/scripts
+  log_dir: /app/Panel/logs
 
 cors:
   origins:
@@ -335,7 +335,7 @@ if [ -n "${EXTRA_CORS_ORIGINS}" ]; then
     # 去首尾空白
     origin=$(echo "$origin" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     [ -z "$origin" ] && continue
-    echo "    - ${origin}" >> $DAIDAI_DIR/config.yaml
+    echo "    - ${origin}" >> $PANEL_DIR/config.yaml
   done
 fi
 
@@ -362,9 +362,9 @@ if [ -n "${SSH_USER}" ] && [ -n "${SSH_PASSWORD}" ]; then
     *)
       _pw_hash=$(openssl passwd -6 "${SSH_PASSWORD}" 2>/dev/null)
       if [ -n "$_pw_hash" ] && usermod -p "$_pw_hash" "${SSH_USER}" 2>/dev/null; then
-        echo "[ssh] chpasswd 未生效，已改用 usermod -p 写入密码" >> $DAIDAI_DIR/service.log
+        echo "[ssh] chpasswd 未生效，已改用 usermod -p 写入密码" >> $PANEL_DIR/service.log
       else
-        echo "[ssh] 警告: ${SSH_USER} 的密码哈希仍是锁定态，密码登录必然失败" >> $DAIDAI_DIR/service.log
+        echo "[ssh] 警告: ${SSH_USER} 的密码哈希仍是锁定态，密码登录必然失败" >> $PANEL_DIR/service.log
       fi
       ;;
   esac
@@ -373,7 +373,7 @@ fi
 if [ ! -f /etc/ssh/sshd_config ]; then
   # 原来这里是「文件不在就整段静默跳过」，于是 openssh-server 没装成时
   # 用户既看不到 SSH，也看不到任何一行说明。至少留个线索。
-  echo "[ssh] /etc/ssh/sshd_config 不存在，openssh-server 多半没装成，本次不启动 sshd" >> $DAIDAI_DIR/service.log
+  echo "[ssh] /etc/ssh/sshd_config 不存在，openssh-server 多半没装成，本次不启动 sshd" >> $PANEL_DIR/service.log
 else
   # 重写三个模块托管的指令：Port / PermitRootLogin / PasswordAuthentication。
   #
@@ -407,8 +407,8 @@ else
     !inmatch && /^[#[:space:]]*([Pp]ort|[Pp]ermit[Rr]oot[Ll]ogin|[Pp]assword[Aa]uthentication)[[:space:]]+/ { next }
     { print }
     END { if (!inserted) emit() }
-  ' /etc/ssh/sshd_config > /etc/ssh/sshd_config.daidai-tmp &&
-    mv -f /etc/ssh/sshd_config.daidai-tmp /etc/ssh/sshd_config
+  ' /etc/ssh/sshd_config > /etc/ssh/sshd_config.panel-tmp &&
+    mv -f /etc/ssh/sshd_config.panel-tmp /etc/ssh/sshd_config
 
   # Debian 的 sshd_config 顶部有一行未注释的 Include /etc/ssh/sshd_config.d/*.conf，
   # Include 进来的内容先被解析，按「第一次胜出」会压过主文件里的一切。
@@ -421,7 +421,7 @@ else
       echo "Port ${SSH_PORT}"
       echo "PermitRootLogin yes"
       echo "PasswordAuthentication yes"
-    } > /etc/ssh/sshd_config.d/00-daidai.conf
+    } > /etc/ssh/sshd_config.d/00-panel.conf
   fi
 
   # 没有 host key 就补一次（安装期已经跑过，这里是兜底）
@@ -455,7 +455,7 @@ else
   # 特权分离用户/目录缺失这三类问题。原来这些全部会变成「起不来且没日志」。
   _sshd_t=$(/usr/sbin/sshd -t 2>&1)
   if [ -n "$_sshd_t" ]; then
-    echo "[ssh] sshd -t: $_sshd_t" >> $DAIDAI_DIR/service.log
+    echo "[ssh] sshd -t: $_sshd_t" >> $PANEL_DIR/service.log
   fi
 
   # 去重判据从 `pgrep -x sshd` 换成「本容器的 SSH 端口有没有在监听」。
@@ -479,15 +479,15 @@ else
   }
 
   if ssh_port_listening; then
-    echo "[ssh] 端口 ${SSH_PORT} 已在监听，跳过启动 sshd" >> $DAIDAI_DIR/service.log
+    echo "[ssh] 端口 ${SSH_PORT} 已在监听，跳过启动 sshd" >> $PANEL_DIR/service.log
   else
     # sshd.log 滚动只在「确实要重新拉起 sshd」时做。
     # 放在外面的话会踩到这个坑：老 sshd 还开着这个 fd，mv 之后它继续往 .old 写，
     # 新的 sshd.log 永远长不到阈值 —— 滚动再也不会触发，.old 无上限增长。
-    if [ -f $DAIDAI_DIR/sshd.log ]; then
-      _ssh_log_size=$(stat -c%s $DAIDAI_DIR/sshd.log 2>/dev/null || echo 0)
+    if [ -f $PANEL_DIR/sshd.log ]; then
+      _ssh_log_size=$(stat -c%s $PANEL_DIR/sshd.log 2>/dev/null || echo 0)
       if [ "${_ssh_log_size:-0}" -gt 1048576 ]; then
-        mv -f $DAIDAI_DIR/sshd.log $DAIDAI_DIR/sshd.log.old 2>/dev/null
+        mv -f $PANEL_DIR/sshd.log $PANEL_DIR/sshd.log.old 2>/dev/null
       fi
     fi
 
@@ -496,10 +496,10 @@ else
     #      会被静默丢弃，每次连接的 PAM 报错也一起没了。
     #   -D 不 daemonize —— 不加 -D 时 sshd 会 daemon(0,0) 把 stdio 重定向到 /dev/null，
     #      -e 就只剩「daemonize 之前」那几条 fatal 还看得到。
-    # 用 nohup + & 交给 init 收养，与 daidai-server 的拉起方式一致（chroot 无 PID namespace，
+    # 用 nohup + & 交给 init 收养，与 panel-server 的拉起方式一致（chroot 无 PID namespace，
     # 父进程退出后子进程照活）。
-    nohup /usr/sbin/sshd -D -e >> $DAIDAI_DIR/sshd.log 2>&1 &
-    echo "[ssh] 已拉起 sshd PID=$! port=${SSH_PORT}" >> $DAIDAI_DIR/service.log
+    nohup /usr/sbin/sshd -D -e >> $PANEL_DIR/sshd.log 2>&1 &
+    echo "[ssh] 已拉起 sshd PID=$! port=${SSH_PORT}" >> $PANEL_DIR/service.log
 
     # 探 5 次而不是只探一次：中低端手机开机时 sshd 要 1~2 秒才加载完 host key 并 bind，
     # 只 sleep 1 就判定的话，SSH 明明可用却每次开机都写一句「端口未监听」，
@@ -510,9 +510,9 @@ else
       if ssh_port_listening; then _ssh_ok=1; break; fi
     done
     if [ "$_ssh_ok" = "1" ]; then
-      echo "[ssh] 端口 ${SSH_PORT} 监听正常" >> $DAIDAI_DIR/service.log
+      echo "[ssh] 端口 ${SSH_PORT} 监听正常" >> $PANEL_DIR/service.log
     else
-      echo "[ssh] 警告: 等待 5 秒后端口 ${SSH_PORT} 仍未监听，详见 $DAIDAI_DIR/sshd.log" >> $DAIDAI_DIR/service.log
+      echo "[ssh] 警告: 等待 5 秒后端口 ${SSH_PORT} 仍未监听，详见 $PANEL_DIR/sshd.log" >> $PANEL_DIR/service.log
     fi
   fi
 
@@ -527,43 +527,43 @@ else
     echo "[ssh] pam_loginuid=$(grep -E 'pam_loginuid' /etc/pam.d/sshd 2>/dev/null | tr -s ' ' | head -n1)"
     echo "[ssh] dropins=$(ls /etc/ssh/sshd_config.d/ 2>/dev/null | tr '\n' ' ')"
     echo "[ssh] loginuid=$(cat /proc/self/loginuid 2>/dev/null || echo ABSENT)"
-  } >> $DAIDAI_DIR/service.log
+  } >> $PANEL_DIR/service.log
 fi
 
-# 避免重复拉起 daidai-server
-if pgrep -f /usr/local/bin/daidai-server >/dev/null 2>&1; then
-  echo "daidai-server 已在运行" >> $DAIDAI_DIR/service.log
+# 避免重复拉起 panel-server
+if pgrep -f /usr/local/bin/panel-server >/dev/null 2>&1; then
+  echo "panel-server 已在运行" >> $PANEL_DIR/service.log
   exit 0
 fi
 
-cd $DAIDAI_DIR
-nohup /usr/local/bin/daidai-server > $DAIDAI_DIR/daidai.log 2>&1 &
-echo "daidai-server 已拉起 PID=$! (port=${PANEL_PORT})" >> $DAIDAI_DIR/service.log
+cd $PANEL_DIR
+nohup /usr/local/bin/panel-server > $PANEL_DIR/panel.log 2>&1 &
+echo "panel-server 已拉起 PID=$! (port=${PANEL_PORT})" >> $PANEL_DIR/service.log
 exit 0
 CONTAINER_EOF
 chmod +x "$STARTUP" 2>/dev/null
 
-log "进入容器启动 daidai-server (flavor=$FLAVOR, panel=$PANEL_PORT, ssh=$SSH_PORT)..."
+log "进入容器启动 panel-server (flavor=$FLAVOR, panel=$PANEL_PORT, ssh=$SSH_PORT)..."
 
 # 输出重定向进宿主 service.log：容器启动脚本里任何没被显式重定向的报错
 # （ruri 自身的错误、脚本里漏掉重定向的命令）原来是直接丢掉的。
-"$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/daidai-startup.sh >> "$LOG_FILE" 2>&1
+"$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/panel-startup.sh >> "$LOG_FILE" 2>&1
 
 sleep 2
 
 # 容器内启动后简单验证
-if "$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" -c "pgrep -f /usr/local/bin/daidai-server >/dev/null 2>&1"; then
+if "$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" -c "pgrep -f /usr/local/bin/panel-server >/dev/null 2>&1"; then
   log "面板启动成功，访问 http://127.0.0.1:${PANEL_PORT}"
 else
-  log "!! 面板启动失败，查看 $rootfs/app/Dumb-Panel/daidai.log"
+  log "!! 面板启动失败，查看 $rootfs/app/Panel/panel.log"
 fi
 
 # ---- 守护代次标记 ----------------------------------------------------------
 # 必须在 fork 守护【之前】写。
 #
-# 为什么需要：本脚本对守护子 shell 没有任何去重手段（只对 daidai-server 做了 pgrep 去重），
+# 为什么需要：本脚本对守护子 shell 没有任何去重手段（只对 panel-server 做了 pgrep 去重），
 # 而 action.sh / 文档都在教用户重跑 service.sh —— 跑几次就有几个 while 循环，
-# 它们彼此看不见对方的 revive_cooldown，会各自进容器重跑 daidai-startup.sh
+# 它们彼此看不见对方的 revive_cooldown，会各自进容器重跑 panel-startup.sh
 # （覆盖 config.yaml、把 SSH 密码改回 ports.conf 的值、持续累积 ruri 挂载）。
 #
 # 做法：每次 service.sh 启动都写一个新值，守护把它读进变量并逐轮比对，
@@ -580,13 +580,13 @@ log "守护代次: $WATCHDOG_GEN"
 #   1. 存活守护：模块版没有 supervisor，面板进程一旦退出（崩溃、OOM、在线升级失败）
 #      就得重启手机才能回来。这里每 60 秒探一次，不在就重新拉起。
 #   2. deps 快照：容器 overlayfs 的写入层在重启后可能丢失，每 10 分钟把 deps 目录
-#      同步到宿主 /data/adb/daidai-panel/deps-snapshot/，下次开机由上面的逻辑回填。
+#      同步到宿主 /data/adb/panel/deps-snapshot/，下次开机由上面的逻辑回填。
 (
   DEPS_PERSIST="$PERSIST_DIR/deps-snapshot"
-  DEPS_CONTAINER="$rootfs/app/Dumb-Panel/deps"
+  DEPS_CONTAINER="$rootfs/app/Panel/deps"
   # 面板在线升级期间会写这个哨兵，替换窗口内守护不插手，
   # 免得在「旧进程已退出、新进程还没起来」的空档里把旧版本又拉起来。
-  UPDATING_FLAG="$rootfs/app/Dumb-Panel/.updating"
+  UPDATING_FLAG="$rootfs/app/Panel/.updating"
 
   # 直接读 /proc 判断进程是否存活，不依赖 pgrep / busybox 是否可用。
   # 容器走的是 chroot（ruri 不传 -u），没有 PID namespace，
@@ -603,7 +603,7 @@ log "守护代次: $WATCHDOG_GEN"
       proc_cmdline=""
       read -r proc_cmdline 2>/dev/null < "$proc_dir/cmdline"
       case "$proc_cmdline" in
-        /usr/local/bin/daidai-server*) return 0 ;;
+        /usr/local/bin/panel-server*) return 0 ;;
       esac
     done
     return 1
@@ -656,7 +656,7 @@ log "守护代次: $WATCHDOG_GEN"
     if [ ! -f "$UPDATING_FLAG" ] && [ "$revive_cooldown" -le 0 ]; then
       if ! panel_is_running; then
         log "!! 面板进程不在，尝试重新拉起"
-        "$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/daidai-startup.sh
+        "$RURIMA" ruri -p -N -S -A $rootfs "$CTR_SHELL" /tmp/panel-startup.sh
         revive_cooldown=5
       fi
     fi

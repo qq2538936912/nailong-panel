@@ -23,7 +23,7 @@ func TestResolveMagiskShellVersion(t *testing.T) {
 	for _, tc := range cases {
 		t.Setenv(magiskShellVersionEnv, tc.raw)
 		if got := resolveMagiskShellVersion(); got != tc.want {
-			t.Fatalf("DAIDAI_MAGISK_SHELL_VERSION=%q 应解析为 %d，实际 %d", tc.raw, tc.want, got)
+			t.Fatalf("PANEL_MAGISK_SHELL_VERSION=%q 应解析为 %d，实际 %d", tc.raw, tc.want, got)
 		}
 	}
 }
@@ -59,12 +59,12 @@ func TestRewriteMagiskModulePropOnlyTouchesVersionLines(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "module.prop")
 	original := strings.Join([]string{
-		"id=daidai-panel",
-		"name=呆呆面板 (Daidai Panel)",
+		"id=panel",
+		"name=面板 (Panel)",
 		"version=v3.0.2",
 		"versionCode=30002",
-		"author=linzixuanzz",
-		"description=在 Android 设备上以 root 权限运行呆呆面板",
+		"author=xiaofeilong2",
+		"description=在 Android 设备上以 root 权限运行面板",
 		"updateJson=https://example.com/update-debian.json",
 		"",
 	}, "\n")
@@ -92,7 +92,7 @@ func TestRewriteMagiskModulePropOnlyTouchesVersionLines(t *testing.T) {
 	if !strings.Contains(text, "updateJson=https://example.com/update-debian.json") {
 		t.Fatalf("updateJson 行被破坏:\n%s", text)
 	}
-	if !strings.Contains(text, "id=daidai-panel") || !strings.Contains(text, "author=linzixuanzz") {
+	if !strings.Contains(text, "id=panel") || !strings.Contains(text, "author=xiaofeilong2") {
 		t.Fatalf("其余字段被破坏:\n%s", text)
 	}
 	if strings.Contains(text, "v3.0.2") || strings.Contains(text, "30002") {
@@ -145,9 +145,9 @@ func TestMagiskUpdateHelperScriptKeepsCriticalConstraints(t *testing.T) {
 	workDir := t.TempDir()
 	plan := &panelUpdatePlan{
 		DeploymentType: panelUpdateDeploymentMagisk,
-		BinaryName:     "daidai-linux-arm64",
+		BinaryName:     "panel-linux-arm64",
 		WebDir:         "/app/web",
-		DataDir:        "/app/Dumb-Panel",
+		DataDir:        "/app/Panel",
 		CurrentPID:     4321,
 		// 面板自己发起升级的场景：调用进程就是面板进程。
 		ServerPID: 4321,
@@ -164,11 +164,11 @@ func TestMagiskUpdateHelperScriptKeepsCriticalConstraints(t *testing.T) {
 	}
 	script := string(raw)
 
-	// 1. 启动路径必须仍是 /usr/local/bin/daidai-server，
-	//    否则 Magisk/service.sh 的 `pgrep -f /usr/local/bin/daidai-server` 去重失效，
+	// 1. 启动路径必须仍是 /usr/local/bin/panel-server，
+	//    否则 Magisk/service.sh 的 `pgrep -f /usr/local/bin/panel-server` 去重失效，
 	//    下次开机会再拉起一个实例抢同一个端口。
-	if !strings.Contains(script, "TARGET_BIN='/usr/local/bin/daidai-server'") {
-		t.Fatalf("helper 脚本没有把目标程序固定在 /usr/local/bin/daidai-server:\n%s", script)
+	if !strings.Contains(script, "TARGET_BIN='/usr/local/bin/panel-server'") {
+		t.Fatalf("helper 脚本没有把目标程序固定在 /usr/local/bin/panel-server:\n%s", script)
 	}
 
 	// 2. 必须先写 .new 再 mv，不能 cp 直接覆盖正在执行的文件（ETXTBSY）。
@@ -184,7 +184,7 @@ func TestMagiskUpdateHelperScriptKeepsCriticalConstraints(t *testing.T) {
 		t.Fatalf("helper 脚本必须先 cd 到数据目录再启动面板:\n%s", script)
 	}
 
-	if !strings.Contains(script, "DATA_DIR='/app/Dumb-Panel'") {
+	if !strings.Contains(script, "DATA_DIR='/app/Panel'") {
 		t.Fatalf("helper 脚本的数据目录不正确:\n%s", script)
 	}
 	if !strings.Contains(script, "PID=4321") {
@@ -202,9 +202,9 @@ func TestMagiskUpdateHelperScriptTerminatesPanelWhenInvokedFromCLI(t *testing.T)
 	workDir := t.TempDir()
 	plan := &panelUpdatePlan{
 		DeploymentType: panelUpdateDeploymentMagisk,
-		BinaryName:     "daidai-linux-arm64",
+		BinaryName:     "panel-linux-arm64",
 		WebDir:         "/app/web",
-		DataDir:        "/app/Dumb-Panel",
+		DataDir:        "/app/Panel",
 		CurrentPID:     1111, // ddp CLI
 		ServerPID:      2222, // 真正的面板进程
 	}
@@ -242,16 +242,16 @@ func TestBuildPanelUpdateTargetForMagisk(t *testing.T) {
 		DeploymentType: panelUpdateDeploymentMagisk,
 		UpdateManager:  panelUpdateManagerPanel,
 		ReleaseVersion: "3.0.3",
-		AssetName:      "daidai-linux-arm64.tar.gz",
-		BinaryName:     "daidai-linux-arm64",
+		AssetName:      "panel-linux-arm64.tar.gz",
+		BinaryName:     "panel-linux-arm64",
 		WebDir:         "/app/web",
-		ModuleDir:      "/data/adb/modules/daidai-panel",
+		ModuleDir:      "/data/adb/modules/panel",
 	})
 
 	if target["deployment_type"] != panelUpdateDeploymentMagisk {
 		t.Fatalf("deployment_type 应为 magisk，实际 %v", target["deployment_type"])
 	}
-	if target["asset_name"] != "daidai-linux-arm64.tar.gz" {
+	if target["asset_name"] != "panel-linux-arm64.tar.gz" {
 		t.Fatalf("asset_name 不正确: %v", target["asset_name"])
 	}
 	if target["web_dir"] != "/app/web" {
@@ -269,7 +269,7 @@ func TestBuildPanelUpdateTargetForMagisk(t *testing.T) {
 // 非模块版环境下必须返回内部哨兵错误，让更新链路继续往 docker / binary 走，
 // 而不是把「不是模块版」当成升级失败抛给用户。
 func TestBuildMagiskPanelUpdatePlanSkipsNonMagiskRuntime(t *testing.T) {
-	t.Setenv("DAIDAI_MAGISK_MODULE", "")
+	t.Setenv("PANEL_MAGISK_MODULE", "")
 
 	_, err := buildMagiskPanelUpdatePlan(nil)
 	if err == nil {

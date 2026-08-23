@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/service"
+	"panel/config"
+	"panel/service"
 )
 
 var scriptInterpreterMap = map[string][]string{

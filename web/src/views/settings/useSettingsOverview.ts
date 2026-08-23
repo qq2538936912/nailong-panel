@@ -219,7 +219,7 @@ export function useSettingsOverview() {
   function buildBinaryUpdateConfirmMessage(updateTarget: any) {
     const assetText = updateTarget.asset_name ? `\n更新包：${updateTarget.asset_name}` : ''
     const installDirText = updateTarget.install_dir ? `\n安装目录：${updateTarget.install_dir}` : ''
-    return `确认开始更新面板吗？系统会在后台下载当前平台的二进制更新包，替换程序与前端文件，并自动重启面板。\n后台更新会保留 config.yaml、Dumb-Panel、data、logs、backups 等本地配置与数据目录。${assetText}${installDirText}`
+    return `确认开始更新面板吗？系统会在后台下载当前平台的二进制更新包，替换程序与前端文件，并自动重启面板。\n后台更新会保留 config.yaml、Panel、data、logs、backups 等本地配置与数据目录。${assetText}${installDirText}`
   }
 
   function buildMagiskUpdateConfirmMessage(updateTarget: any) {
@@ -360,7 +360,7 @@ export function useSettingsOverview() {
         '停止后面板进程会退出，<b>这个网页将永久失联</b>（刷新也打不开），重启手机同样不会自动启动。<br/><br/>'
           + '只有两种方式能再启动回来：<br/>'
           + '1. 在 Magisk / KernelSU / APatch 管理器里点模块卡片的「运行 / Action」按钮（再点一次就是启动）；<br/>'
-          + '2. 用 adb shell 或 Termux 执行：<code>su -c "sh /data/adb/modules/daidai-panel/action.sh"</code><br/><br/>'
+          + '2. 用 adb shell 或 Termux 执行：<code>su -c "sh /data/adb/modules/panel/action.sh"</code><br/><br/>'
           + '确定要停止吗？',
         '停止面板服务',
         {
@@ -401,7 +401,7 @@ export function useSettingsOverview() {
     //
     // 下面的轮询是 `fetch('/', { method: 'HEAD' })` → res.ok → window.location.reload()。
     // 演示站是纯静态站，它的 `/` 在本地静态预览下恒 200；GitHub Pages 上当前恰好是 404
-    // （实测 https://linzixuanzz.github.io/ 没有根仓库），但只要哪天建了同名根仓库
+    // （实测 https://xiaofeilong2.github.io/ 没有根仓库），但只要哪天建了同名根仓库
     // 就会变成 200 —— 属于会自己引爆的定时地雷。一旦 reload，演示数据（纯内存）全部清零。
     //
     // 正常路径其实走不到这里：POST /system/restart 在演示环境是 403，
@@ -520,7 +520,7 @@ export function useSettingsOverview() {
   function openGitHub() {
     const url = updateInfo.value?.has_update && updateInfo.value?.release_url
       ? updateInfo.value.release_url
-      : 'https://github.com/linzixuanzz/daidai-panel/releases'
+      : 'https://gitee.com/xiaofeilong2/panel/releases'
     window.open(url, '_blank')
   }
 

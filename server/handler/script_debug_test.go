@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/testutil"
 )
 
 func TestPrepareInlineDebugFileUsesOriginalScriptDirectory(t *testing.T) {
@@ -46,7 +46,7 @@ func TestPrepareInlineDebugFileUsesOriginalScriptDirectory(t *testing.T) {
 	if !os.SameFile(expectedDirInfo, actualFileDirInfo) {
 		t.Fatalf("expected debug file to be created beside source script, got %q", full)
 	}
-	if !strings.HasPrefix(filepath.Base(full), ".sample.daidai-debug-") {
+	if !strings.HasPrefix(filepath.Base(full), ".sample.panel-debug-") {
 		t.Fatalf("unexpected debug filename %q", filepath.Base(full))
 	}
 	if filepath.Ext(full) != ".py" {

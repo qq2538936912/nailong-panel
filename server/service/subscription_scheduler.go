@@ -7,9 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	cronu "daidai-panel/pkg/cron"
+	"panel/database"
+	"panel/model"
+	cronu "panel/pkg/cron"
 
 	"github.com/robfig/cron/v3"
 )

@@ -1,21 +1,21 @@
 #!/system/bin/sh
 ##########################################################################
-# 呆呆面板 Magisk 模块卸载脚本
+# 面板 Magisk 模块卸载脚本
 #
 # 默认会清理：
-#   - 运行中的 daidai-server 进程
-#   - 容器 rootfs (/data/daidai 或 /data/local/daidai)，Alpine / Debian 路径相同
-#   - 持久化目录 /data/adb/daidai-panel
+#   - 运行中的 panel-server 进程
+#   - 容器 rootfs (/data/panel 或 /data/local/panel)，Alpine / Debian 路径相同
+#   - 持久化目录 /data/adb/panel
 #
 # 如需保留数据以便重装后继续用，卸载前先：
-#   su -c "touch /data/adb/daidai-panel/.keep_on_uninstall"
+#   su -c "touch /data/adb/panel/.keep_on_uninstall"
 ##########################################################################
 
-PERSIST_DIR=/data/adb/daidai-panel
+PERSIST_DIR=/data/adb/panel
 KEEP_FLAG="$PERSIST_DIR/.keep_on_uninstall"
 STOP_FLAG="$PERSIST_DIR/stopped"
 WATCHDOG_GEN_FILE="$PERSIST_DIR/watchdog.gen"
-LOG_TAG="daidai-panel-uninstall"
+LOG_TAG="panel-uninstall"
 
 _log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >&2
@@ -25,22 +25,22 @@ _log() {
 _log "卸载脚本开始执行"
 
 # 0. 先让 service.sh fork 的存活守护自退。
-#    守护的 argv 继承自 service.sh，`pkill -f daidai-server` 根本打不到它；
+#    守护的 argv 继承自 service.sh，`pkill -f panel-server` 根本打不到它；
 #    不收口的话，卸载之后守护还会活到下次重启，对着已被 rm -rf 的 rootfs 反复 ruri。
 mkdir -p "$PERSIST_DIR" 2>/dev/null
 printf '%s\n' "stopped by uninstall.sh at $(date '+%Y-%m-%d %H:%M:%S')" > "$STOP_FLAG" 2>/dev/null
 
 # 1. 停止面板进程
-pkill -f "daidai-server" 2>/dev/null
+pkill -f "panel-server" 2>/dev/null
 sleep 1
-pkill -9 -f "daidai-server" 2>/dev/null
+pkill -9 -f "panel-server" 2>/dev/null
 
 # 2. 清理 rootfs（除非保留）
 if [ -f "$KEEP_FLAG" ]; then
   _log "检测到保留标记 $KEEP_FLAG，跳过 rootfs / 持久化目录清理"
-  _log "如需彻底删除：su -c \"rm -rf /data/daidai /data/local/daidai $PERSIST_DIR\""
+  _log "如需彻底删除：su -c \"rm -rf /data/panel /data/local/panel $PERSIST_DIR\""
 else
-  for rfs in /data/daidai /data/local/daidai; do
+  for rfs in /data/panel /data/local/panel; do
     if [ -d "$rfs" ]; then
       _log "清理 rootfs: $rfs"
       rm -rf "$rfs"
@@ -65,8 +65,8 @@ rm -f "$WATCHDOG_GEN_FILE" 2>/dev/null
 rm -f "$STOP_FLAG" 2>/dev/null
 
 # 4. 清理历史版本可能写入的其它路径
-rm -f /system/etc/init.d/99daidai 2>/dev/null
-rm -f /data/adb/service.d/daidai-panel.sh 2>/dev/null
-rm -f /data/local/tmp/daidai-panel.* 2>/dev/null
+rm -f /system/etc/init.d/99panel 2>/dev/null
+rm -f /data/adb/service.d/panel.sh 2>/dev/null
+rm -f /data/local/tmp/panel.* 2>/dev/null
 
 _log "卸载完成；重启后模块本体目录会被 Magisk 自动清除"

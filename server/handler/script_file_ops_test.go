@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/testutil"
 )
 
 func TestScriptGetContentRejectsDirectoryTarget(t *testing.T) {

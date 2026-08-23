@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 func TestNormalizeScriptRelativePath(t *testing.T) {

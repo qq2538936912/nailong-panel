@@ -16,12 +16,12 @@ import (
 	"syscall"
 	"time"
 
-	"daidai-panel/appboot"
-	"daidai-panel/config"
-	"daidai-panel/handler"
-	"daidai-panel/middleware"
-	"daidai-panel/router"
-	"daidai-panel/service"
+	"panel/appboot"
+	"panel/config"
+	"panel/handler"
+	"panel/middleware"
+	"panel/router"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -94,7 +94,7 @@ func buildAccessURLs(port int) []string {
 
 func printStartupSummary(port int) {
 	urls := buildAccessURLs(port)
-	fmt.Println("呆呆面板已经启动")
+	fmt.Println("面板已经启动")
 	if len(urls) == 0 {
 		fmt.Printf("访问地址：http://127.0.0.1:%d\n", port)
 		return
@@ -137,7 +137,7 @@ func writeServerPIDFile(dataDir string) func() {
 		return func() {}
 	}
 
-	pidFile := filepath.Join(pidDir, "daidai-server.pid")
+	pidFile := filepath.Join(pidDir, "panel-server.pid")
 	if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d\n", os.Getpid())), 0o644); err != nil {
 		log.Printf("write pid file failed: %v", err)
 		return func() {}

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/middleware"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/middleware"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,7 +43,7 @@ func TestDebugRunRevokesScriptTokenAfterCompletion(t *testing.T) {
 	scriptPath := filepath.Join(config.C.Data.ScriptsDir, scriptName)
 	outputPath := filepath.Join(config.C.Data.ScriptsDir, outputName)
 	// 把注入的凭据落到文件，测试才能拿到它的 jti —— 生产脚本绝不该这么写。
-	script := "printf '%s' \"$DAIDAI_TOKEN\" > " + outputName + "\n"
+	script := "printf '%s' \"$PANEL_TOKEN\" > " + outputName + "\n"
 	if err := os.WriteFile(scriptPath, []byte(script), 0o755); err != nil {
 		t.Fatalf("write probe script: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestDebugRunRevokesScriptTokenAfterCompletion(t *testing.T) {
 	}
 	token := strings.TrimSpace(string(tokenBytes))
 	if token == "" {
-		t.Fatal("expected DAIDAI_TOKEN to be injected into the debug run environment")
+		t.Fatal("expected PANEL_TOKEN to be injected into the debug run environment")
 	}
 
 	claims, err := middleware.ParseToken(token)
@@ -114,11 +114,11 @@ func TestBuildScriptExecEnvReturnsRevocableToken(t *testing.T) {
 	if scriptToken == nil || scriptToken.JTI == "" {
 		t.Fatalf("expected buildScriptExecEnv to return a revocable token, got %#v", scriptToken)
 	}
-	if envMap["DAIDAI_TOKEN"] == "" {
-		t.Fatalf("expected DAIDAI_TOKEN in debug env, got %#v", envMap)
+	if envMap["PANEL_TOKEN"] == "" {
+		t.Fatalf("expected PANEL_TOKEN in debug env, got %#v", envMap)
 	}
 
-	claims, err := middleware.ParseToken(envMap["DAIDAI_TOKEN"])
+	claims, err := middleware.ParseToken(envMap["PANEL_TOKEN"])
 	if err != nil {
 		t.Fatalf("parse debug token: %v", err)
 	}

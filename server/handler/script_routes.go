@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"daidai-panel/middleware"
+	"panel/middleware"
 
 	"github.com/gin-gonic/gin"
 )

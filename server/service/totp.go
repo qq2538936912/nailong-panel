@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

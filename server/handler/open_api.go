@@ -7,16 +7,16 @@ import (
 	"strconv"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/pkg/crypto"
-	"daidai-panel/pkg/response"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/pkg/crypto"
+	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
-	"daidai-panel/config"
+	"panel/config"
 )
 
 type OpenAPIHandler struct{}

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/middleware"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/middleware"
+	"panel/testutil"
 )
 
 func TestBuildNotifyHelperEnvCreatesManagedHelpers(t *testing.T) {
@@ -24,10 +24,10 @@ func TestBuildNotifyHelperEnvCreatesManagedHelpers(t *testing.T) {
 		t.Fatalf("build notify helper env: %v", err)
 	}
 
-	if env["DAIDAI_NOTIFY_URL"] == "" || env["DAIDAI_NOTIFY_TOKEN"] == "" {
+	if env["PANEL_NOTIFY_URL"] == "" || env["PANEL_NOTIFY_TOKEN"] == "" {
 		t.Fatalf("expected notify url/token in env, got %#v", env)
 	}
-	claims, err := middleware.ParseToken(env["DAIDAI_NOTIFY_TOKEN"])
+	claims, err := middleware.ParseToken(env["PANEL_NOTIFY_TOKEN"])
 	if err != nil {
 		t.Fatalf("parse helper token: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestBuildNotifyHelperEnvCreatesManagedHelpers(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read helper %s: %v", path, err)
 		}
-		if !strings.Contains(string(content), "DAIDAI_PANEL_MANAGED_NOTIFY_HELPER") {
+		if !strings.Contains(string(content), "PANEL_MANAGED_NOTIFY_HELPER") {
 			t.Fatalf("expected helper marker in %s", path)
 		}
 	}
@@ -57,8 +57,8 @@ func TestBuildNotifyHelperEnvCreatesManagedHelpers(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(workDir, sendNotifyJSFilename)); !os.IsNotExist(err) {
 		t.Fatalf("expected nested sendNotify.js to stay absent, got err=%v", err)
 	}
-	if got := env["DAIDAI_SCRIPTS_DIR"]; got != scriptsDir {
-		t.Fatalf("expected DAIDAI_SCRIPTS_DIR=%q, got %q", scriptsDir, got)
+	if got := env["PANEL_SCRIPTS_DIR"]; got != scriptsDir {
+		t.Fatalf("expected PANEL_SCRIPTS_DIR=%q, got %q", scriptsDir, got)
 	}
 
 	if _, err := os.Stat(filepath.Join(root, "data")); err != nil {
@@ -83,7 +83,7 @@ func TestBuildNotifyHelperEnvUsesAbsoluteHelperPaths(t *testing.T) {
 		t.Fatalf("build notify helper env: %v", err)
 	}
 
-	for _, key := range []string{"DAIDAI_SCRIPTS_DIR", "DAIDAI_NOTIFY_PY", "DAIDAI_SEND_NOTIFY_JS"} {
+	for _, key := range []string{"PANEL_SCRIPTS_DIR", "PANEL_NOTIFY_PY", "PANEL_SEND_NOTIFY_JS"} {
 		if !filepath.IsAbs(env[key]) {
 			t.Fatalf("expected %s to be absolute, got %q", key, env[key])
 		}
@@ -105,23 +105,23 @@ func TestBuildNotifyHelperEnvExposesGenericAPIEntrypoint(t *testing.T) {
 	}
 
 	wantBase := fmt.Sprintf("http://127.0.0.1:%d/api/v1", config.C.Server.Port)
-	if got := env["DAIDAI_API_BASE"]; got != wantBase {
-		t.Fatalf("expected DAIDAI_API_BASE=%q, got %q", wantBase, got)
+	if got := env["PANEL_API_BASE"]; got != wantBase {
+		t.Fatalf("expected PANEL_API_BASE=%q, got %q", wantBase, got)
 	}
-	if got := env["DAIDAI_NOTIFY_URL"]; got != wantBase+"/notifications/send" {
-		t.Fatalf("expected DAIDAI_NOTIFY_URL to stay unchanged, got %q", got)
+	if got := env["PANEL_NOTIFY_URL"]; got != wantBase+"/notifications/send" {
+		t.Fatalf("expected PANEL_NOTIFY_URL to stay unchanged, got %q", got)
 	}
-	if env["DAIDAI_TOKEN"] == "" {
-		t.Fatalf("expected DAIDAI_TOKEN to be populated")
+	if env["PANEL_TOKEN"] == "" {
+		t.Fatalf("expected PANEL_TOKEN to be populated")
 	}
-	if env["DAIDAI_TOKEN"] != env["DAIDAI_NOTIFY_TOKEN"] {
-		t.Fatalf("expected DAIDAI_TOKEN and DAIDAI_NOTIFY_TOKEN to be the same credential, got %q vs %q",
-			env["DAIDAI_TOKEN"], env["DAIDAI_NOTIFY_TOKEN"])
+	if env["PANEL_TOKEN"] != env["PANEL_NOTIFY_TOKEN"] {
+		t.Fatalf("expected PANEL_TOKEN and PANEL_NOTIFY_TOKEN to be the same credential, got %q vs %q",
+			env["PANEL_TOKEN"], env["PANEL_NOTIFY_TOKEN"])
 	}
 
-	claims, err := middleware.ParseToken(env["DAIDAI_TOKEN"])
+	claims, err := middleware.ParseToken(env["PANEL_TOKEN"])
 	if err != nil {
-		t.Fatalf("parse DAIDAI_TOKEN: %v", err)
+		t.Fatalf("parse PANEL_TOKEN: %v", err)
 	}
 	if claims.Role != "operator" {
 		t.Fatalf("expected operator role on script token, got %q", claims.Role)
@@ -141,15 +141,15 @@ func TestManagedRuntimeEnvMapCarriesScriptAPIEntrypoint(t *testing.T) {
 		t.Fatalf("expected script token info from runtime env builder, got %#v", tokenInfo)
 	}
 
-	for _, key := range []string{"DAIDAI_API_BASE", "DAIDAI_TOKEN", "DAIDAI_NOTIFY_URL", "DAIDAI_NOTIFY_TOKEN"} {
+	for _, key := range []string{"PANEL_API_BASE", "PANEL_TOKEN", "PANEL_NOTIFY_URL", "PANEL_NOTIFY_TOKEN"} {
 		if envMap[key] == "" {
 			t.Fatalf("expected %s in task runtime env, got %q", key, envMap[key])
 		}
 	}
 
-	claims, err := middleware.ParseToken(envMap["DAIDAI_TOKEN"])
+	claims, err := middleware.ParseToken(envMap["PANEL_TOKEN"])
 	if err != nil {
-		t.Fatalf("parse runtime DAIDAI_TOKEN: %v", err)
+		t.Fatalf("parse runtime PANEL_TOKEN: %v", err)
 	}
 	if claims.ID != tokenInfo.JTI {
 		t.Fatalf("expected runtime token jti %q to match returned jti %q", claims.ID, tokenInfo.JTI)

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/model"
+	"panel/testutil"
 )
 
 // 回归：v2.2.18 在 task_executor.runTask 中构建任务运行环境时，
@@ -83,8 +83,8 @@ func TestTaskExecutorUsesPlannedScriptDirectoryForRuntimeEnv(t *testing.T) {
 		t.Fatalf("build runtime env: %v", err)
 	}
 
-	if got := envMap["DAIDAI_PYTHON_VERSION"]; got != "3.10" {
-		t.Fatalf("expected DAIDAI_PYTHON_VERSION=3.10, got %q", got)
+	if got := envMap["PANEL_PYTHON_VERSION"]; got != "3.10" {
+		t.Fatalf("expected PANEL_PYTHON_VERSION=3.10, got %q", got)
 	}
 
 	parts := strings.Split(envMap["PYTHONPATH"], string(filepath.ListSeparator))

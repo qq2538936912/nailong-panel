@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/middleware"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/middleware"
+	"panel/model"
+	"panel/testutil"
 )
 
 // stubRunCommandWithPlan 替换子进程执行入口，让用例可以稳定构造
@@ -70,9 +70,9 @@ func runTaskForScriptTokenTest(t *testing.T, timeout int) {
 func mustParseScriptToken(t *testing.T, envVars map[string]string) *middleware.Claims {
 	t.Helper()
 
-	token := envVars["DAIDAI_TOKEN"]
+	token := envVars["PANEL_TOKEN"]
 	if token == "" {
-		t.Fatalf("expected DAIDAI_TOKEN in task env, got %#v", envVars)
+		t.Fatalf("expected PANEL_TOKEN in task env, got %#v", envVars)
 	}
 	claims, err := middleware.ParseToken(token)
 	if err != nil {
@@ -158,8 +158,8 @@ func TestRunTaskRevokesScriptTokenAfterCompletion(t *testing.T) {
 	runTaskForScriptTokenTest(t, 0)
 	claims := mustParseScriptToken(t, envVars)
 
-	if envVars["DAIDAI_NOTIFY_TOKEN"] != envVars["DAIDAI_TOKEN"] {
-		t.Fatalf("expected DAIDAI_NOTIFY_TOKEN and DAIDAI_TOKEN to share one credential")
+	if envVars["PANEL_NOTIFY_TOKEN"] != envVars["PANEL_TOKEN"] {
+		t.Fatalf("expected PANEL_NOTIFY_TOKEN and PANEL_TOKEN to share one credential")
 	}
 
 	var blocked model.TokenBlocklist
@@ -209,7 +209,7 @@ func TestRunTaskKeepsScriptTokenValidWhileRunning(t *testing.T) {
 	stubRunCommandWithPlan(t, func(taskEnv map[string]string) (*ScriptResult, error) {
 		envVars = copyScriptEnv(taskEnv)
 
-		claims, err := middleware.ParseToken(envVars["DAIDAI_TOKEN"])
+		claims, err := middleware.ParseToken(envVars["PANEL_TOKEN"])
 		if err != nil {
 			return nil, err
 		}

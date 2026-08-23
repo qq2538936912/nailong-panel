@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 var panelTimezoneState = struct {

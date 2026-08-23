@@ -86,9 +86,9 @@ func detectSessionClientType(headerClientType, headerClientApp, headerClientPlat
 	}
 
 	switch headerClientApp {
-	case "daidai-panel-app":
+	case "panel-app":
 		return SessionClientApp
-	case "daidai-panel-web":
+	case "panel-web":
 		return SessionClientWeb
 	}
 
@@ -98,14 +98,14 @@ func detectSessionClientType(headerClientType, headerClientApp, headerClientPlat
 
 	switch strings.ToLower(strings.TrimSpace(headerClientPlatform)) {
 	case "android", "ios", "macos", "windows", "linux":
-		if headerClientApp == "daidai-panel-app" {
+		if headerClientApp == "panel-app" {
 			return SessionClientApp
 		}
 	}
 
 	ua := strings.ToLower(strings.TrimSpace(userAgent))
 	switch {
-	case strings.Contains(ua, "daidaipanelapp/"):
+	case strings.Contains(ua, "panelapp/"):
 		return SessionClientApp
 	case strings.Contains(ua, "dart/"), strings.Contains(ua, "dart:io"):
 		return SessionClientApp

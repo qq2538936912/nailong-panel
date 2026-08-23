@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestPullGitRepoWithCallbackSubPathDoesNotCheckoutRepoRootFiles(t *testing.T) {

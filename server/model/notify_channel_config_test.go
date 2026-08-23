@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // TestNormalizeNotifyChannelConfigCoercesScalarValues 锁死这条修复的核心行为。

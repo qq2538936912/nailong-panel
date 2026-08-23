@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/config"
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/dlticket"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/dlticket"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )

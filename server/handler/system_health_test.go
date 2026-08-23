@@ -8,9 +8,9 @@ import (
 	"testing"
 	"strings"
 
-	"daidai-panel/model"
-	"daidai-panel/service"
-	"daidai-panel/testutil"
+	"panel/model"
+	"panel/service"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )

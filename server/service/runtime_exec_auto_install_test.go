@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // TestBuildManagedRuntimeEnvMapDoesNotWritePythonPreCheckEnv 守卫：
@@ -68,8 +68,8 @@ func TestBuildManagedRuntimeEnvMapUsesRequestedPythonVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build managed runtime env map: %v", err)
 	}
-	if envMap["DAIDAI_PYTHON_VERSION"] != "3.10" {
-		t.Fatalf("expected DAIDAI_PYTHON_VERSION=3.10, got %q", envMap["DAIDAI_PYTHON_VERSION"])
+	if envMap["PANEL_PYTHON_VERSION"] != "3.10" {
+		t.Fatalf("expected PANEL_PYTHON_VERSION=3.10, got %q", envMap["PANEL_PYTHON_VERSION"])
 	}
 	expectedVenvBin := resolveManagedVenvBin(ManagedPythonVenvDir("3.10"))
 	if !strings.Contains(envMap["PATH"], expectedVenvBin) {
@@ -179,8 +179,8 @@ func TestWarmManagedPythonVenvWarmsAllSupportedVersions(t *testing.T) {
 
 func TestSupportedPythonVersionsHonorsSingleRuntimeVariant(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.11")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.11")
 
 	versions := SupportedPythonVersions()
 	if len(versions) != 1 || versions[0] != "3.11" {
@@ -200,8 +200,8 @@ func TestSupportedPythonVersionsHonorsSingleRuntimeVariant(t *testing.T) {
 func TestCleanupManagedPythonArtifactsOnStartupRemovesUnsupportedSingleRuntimeDirs(t *testing.T) {
 	root := testutil.SetupTestEnv(t)
 	dataDir := filepath.Join(root, "data")
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.12")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.12")
 
 	for _, version := range []string{"3.10", "3.11", "3.12"} {
 		if err := os.MkdirAll(filepath.Join(dataDir, "deps", "python", version, "bin"), 0o755); err != nil {
@@ -224,7 +224,7 @@ func TestCleanupManagedPythonArtifactsOnStartupRemovesUnsupportedSingleRuntimeDi
 func TestCleanupManagedPythonArtifactsOnStartupKeepsAllRuntimeDirs(t *testing.T) {
 	root := testutil.SetupTestEnv(t)
 	dataDir := filepath.Join(root, "data")
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "all")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "all")
 
 	for _, version := range []string{"3.10", "3.11", "3.12"} {
 		if err := os.MkdirAll(filepath.Join(dataDir, "deps", "python", version, "bin"), 0o755); err != nil {
@@ -243,8 +243,8 @@ func TestCleanupManagedPythonArtifactsOnStartupKeepsAllRuntimeDirs(t *testing.T)
 
 func TestApplySinglePythonRuntimePolicyOnStartupResetsDefaultAndTasks(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.12")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.12")
 
 	if err := model.SetConfig("python_default_version", "3.10"); err != nil {
 		t.Fatalf("set old default python version: %v", err)
@@ -544,7 +544,7 @@ func TestPythonBootstrapHasNoPreCheckAutoInstall(t *testing.T) {
 func TestDefaultPythonVersionFallsBackToActiveSystemPythonOnMagiskRuntime(t *testing.T) {
 	testutil.SetupTestEnv(t)
 
-	t.Setenv("DAIDAI_MAGISK_MODULE", "1")
+	t.Setenv("PANEL_MAGISK_MODULE", "1")
 
 	// 模块版的真实形态是"系统上只有一个活跃 python3"，所以 PATH 上只能有这一个解释器。
 	// 旧写法是把临时目录前置到系统 PATH 前面，宿主机自带的 python3.12 依旧可见，
@@ -562,7 +562,7 @@ func TestDefaultPythonVersionFallsBackToActiveSystemPythonOnMagiskRuntime(t *tes
 func TestResolvePythonVersionFromEnvFallsBackToActiveSystemPythonOnMagiskRuntime(t *testing.T) {
 	testutil.SetupTestEnv(t)
 
-	t.Setenv("DAIDAI_MAGISK_MODULE", "1")
+	t.Setenv("PANEL_MAGISK_MODULE", "1")
 
 	// 同上：PATH 整体替换成只含假 python3 的目录，
 	// 否则宿主机的 python3.12 会让 probe("3.12") 命中、请求版本被原样返回。
@@ -571,7 +571,7 @@ func TestResolvePythonVersionFromEnvFallsBackToActiveSystemPythonOnMagiskRuntime
 	writeFakePythonInterpreter(t, fakeDir, "python3", "3.11.4")
 
 	envMap := map[string]string{
-		"DAIDAI_PYTHON_VERSION": "3.12",
+		"PANEL_PYTHON_VERSION": "3.12",
 	}
 	if got := ResolvePythonVersionFromEnv(envMap); got != "3.11" {
 		t.Fatalf("expected Magisk runtime python version to fall back from 3.12 to active python3=3.11, got %q", got)

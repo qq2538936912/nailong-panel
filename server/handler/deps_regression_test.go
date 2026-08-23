@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -187,8 +187,8 @@ func TestPythonDependencyCreateInstallsAllPythonVersions(t *testing.T) {
 
 func TestPythonDependencyCreateInstallsOnlySingleRuntimeVersion(t *testing.T) {
 	testutil.SetupTestEnv(t)
-	t.Setenv("DAIDAI_PYTHON_RUNTIME_MODE", "single")
-	t.Setenv("DAIDAI_PYTHON_VERSION", "3.12")
+	t.Setenv("PANEL_PYTHON_RUNTIME_MODE", "single")
+	t.Setenv("PANEL_PYTHON_VERSION", "3.12")
 
 	originalRunner := dependencyInstallRunner
 	defer func() {

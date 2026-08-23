@@ -40,7 +40,7 @@ EOF
 ok=0
 used=
 for host in mirrors.cloud.tencent.com mirrors.aliyun.com mirrors.tuna.tsinghua.edu.cn mirrors.nju.edu.cn deb.debian.org; do
-  echo "[daidai-apt] trying ${host}"
+  echo "[panel-apt] trying ${host}"
   write_sources "$host"
   rm -rf /var/lib/apt/lists/*
   if apt-get update \
@@ -48,15 +48,15 @@ for host in mirrors.cloud.tencent.com mirrors.aliyun.com mirrors.tuna.tsinghua.e
     && apt-cache show gosu >/dev/null 2>&1; then
     ok=1
     used=$host
-    echo "[daidai-apt] using ${host}"
+    echo "[panel-apt] using ${host}"
     break
   fi
-  echo "[daidai-apt] ${host} unavailable or missing packages"
+  echo "[panel-apt] ${host} unavailable or missing packages"
 done
 
 if [ "$ok" -ne 1 ]; then
-  echo "[daidai-apt] no usable Debian mirror; openssh-client/gosu not in the package index" >&2
+  echo "[panel-apt] no usable Debian mirror; openssh-client/gosu not in the package index" >&2
   exit 1
 fi
 
-echo "[daidai-apt] ready (${used}, ${SUITE})"
+echo "[panel-apt] ready (${used}, ${SUITE})"

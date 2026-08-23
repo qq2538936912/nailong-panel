@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"daidai-panel/config"
-	"daidai-panel/model"
+	"panel/config"
+	"panel/model"
 )
 
 type gitAuthConfig struct {

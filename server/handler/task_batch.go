@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/pkg/response"
-	"daidai-panel/service"
+	"panel/database"
+	"panel/model"
+	"panel/pkg/response"
+	"panel/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

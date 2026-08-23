@@ -10,8 +10,8 @@ import (
 	"time"
 	"unicode"
 
-	"daidai-panel/model"
-	"daidai-panel/pkg/pathutil"
+	"panel/model"
+	"panel/pkg/pathutil"
 )
 
 type LogStreamManager struct {

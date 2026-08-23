@@ -3,17 +3,17 @@
 # 脚本运行时自检工具
 #
 # 用法:
-#   su -c "sh /data/adb/modules/daidai-panel/scripts/check-runtimes.sh"
+#   su -c "sh /data/adb/modules/panel/scripts/check-runtimes.sh"
 #
 # 用途:
-#   检查呆呆面板依赖的常见脚本运行时是否可用，并给出建议。
+#   检查面板依赖的常见脚本运行时是否可用，并给出建议。
 #   调用方式可以是 adb shell，也可以是模块卡片上的「运行」按钮。
 ##########################################################################
 
-PANEL_DIR=/data/adb/daidai-panel
+PANEL_DIR=/data/adb/panel
 
 # 组装与 service.sh 一致的 PATH，确保自检与实际运行时一致
-MODDIR="/data/adb/modules/daidai-panel"
+MODDIR="/data/adb/modules/panel"
 TERMUX_PATHS=""
 for p in \
   /data/data/com.termux/files/usr/bin \
@@ -33,7 +33,7 @@ export PATH="${PANEL_RUNTIME_PATHS:+$PANEL_RUNTIME_PATHS:}$MODDIR${TERMUX_PATHS:
 say() { echo "$1"; }
 
 say "============================================"
-say " 呆呆面板 - 脚本运行时自检"
+say " 面板 - 脚本运行时自检"
 say "============================================"
 say "PATH = $PATH"
 say ""
@@ -100,7 +100,7 @@ else
   say "    3. 重启手机或面板"
   say ""
   say "  方案 B: 把静态编译的 python/node 放到"
-  say "    /data/adb/daidai-panel/bin/"
+  say "    /data/adb/panel/bin/"
   say "    它会在面板 PATH 最前面被发现"
 fi
 say "============================================"

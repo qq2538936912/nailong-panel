@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // 手动停止标记：打标记后消费一次返回 true，再次消费返回 false（读即清、幂等防残留）。

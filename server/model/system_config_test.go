@@ -3,9 +3,9 @@ package model_test
 import (
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 func TestSetConfigNormalizesRegisteredValues(t *testing.T) {
@@ -86,7 +86,7 @@ func TestRegisteredConfigUsesRegistryDefaults(t *testing.T) {
 
 	database.DB.Where("`key` = ?", "panel_title").Delete(&model.SystemConfig{})
 
-	if got := model.GetRegisteredConfig("panel_title"); got != "呆呆面板" {
+	if got := model.GetRegisteredConfig("panel_title"); got != "面板" {
 		t.Fatalf("expected registry default panel_title, got %q", got)
 	}
 	database.DB.Where("`key` = ?", model.PanelTimezoneConfigKey).Delete(&model.SystemConfig{})

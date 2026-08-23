@@ -18,7 +18,7 @@
 #   find             -> 空操作（跳过 scan_legacy_db_locations 的全盘扫描）
 #   su-exec / gosu   -> 用 setpriv 真降权。两个桩的 HOME 行为【刻意不同】，
 #                       分别建模这两个工具的真实差异，见下面各自的注释。
-#   /app/daidai-server -> 打印 uid/gid/HOME 并真的往 $HOME/.npm 里建目录
+#   /app/panel-server -> 打印 uid/gid/HOME 并真的往 $HOME/.npm 里建目录
 #                       （这正是用户报障时 npm 失败的那一步）
 ##############################################################################
 
@@ -39,9 +39,9 @@ fi
 # 重入时用 bash "$0" 而不是直接 exec "$0"：本文件不一定带可执行位
 # （Windows 检出、或从 zip 解出来时都可能丢），直接 exec 会得到一句
 # 很难对上号的 "Permission denied"。
-if [ "${DAIDAI_PUID_TEST_ISOLATED:-0}" != "1" ]; then
+if [ "${PANEL_PUID_TEST_ISOLATED:-0}" != "1" ]; then
   exec unshare --mount --fork --propagation private \
-    env DAIDAI_PUID_TEST_ISOLATED=1 ENTRYPOINT_SRC="$SRC" bash "$0" "$@"
+    env PANEL_PUID_TEST_ISOLATED=1 ENTRYPOINT_SRC="$SRC" bash "$0" "$@"
 fi
 
 if [ -e /app ] && [ -n "$(ls -A /app 2>/dev/null)" ]; then
@@ -50,12 +50,12 @@ if [ -e /app ] && [ -n "$(ls -A /app 2>/dev/null)" ]; then
 fi
 
 # 账号不受 mount namespace 隔离，收尾时要 userdel。所以本机上已经存在的
-# daidai 账号绝不能碰 —— 仓库自己推荐的二进制部署方式
-# （packaging/linux/daidai-panel.service 的 User=daidai）就会建这么一个服务账号，
+# panel 账号绝不能碰 —— 仓库自己推荐的二进制部署方式
+# （packaging/linux/panel.service 的 User=panel）就会建这么一个服务账号，
 # 在那种机器上跑本脚本会把它连同 /etc/shadow 条目一起删掉，面板下次直接起不来。
-if id -u daidai >/dev/null 2>&1 || getent group daidai >/dev/null 2>&1; then
-  echo "!! 本机已存在 daidai 用户或用户组，本脚本会在收尾时删除同名账号，为避免误删直接退出"
-  echo "   （如果这台机器上没有在跑面板，可先 userdel daidai / groupdel daidai 再重跑）"
+if id -u panel >/dev/null 2>&1 || getent group panel >/dev/null 2>&1; then
+  echo "!! 本机已存在 panel 用户或用户组，本脚本会在收尾时删除同名账号，为避免误删直接退出"
+  echo "   （如果这台机器上没有在跑面板，可先 userdel panel / groupdel panel 再重跑）"
   exit 2
 fi
 
@@ -70,8 +70,8 @@ cleanup() {
   umount /app 2>/dev/null
   rmdir /app 2>/dev/null
   # 账号不受 mount namespace 隔离，必须显式清理
-  id -u daidai >/dev/null 2>&1 && userdel daidai 2>/dev/null
-  getent group daidai >/dev/null 2>&1 && groupdel daidai 2>/dev/null
+  id -u panel >/dev/null 2>&1 && userdel panel 2>/dev/null
+  getent group panel >/dev/null 2>&1 && groupdel panel 2>/dev/null
 }
 trap cleanup EXIT
 
@@ -123,7 +123,7 @@ STUB
 } > "$WORK/bin/gosu"
 rm -f "$WORK/bin/_resolve"
 
-cat > /app/daidai-server <<'STUB'
+cat > /app/panel-server <<'STUB'
 #!/bin/sh
 echo "SERVER uid=$(id -u) gid=$(id -g) HOME=$HOME"
 # npm 启动时无条件初始化 cacache（$HOME/.npm/_cacache），
@@ -135,7 +135,7 @@ else
 fi
 exit 0
 STUB
-chmod +x "$WORK/bin"/* /app/daidai-server
+chmod +x "$WORK/bin"/* /app/panel-server
 
 run_case() {
   local desc="$1"; shift
@@ -188,7 +188,7 @@ expect "以 5000 身份运行"             "SERVER uid=5000 gid=5000"
 expect "HOME 指向数据目录下的 .home"  "HOME=$LAST_DATA/.home"
 expect "npm cache 可写"               "SERVER npm-cache-writable=yes"
 expect_owner "$LAST_DATA/.home" "5000:5000"
-userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
+userdel panel 2>/dev/null; groupdel panel 2>/dev/null
 
 # ---- 2. UID/GID 撞车 -------------------------------------------------------
 # Debian 镜像基于 node:20-bookworm-slim，自带 uid/gid 1000 的 node 用户，
@@ -199,24 +199,24 @@ userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
 # 把 entrypoint 的复用逻辑整段删掉也照样绿。
 # 并且把这个账号的【主组设成 100(users)】—— 与稍后要传的 PGID=7000 不同，
 # 这样才能验出「gid 取的是 PGID 而不是 passwd 里的主组」。
-groupadd -g 7000 daidai-collide-grp 2>/dev/null || true
-useradd -M -u 7000 -g 100 -s /usr/sbin/nologin daidai-collide 2>/dev/null || true
+groupadd -g 7000 panel-collide-grp 2>/dev/null || true
+useradd -M -u 7000 -g 100 -s /usr/sbin/nologin panel-collide 2>/dev/null || true
 if [ -z "$(getent passwd 7000)" ] || [ -z "$(getent group 7000)" ]; then
   echo "!! 无法预置 uid/gid 7000 的撞车场景，这条用例会退化成无冲突路径，判为失败"
   FAILED=1
 else
-  echo "预置完成：uid 7000 = $(getent passwd 7000 | cut -d: -f1)（主组 gid $(id -g daidai-collide)）, gid 7000 = $(getent group 7000 | cut -d: -f1)"
+  echo "预置完成：uid 7000 = $(getent passwd 7000 | cut -d: -f1)（主组 gid $(id -g panel-collide)）, gid 7000 = $(getent group 7000 | cut -d: -f1)"
   run_case "PUID=7000 PGID=7000（uid/gid 均已被占用，且现成账号主组≠PGID）" PUID=7000 PGID=7000
   expect_rc0
   expect "复用现成账号运行"                 "SERVER uid=7000"
-  # 这一条是关键：passwd 里 daidai-collide 的主组是 100，
+  # 这一条是关键：passwd 里 panel-collide 的主组是 100，
   # 只把用户名传给 su-exec/gosu 的话进程 gid 会是 100，用户填的 PGID 被丢掉。
   expect "gid 取自 PGID 而不是账号主组"     "SERVER uid=7000 gid=7000"
   expect "npm cache 可写"                   "SERVER npm-cache-writable=yes"
   expect_owner "$LAST_DATA/.home" "7000:7000"
 fi
-userdel daidai-collide 2>/dev/null; groupdel daidai-collide-grp 2>/dev/null
-userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
+userdel panel-collide 2>/dev/null; groupdel panel-collide-grp 2>/dev/null
+userdel panel 2>/dev/null; groupdel panel 2>/dev/null
 
 # ---- 3. 只设 PGID：不该造出 uid=0 的假降权 ---------------------------------
 run_case "只设 PGID=1000" PGID=1000
@@ -224,7 +224,7 @@ expect_rc0
 expect "跳过降权，仍以 root 运行" "SERVER uid=0"
 expect "有明确说明"               "等价于以 root 运行，已跳过降权"
 
-# ---- 4. 改了 PUID 之后 docker restart（容器可写层里已有旧 daidai）----------
+# ---- 4. 改了 PUID 之后 docker restart（容器可写层里已有旧 panel）----------
 run_case "PUID=6000 PGID=6000（先建一次）" PUID=6000 PGID=6000
 expect_rc0
 expect "首次以 6000 运行" "SERVER uid=6000"
@@ -233,7 +233,7 @@ expect_rc0
 expect "usermod 就地修正后以 6001 运行" "SERVER uid=6001 gid=6001"
 expect "npm cache 可写"                  "SERVER npm-cache-writable=yes"
 expect_owner "$LAST_DATA/.home" "6001:6001"
-userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
+userdel panel 2>/dev/null; groupdel panel 2>/dev/null
 
 # ---- 5. gosu 分支（Debian 镜像没有 su-exec，且 gosu 不覆写 HOME）-----------
 # 这一条专门证明 entrypoint 里那句 env "HOME=..." 是「有用的」而不是冗余：
@@ -247,10 +247,10 @@ expect "npm cache 可写"                      "SERVER npm-cache-writable=yes"
 # 必须还原【原来那个】 su-exec 桩（它会覆写 HOME），不能拿 gosu 桩顶替 ——
 # 否则后面新增的用例会以为自己在测 su-exec 路径，实际跑的是 gosu 的语义。
 mv -f "$WORK/bin/su-exec.disabled" "$WORK/bin/su-exec"
-userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
+userdel panel 2>/dev/null; groupdel panel 2>/dev/null
 
 # ---- 6. 数据目录只读：必须给出友好诊断，不能静默退出 ------------------------
-# 这是本轮差点引入的回归：新加的 mkdir "$DAIDAI_HOME" 一旦不带 || true，
+# 这是本轮差点引入的回归：新加的 mkdir "$PANEL_HOME" 一旦不带 || true，
 # 在 :ro 挂载 / NFS root_squash 下会被 set -e 直接带出 —— docker logs 里
 # 一行输出都没有，而下面那道可写性预检本来能说清「数据目录不可写 + 怎么修」。
 #
@@ -293,7 +293,7 @@ if [ "$RO_MOUNTED" = "1" ]; then
   fi
 
   umount "$RO_DATA" 2>/dev/null
-  userdel daidai 2>/dev/null; groupdel daidai 2>/dev/null
+  userdel panel 2>/dev/null; groupdel panel 2>/dev/null
 else
   echo "  [SKIP] 无法挂 tmpfs 到临时目录，跳过只读数据目录用例"
 fi

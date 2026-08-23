@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"testing"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
-	"daidai-panel/testutil"
+	"panel/database"
+	"panel/model"
+	"panel/testutil"
 )
 
 // Matches an RFC 4122 v4 UUID in uppercase form, e.g. A1B2C3D4-E5F6-4789-ABCD-1234567890AB.

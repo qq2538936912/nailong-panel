@@ -4,8 +4,8 @@ import (
 	"log"
 	"strings"
 
-	"daidai-panel/database"
-	"daidai-panel/model"
+	"panel/database"
+	"panel/model"
 )
 
 var dependencyInstalledFunc = DependencyInstalledForPythonVersion

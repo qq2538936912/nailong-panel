@@ -1049,17 +1049,17 @@ route('POST', '/envs/export-files', (ctx) => {
   const result: Record<string, string> = {}
 
   if (format === 'shell' || format === 'all') {
-    result['shell'] = ['#!/bin/bash', '# 呆呆面板 - 环境变量', '']
+    result['shell'] = ['#!/bin/bash', '# 面板 - 环境变量', '']
       .concat(rows.map((env) => `export ${env.name}='${env.value.replace(/'/g, "'\\''")}'`))
       .join('\n')
   }
   if (format === 'js' || format === 'all') {
-    result['js'] = ['// 呆呆面板 - 环境变量', '']
+    result['js'] = ['// 面板 - 环境变量', '']
       .concat(rows.map((env) => `process.env.${env.name} = ${JSON.stringify(env.value)};`))
       .join('\n')
   }
   if (format === 'python' || format === 'all') {
-    result['python'] = ['# -*- coding: utf-8 -*-', '# 呆呆面板 - 环境变量', 'import os', '']
+    result['python'] = ['# -*- coding: utf-8 -*-', '# 面板 - 环境变量', 'import os', '']
       .concat(rows.map((env) => `os.environ['${env.name}'] = ${JSON.stringify(env.value)}`))
       .join('\n')
   }
@@ -1870,9 +1870,9 @@ route('DELETE', '/security/2fa', () => ({ message: '已关闭两步验证' }))
 route('GET', '/terminal/info', () => ({
   data: {
     available: true,
-    work_dir: '/opt/daidai/scripts',
+    work_dir: '/opt/panel/scripts',
     shell: '/bin/bash',
-    python: '/opt/daidai/data/deps/python/3.12/bin/python',
+    python: '/opt/panel/data/deps/python/3.12/bin/python',
     message: '演示环境不会在真实机器上执行命令',
   },
 }))

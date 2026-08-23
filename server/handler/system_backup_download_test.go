@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"daidai-panel/config"
-	"daidai-panel/testutil"
+	"panel/config"
+	"panel/testutil"
 )
 
 func TestSystemBackupDownloadSupportsQueryFilename(t *testing.T) {

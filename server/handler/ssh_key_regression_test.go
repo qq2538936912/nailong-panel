@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"daidai-panel/handler"
-	"daidai-panel/testutil"
+	"panel/handler"
+	"panel/testutil"
 
 	"github.com/gin-gonic/gin"
 )

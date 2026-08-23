@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"daidai-panel/service"
+	"panel/service"
 )
 
-const latestPanelReleaseAPI = "https://api.github.com/repos/linzixuanzz/daidai-panel/releases/latest"
+const latestPanelReleaseAPI = "https://api.github.com/repos/xiaofeilong2/panel/releases/latest"
 
 type panelReleaseInfo struct {
 	TagName     string              `json:"tag_name"`

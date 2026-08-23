@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"daidai-panel/model"
+	"panel/model"
 )
 
 // TestEveryRegisteredConfigDefaultMatchesNormalizedEmpty 锁死注册表里最容易悄悄分叉的一条不变量：
