@@ -800,6 +800,7 @@ Panel/
 
 - **[白虎面板 (Baihu Panel)](https://github.com/engigu/baihu-panel)** — 后端框架架构参考，部分代码基于白虎面板改进
 - **[青龙面板 (Qinglong)](https://github.com/whyour/qinglong)** — 功能设计参考，定时任务管理、环境变量、订阅管理等核心功能借鉴自青龙面板
+- **[呆呆面板 (Daidai Panel)](https://github.com/linzixuanzz/daidai-panel)** — 功能与体验参考
 
 感谢以上项目作者的贡献！
 

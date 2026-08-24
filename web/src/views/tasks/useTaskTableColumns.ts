@@ -27,7 +27,7 @@ type ColumnMeta = {
 
 const COLUMN_META: Record<TaskTableColumnKey, ColumnMeta> = {
   name: { label: '任务名称', min: 80, max: 520, defaultWidth: 220, narrowWidth: 160, className: 'task-col-name' },
-  command: { label: '命令 / 脚本', min: 70, max: 560, defaultWidth: 240, narrowWidth: 150, className: 'task-col-command' },
+  command: { label: '命令 / 脚本', min: 70, max: 960, defaultWidth: 240, narrowWidth: 150, className: 'task-col-command' },
   cron: { label: '定时规则', min: 70, max: 360, defaultWidth: 180, narrowWidth: 130, className: 'task-col-cron' },
   status: { label: '状态', min: 80, max: 140, defaultWidth: 110, narrowWidth: 90, className: 'task-col-status' },
   lastRun: { label: '最后运行', min: 120, max: 200, defaultWidth: 160, narrowWidth: 160, className: 'task-col-last-run' },
@@ -91,6 +91,18 @@ function measureCellContentWidth(cell: HTMLElement) {
   return width + 24
 }
 
+function measureColumnWidth(tableEl: HTMLElement, key: TaskTableColumnKey) {
+  const className = COLUMN_META[key].className
+  const cells = tableEl.querySelectorAll(`th.${className} .cell, td.${className} .cell`)
+  let maxWidth = COLUMN_META[key].min
+
+  cells.forEach((node) => {
+    maxWidth = Math.max(maxWidth, measureCellContentWidth(node as HTMLElement))
+  })
+
+  return clampWidth(key, maxWidth)
+}
+
 export function useTaskTableColumns(options: {
   tableRef: Ref<TableInstance | undefined>
   isNarrowDesktop: ComputedRef<boolean>
@@ -129,6 +141,11 @@ export function useTaskTableColumns(options: {
       [key]: clampWidth(key, width),
     }
     persistColumnWidths(storedWidths.value)
+  }
+
+  function replaceColumnWidths(next: StoredColumnWidths) {
+    storedWidths.value = next
+    persistColumnWidths(next)
   }
 
   let resizing:
@@ -170,27 +187,46 @@ export function useTaskTableColumns(options: {
     await nextTick()
     const tableEl = options.tableRef.value?.$el as HTMLElement | undefined
     if (!tableEl) return
-
-    const className = COLUMN_META[key].className
-    const cells = tableEl.querySelectorAll(`th.${className} .cell, td.${className} .cell`)
-    let maxWidth = defaultWidth(key)
-
-    cells.forEach((node) => {
-      maxWidth = Math.max(maxWidth, measureCellContentWidth(node as HTMLElement))
-    })
-
-    updateColumnWidth(key, maxWidth)
+    updateColumnWidth(key, measureColumnWidth(tableEl, key))
   }
 
   async function autoFitAllColumns() {
-    for (const key of visibleColumnKeys.value) {
-      await autoFitColumn(key)
+    await nextTick()
+    const tableEl = options.tableRef.value?.$el as HTMLElement | undefined
+    if (!tableEl) return
+
+    const keys = visibleColumnKeys.value
+    const measured: StoredColumnWidths = {}
+    for (const key of keys) {
+      measured[key] = measureColumnWidth(tableEl, key)
     }
+
+    // 表格可视宽减去勾选列与固定「操作」列后，剩余宽度优先留给「命令 / 脚本」，
+    // 避免适应后右侧再留出一块空白。
+    const headerWidth =
+      (tableEl.querySelector('.el-table__header-wrapper') as HTMLElement | null)?.clientWidth ||
+      tableEl.clientWidth
+    const selectionWidth = tableEl.querySelector('.el-table-column--selection') ? 40 : 0
+    const actionsWidth = 240
+    let reserved = selectionWidth + actionsWidth
+
+    for (const key of keys) {
+      if (key === 'command') continue
+      reserved += measured[key] ?? defaultWidth(key)
+    }
+
+    const leftover = headerWidth - reserved
+    const commandMeasured = measured.command ?? defaultWidth('command')
+    measured.command = clampWidth(
+      'command',
+      leftover > commandMeasured ? leftover : commandMeasured,
+    )
+
+    replaceColumnWidths(measured)
   }
 
   function resetColumnWidths() {
-    storedWidths.value = {}
-    persistColumnWidths({})
+    replaceColumnWidths({})
   }
 
   onBeforeUnmount(() => {

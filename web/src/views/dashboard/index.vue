@@ -59,11 +59,11 @@ const trendRange = ref<7 | 30>(7);
 type LogFilter = "all" | "success" | "failed" | "aborted" | "running";
 const logFilter = ref<LogFilter>("all");
 const logFilterOptions: Array<{ label: string; value: LogFilter }> = [
-  { label: "全部", value: "all" },
-  { label: "成功", value: "success" },
-  { label: "失败", value: "failed" },
-  { label: "终止", value: "aborted" },
-  { label: "运行中", value: "running" },
+  { label: "全部任务", value: "all" },
+  { label: "执行成功", value: "success" },
+  { label: "执行失败", value: "failed" },
+  { label: "手动终止", value: "aborted" },
+  { label: "正在运行", value: "running" },
 ];
 const refreshTimestamp = ref(new Date());
 const hasLoadedOnce = ref(false);
@@ -741,14 +741,14 @@ function rerunLog(log: any) {
                 :class="{ 'is-active': trendRange === 7 }"
                 @click="trendRange = 7"
               >
-                近7天
+                最近七天
               </button>
               <button
                 class="seg-btn"
                 :class="{ 'is-active': trendRange === 30 }"
                 @click="trendRange = 30"
               >
-                近30天
+                近三十天
               </button>
             </div>
           </div>
