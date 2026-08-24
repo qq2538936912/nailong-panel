@@ -34,6 +34,7 @@ const {
   showVersionDiffDialog,
   showUploadDialog,
   uploadDir,
+  uploadMode,
   newFileName,
   newFileParent,
   newDirName,
@@ -56,6 +57,7 @@ const {
   handleCreateFile,
   handleCreateDir,
   handleDelete,
+  handleBatchDelete,
   handleMoveToRoot,
   allowDrag,
   allowDrop,
@@ -162,6 +164,7 @@ async function handleCancelEdit() {
         :on-open-create-file="openCreateFileDialog"
         :on-open-create-dir="openCreateDirDialog"
         :on-open-upload="openUploadDialog"
+        :on-batch-delete="handleBatchDelete"
         :on-open-code-runner="openCodeRunner"
         :on-refresh="loadTree"
         :on-node-click="handleNodeClick"
@@ -211,6 +214,7 @@ async function handleCancelEdit() {
       v-model:new-dir-parent="newDirParent"
       v-model:rename-target="renameTarget"
       v-model:upload-dir="uploadDir"
+      v-model:upload-mode="uploadMode"
       v-model:version-diff-original-title="versionDiffOriginalTitle"
       v-model:version-diff-modified-title="versionDiffModifiedTitle"
       v-model:version-diff-original-content="versionDiffOriginalContent"

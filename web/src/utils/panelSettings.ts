@@ -14,7 +14,7 @@ export function getCachedPanelSettings() {
 }
 
 export function getCachedPanelTitle() {
-  return cachedPanelSettings?.panel_title?.trim() || '面板'
+  return cachedPanelSettings?.panel_title?.trim() || '奶龙面板'
 }
 
 export async function loadPanelSettings(options?: { force?: boolean }) {

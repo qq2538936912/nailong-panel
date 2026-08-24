@@ -24,6 +24,7 @@ import {
 const router = useRouter();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+const baseUrl = import.meta.env.BASE_URL;
 
 const isInit = ref(false);
 const checkingInit = ref(true);
@@ -516,7 +517,7 @@ const themeIcon = computed(() => (themeStore.isDark ? Sunny : Moon));
         <template v-else>
           <div class="login-header">
             <div class="login-logo">
-              <img src="/favicon-512.webp" alt="面板" width="48" height="48" />
+              <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" width="48" height="48" />
             </div>
             <h2>{{ titleText }}</h2>
             <p>{{ subtitleText }}</p>
@@ -588,7 +589,7 @@ const themeIcon = computed(() => (themeStore.isDark ? Sunny : Moon));
           </p>
 
           <div class="login-version">
-            面板{{ panelVersion ? ` v${panelVersion}` : "" }}
+            奶龙面板{{ panelVersion ? ` v${panelVersion}` : "" }}
           </div>
         </template>
       </div>

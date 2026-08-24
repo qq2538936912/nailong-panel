@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Upload } from '@element-plus/icons-vue'
+import { FolderAdd, Upload } from '@element-plus/icons-vue'
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
-import type { ScriptVersionRecord } from '../types'
+import type { ScriptUploadMode, ScriptVersionRecord } from '../types'
 
 const MonacoDiffEditor = defineAsyncComponent(() => import('@/components/MonacoDiffEditor.vue'))
 
@@ -18,6 +18,7 @@ const newDirName = defineModel<string>('newDirName', { required: true })
 const newDirParent = defineModel<string>('newDirParent', { required: true })
 const renameTarget = defineModel<string>('renameTarget', { required: true })
 const uploadDir = defineModel<string>('uploadDir', { required: true })
+const uploadMode = defineModel<ScriptUploadMode>('uploadMode', { required: true })
 const versionDiffOriginalTitle = defineModel<string>('versionDiffOriginalTitle', { required: true })
 const versionDiffModifiedTitle = defineModel<string>('versionDiffModifiedTitle', { required: true })
 const versionDiffOriginalContent = defineModel<string>('versionDiffOriginalContent', { required: true })
@@ -46,6 +47,48 @@ const props = defineProps<{
 const hiddenTargetFolderSegments = new Set(['node_modules', '__pycache__', '.git', '.svn', '.hg', '.bzr'])
 const nestedFolders = computed(() => props.allFolders.filter(folder => folder && !folder.split('/').some(segment => hiddenTargetFolderSegments.has(segment.trim().toLowerCase()))))
 const ignoreWhitespaceDiff = ref(false)
+const folderInputRef = ref<HTMLInputElement>()
+const selectedUploadCount = ref(0)
+const selectedFolderName = ref('')
+
+const uploadDialogTitle = computed(() => uploadMode.value === 'folder' ? '上传文件夹' : '上传文件')
+
+function resetUploadSelection() {
+  selectedUploadCount.value = 0
+  selectedFolderName.value = ''
+  if (folderInputRef.value) {
+    folderInputRef.value.value = ''
+  }
+}
+
+function handleUploadFileChange(file: any, files: any[]) {
+  selectedUploadCount.value = files.length
+  selectedFolderName.value = ''
+  props.onUploadFileChange(file, files)
+}
+
+function handleFolderInputChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files || [])
+  selectedUploadCount.value = files.length
+  selectedFolderName.value = files[0]?.webkitRelativePath?.split('/')[0] || ''
+  props.onUploadFileChange(undefined, files.map((raw) => ({ raw })))
+}
+
+function openFolderPicker() {
+  folderInputRef.value?.click()
+}
+
+watch(showUploadDialog, (visible) => {
+  if (!visible) {
+    resetUploadSelection()
+  }
+})
+
+watch(uploadMode, () => {
+  resetUploadSelection()
+  props.onUploadFileChange(undefined, [])
+})
 
 function normalizeWhitespaceForCompare(content: string) {
   return content.replace(/\s+/g, '')
@@ -262,8 +305,14 @@ watch(showVersionDiffDialog, (visible) => {
     </div>
   </el-dialog>
 
-  <el-dialog v-model="showUploadDialog" title="上传文件" :width="isMobile ? '90%' : '480px'" :fullscreen="isMobile" destroy-on-close>
+  <el-dialog v-model="showUploadDialog" :title="uploadDialogTitle" :width="isMobile ? '90%' : '520px'" :fullscreen="isMobile" destroy-on-close>
     <el-form :label-width="isMobile ? 'auto' : '80px'" :label-position="isMobile ? 'top' : 'right'">
+      <el-form-item label="上传方式">
+        <el-radio-group v-model="uploadMode">
+          <el-radio-button value="file">上传文件</el-radio-button>
+          <el-radio-button value="folder">上传文件夹</el-radio-button>
+        </el-radio-group>
+      </el-form-item>
       <el-form-item label="目标目录">
         <!-- 上传目标目录也支持输入关键词筛选，和新建文件/目录保持一致。 -->
         <el-select
@@ -280,19 +329,38 @@ watch(showVersionDiffDialog, (visible) => {
           <el-option v-for="folder in nestedFolders" :key="folder" :label="folder" :value="folder" />
         </el-select>
       </el-form-item>
-      <el-form-item label="选择文件">
+      <el-form-item :label="uploadMode === 'folder' ? '选择文件夹' : '选择文件'">
         <el-upload
+          v-if="uploadMode === 'file'"
           :auto-upload="false"
           :show-file-list="true"
           multiple
-          :on-change="onUploadFileChange"
-          :on-remove="onUploadFileChange"
+          :on-change="handleUploadFileChange"
+          :on-remove="handleUploadFileChange"
           drag
         >
           <el-icon :size="40"><Upload /></el-icon>
           <div>拖拽文件到此处或点击选择</div>
           <div class="el-upload__tip">支持一次选择多个脚本文件，单个文件大小不超过 100MB。</div>
         </el-upload>
+        <div v-else class="folder-upload">
+          <input
+            ref="folderInputRef"
+            type="file"
+            class="folder-upload-input"
+            webkitdirectory
+            multiple
+            @change="handleFolderInputChange"
+          />
+          <button type="button" class="folder-upload-drop" @click="openFolderPicker">
+            <el-icon :size="40"><FolderAdd /></el-icon>
+            <div>点击选择文件夹</div>
+            <div class="el-upload__tip">会保留文件夹内的相对路径；单个文件不超过 100MB。</div>
+          </button>
+          <div v-if="selectedUploadCount > 0" class="folder-upload-summary">
+            已选择 {{ selectedFolderName ? `${selectedFolderName} / ` : '' }}{{ selectedUploadCount }} 个文件
+          </div>
+        </div>
       </el-form-item>
     </el-form>
     <template #footer>
@@ -303,6 +371,42 @@ watch(showVersionDiffDialog, (visible) => {
 </template>
 
 <style scoped lang="scss">
+.folder-upload {
+  width: 100%;
+}
+
+.folder-upload-input {
+  display: none;
+}
+
+.folder-upload-drop {
+  width: 100%;
+  min-height: 148px;
+  padding: 24px 16px;
+  border: 1px dashed var(--el-border-color);
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-regular);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.folder-upload-drop:hover {
+  border-color: var(--el-color-primary);
+  color: var(--el-color-primary);
+}
+
+.folder-upload-summary {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
 .version-history-toolbar {
   display: flex;
   align-items: center;

@@ -86,7 +86,7 @@ func TestRegisteredConfigUsesRegistryDefaults(t *testing.T) {
 
 	database.DB.Where("`key` = ?", "panel_title").Delete(&model.SystemConfig{})
 
-	if got := model.GetRegisteredConfig("panel_title"); got != "面板" {
+	if got := model.GetRegisteredConfig("panel_title"); got != "奶龙面板" {
 		t.Fatalf("expected registry default panel_title, got %q", got)
 	}
 	database.DB.Where("`key` = ?", model.PanelTimezoneConfigKey).Delete(&model.SystemConfig{})

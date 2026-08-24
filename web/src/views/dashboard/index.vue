@@ -44,6 +44,7 @@ const ExecutionTrendChart = defineAsyncComponent(
 const router = useRouter();
 const authStore = useAuthStore();
 const { isMobile } = useResponsive();
+const baseUrl = import.meta.env.BASE_URL;
 const LOG_STATUS_SUCCESS = 0;
 const LOG_STATUS_FAILED = 1;
 const LOG_STATUS_RUNNING = 2;
@@ -641,12 +642,15 @@ function rerunLog(log: any) {
     <section class="dash-welcome animate-fade-in-up">
       <!-- 左侧：问候语 + 日期/副标题元信息 -->
       <div class="dash-welcome__greet">
-        <h2 class="dash-welcome__title">
-          {{ greeting }}，{{ authStore.user?.username || "User" }} 👋
-        </h2>
-        <span class="dash-welcome__meta"
-          >{{ heroDateLabel }} · {{ greetingSub }}</span
-        >
+        <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" class="dash-welcome__logo" />
+        <div class="dash-welcome__copy">
+          <h2 class="dash-welcome__title">
+            {{ greeting }}，{{ authStore.user?.username || "User" }} 👋
+          </h2>
+          <span class="dash-welcome__meta"
+            >{{ heroDateLabel }} · {{ greetingSub }}</span
+          >
+        </div>
       </div>
       <!-- 右侧：快捷操作按钮，复用 quickActions 数据与点击逻辑 -->
       <div class="dash-welcome__actions">
@@ -1101,8 +1105,21 @@ function rerunLog(log: any) {
 
 .dash-welcome__greet {
   display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dash-welcome__logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.dash-welcome__copy {
+  display: flex;
   flex-direction: column;
-  // 标题与元信息间 4px
   gap: 4px;
   min-width: 0;
 }

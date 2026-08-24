@@ -43,7 +43,7 @@ export const scriptApi = {
   upload(formData: FormData) {
     return request.post('/scripts/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    }) as Promise<{ message: string; path?: string; paths?: string[]; uploaded_count?: number }>
+    }) as Promise<{ message: string; path?: string; paths?: string[]; uploaded_count?: number; skipped_count?: number }>
   },
 
   delete(path: string, type?: string) {
@@ -66,8 +66,13 @@ export const scriptApi = {
     return request.post('/scripts/copy', { source_path: sourcePath, target_path: targetPath }) as Promise<{ message: string }>
   },
 
-  batchDelete(paths: string[]) {
-    return request.delete('/scripts/batch', { data: { paths } }) as Promise<{ message: string }>
+  batchDelete(paths: Array<{ path: string; type: 'file' | 'directory' }>) {
+    return request.delete('/scripts/batch', { data: { paths } }) as Promise<{
+      message: string
+      success_count?: number
+      failed_count?: number
+      failed_items?: string[]
+    }>
   },
 
   listVersions(path: string) {

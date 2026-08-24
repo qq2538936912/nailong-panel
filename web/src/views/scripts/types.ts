@@ -5,6 +5,13 @@ export interface TreeNode {
   children?: TreeNode[]
 }
 
+export type ScriptUploadMode = 'file' | 'folder'
+
+export interface ScriptBatchDeleteTarget {
+  path: string
+  isDir: boolean
+}
+
 export interface ScriptVersionRecord {
   id: number
   version: number | string

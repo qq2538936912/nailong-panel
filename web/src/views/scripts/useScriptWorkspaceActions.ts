@@ -2,7 +2,7 @@ import { ref, type ComputedRef, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { scriptApi } from '@/api/script'
-import type { ScriptVersionDetail, ScriptVersionRecord } from './types'
+import type { ScriptBatchDeleteTarget, ScriptUploadMode, ScriptVersionDetail, ScriptVersionRecord } from './types'
 
 interface ScriptWorkspaceActionsOptions {
   selectedFile: Ref<string>
@@ -45,6 +45,9 @@ export function useScriptWorkspaceActions({
 
   const uploadDir = ref('')
   const uploadFileList = ref<File[]>([])
+  const uploadMode = ref<ScriptUploadMode>('file')
+
+  const hiddenUploadSegments = new Set(['node_modules', '__pycache__', '.git', '.svn', '.hg', '.bzr'])
 
   const newFileName = ref('')
   const newFileParent = ref('')
@@ -189,20 +192,56 @@ export function useScriptWorkspaceActions({
     }
   }
 
+  function clearEditorIfDeleted(path: string, isDir = false) {
+    if (selectedFile.value === path || (isDir && selectedFile.value.startsWith(path + '/'))) {
+      selectedFile.value = ''
+      fileContent.value = ''
+      originalContent.value = ''
+    }
+  }
+
   async function handleDelete(path: string, isDir = false) {
     try {
       await ElMessageBox.confirm(`确定要删除 ${path} 吗？${isDir ? '\n注意：将同时删除文件夹内所有文件！' : ''}`, '确认删除', { type: 'warning' })
       await scriptApi.delete(path, isDir ? 'directory' : 'file')
       ElMessage.success('删除成功')
-      if (selectedFile.value === path || (isDir && selectedFile.value.startsWith(path + '/'))) {
-        selectedFile.value = ''
-        fileContent.value = ''
-        originalContent.value = ''
-      }
+      clearEditorIfDeleted(path, isDir)
       await loadTree()
     } catch (err: any) {
       if (isActionCancelled(err)) return
       ElMessage.error(err?.response?.data?.error || err?.message || '删除失败')
+    }
+  }
+
+  async function handleBatchDelete(items: ScriptBatchDeleteTarget[]) {
+    if (items.length === 0) return
+
+    const preview = items.slice(0, 8).map((item) => item.path).join('\n')
+    const extra = items.length > 8 ? `\n… 等 ${items.length} 项` : ''
+    try {
+      await ElMessageBox.confirm(
+        `确定要删除选中的 ${items.length} 项吗？\n注意：删除文件夹将同时删除其中所有文件！\n\n${preview}${extra}`,
+        '批量删除',
+        { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' }
+      )
+      const res = await scriptApi.batchDelete(
+        items.map((item) => ({ path: item.path, type: item.isDir ? 'directory' : 'file' }))
+      )
+      const failedItems = new Set(Array.isArray(res.failed_items) ? res.failed_items : [])
+      const failedCount = Number(res.failed_count ?? failedItems.size)
+      if (failedCount > 0) {
+        ElMessage.warning(res.message || `删除完成，失败 ${failedCount} 项`)
+      } else {
+        ElMessage.success(res.message || '删除成功')
+      }
+      for (const item of items) {
+        if (failedItems.has(item.path)) continue
+        clearEditorIfDeleted(item.path, item.isDir)
+      }
+      await loadTree()
+    } catch (err: any) {
+      if (isActionCancelled(err)) return
+      ElMessage.error(err?.response?.data?.error || err?.message || '批量删除失败')
     }
   }
 
@@ -227,16 +266,37 @@ export function useScriptWorkspaceActions({
     showRenameDialog.value = true
   }
 
-  function openUploadDialog() {
+  function openUploadDialog(mode: ScriptUploadMode = 'file') {
+    uploadMode.value = mode
     showUploadDialog.value = true
     uploadDir.value = ''
     uploadFileList.value = []
   }
 
+  function getUploadRelativePath(file: File) {
+    const relative = (file.webkitRelativePath || file.name || '').replace(/\\/g, '/').replace(/^\/+/, '')
+    return relative || file.name
+  }
+
+  function shouldSkipUploadPath(path: string) {
+    return path
+      .split('/')
+      .map((segment) => segment.trim().toLowerCase())
+      .some((segment) => hiddenUploadSegments.has(segment))
+  }
+
   async function handleUpload(files: File[]) {
+    const acceptedFiles = files.filter((file) => !shouldSkipUploadPath(getUploadRelativePath(file)))
+    const skippedCount = files.length - acceptedFiles.length
+    if (acceptedFiles.length === 0) {
+      ElMessage.warning(skippedCount > 0 ? '所选文件夹没有可上传的文件' : '请至少选择一个文件')
+      return
+    }
+
     const formData = new FormData()
-    for (const file of files) {
+    for (const file of acceptedFiles) {
       formData.append('file', file)
+      formData.append('relative_path', getUploadRelativePath(file))
     }
     if (uploadDir.value) {
       formData.append('dir', uploadDir.value)
@@ -245,9 +305,16 @@ export function useScriptWorkspaceActions({
       const res = await scriptApi.upload(formData)
       const uploadedPaths = Array.isArray(res.paths) && res.paths.length > 0
         ? res.paths
-        : files.map((file) => (uploadDir.value ? `${uploadDir.value}/${file.name}` : file.name))
+        : acceptedFiles.map((file) => {
+          const relativePath = getUploadRelativePath(file)
+          return uploadDir.value ? `${uploadDir.value}/${relativePath}` : relativePath
+        })
 
-      ElMessage.success(uploadedPaths.length > 1 ? `成功上传 ${uploadedPaths.length} 个文件` : '上传成功')
+      const totalSkipped = skippedCount + Number(res.skipped_count || 0)
+      ElMessage.success(res.message || (uploadedPaths.length > 1 ? `成功上传 ${uploadedPaths.length} 个文件` : '上传成功'))
+      if (totalSkipped > 0 && !res.message?.includes('跳过')) {
+        ElMessage.warning(`已跳过 ${totalSkipped} 个受保护或不支持的文件`)
+      }
       showUploadDialog.value = false
       uploadDir.value = ''
       uploadFileList.value = []
@@ -467,6 +534,7 @@ export function useScriptWorkspaceActions({
     showVersionDiffDialog,
     showUploadDialog,
     uploadDir,
+    uploadMode,
     newFileName,
     newFileParent,
     newDirName,
@@ -483,6 +551,7 @@ export function useScriptWorkspaceActions({
     handleCreateFile,
     handleCreateDir,
     handleDelete,
+    handleBatchDelete,
     handleMoveToRoot,
     handleRename,
     openRename,

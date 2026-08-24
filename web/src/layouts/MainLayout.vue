@@ -36,7 +36,7 @@ const themeStore = useThemeStore()
 const { isMobile } = useResponsive()
 const isCollapsed = ref(false)
 const drawerVisible = ref(false)
-const panelTitle = ref('面板')
+const panelTitle = ref('奶龙面板')
 const panelIcon = ref('')
 const panelVersion = ref('')
 const routeCacheMax = 14
@@ -475,26 +475,27 @@ async function loadVersion() {
 .is-collapsed .logo-inner {
   width: 40px;
   min-height: 40px;
-  padding: 6px;
+  padding: 4px;
   justify-content: center;
 }
 
 .logo-icon-wrap {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  // 纯色底 + 1px 品牌色描边，去掉渐变、内高光与外投影，hover 也不再上浮
-  background: var(--el-bg-color);
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+  overflow: hidden;
+  background: #fff6d6;
+  border: 1px solid color-mix(in srgb, #f5c84b 45%, transparent);
 }
 
 .logo-icon {
-  width: 16px;
-  height: 16px;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
 }
 
 .logo-title {

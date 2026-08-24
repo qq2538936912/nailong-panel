@@ -606,7 +606,7 @@
       "value_type": "string"
     },
     "panel_title": {
-      "default_value": "面板",
+      "default_value": "奶龙面板",
       "description": "面板标题",
       "group": "branding",
       "group_label": "面板与运行时",
@@ -615,7 +615,7 @@
       "registered": true,
       "secret": false,
       "updated_at": null,
-      "value": "面板",
+      "value": "奶龙面板",
       "value_type": "string"
     },
     "proxy_url": {

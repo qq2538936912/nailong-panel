@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import {
   ArrowDown,
+  Delete,
   DocumentAdd,
   FolderAdd,
   Refresh,
@@ -10,9 +11,9 @@ import {
   VideoPlay
 } from '@element-plus/icons-vue'
 import ScriptTreeNode from './ScriptTreeNode.vue'
-import type { TreeNode } from '../types'
+import type { ScriptBatchDeleteTarget, ScriptUploadMode, TreeNode } from '../types'
 
-defineProps<{
+const props = defineProps<{
   isMobile: boolean
   mobileShowEditor: boolean
   treeLoading: boolean
@@ -21,26 +22,64 @@ defineProps<{
   allowDrop: (draggingNode: any, dropNode: any, type: string) => boolean
   onOpenCreateFile: () => void
   onOpenCreateDir: () => void
-  onOpenUpload: () => void
+  onOpenUpload: (mode?: ScriptUploadMode) => void
   onOpenCodeRunner: () => void
   onRefresh: () => void | Promise<void>
   onNodeClick: (data: TreeNode) => void | Promise<void>
   onNodeDrop: (draggingNode: any, dropNode: any, dropType: string) => void | Promise<void>
   onOpenRename: (path: string) => void
   onDelete: (path: string, isDir: boolean) => void | Promise<void>
+  onBatchDelete: (items: ScriptBatchDeleteTarget[]) => void | Promise<void>
   onMoveToRoot?: (path: string, isDir: boolean) => void | Promise<void>
 }>()
 
 const treeRef = ref()
 const searchKeyword = ref('')
+const checkedCount = ref(0)
 
 function filterNode(value: string, data: TreeNode) {
   if (!value) return true
   return (data.title || '').toLowerCase().includes(value.toLowerCase())
 }
 
+function collectBatchDeleteTargets(): ScriptBatchDeleteTarget[] {
+  const nodes = (treeRef.value?.getCheckedNodes(false, false) || []) as TreeNode[]
+  const checkedKeys = new Set(nodes.map((node) => node.key))
+  return nodes
+    .filter((node) => {
+      const parts = node.key.split('/')
+      for (let i = 1; i < parts.length; i++) {
+        if (checkedKeys.has(parts.slice(0, i).join('/'))) {
+          return false
+        }
+      }
+      return true
+    })
+    .map((node) => ({ path: node.key, isDir: !node.isLeaf }))
+}
+
+function syncCheckedCount() {
+  checkedCount.value = collectBatchDeleteTargets().length
+}
+
+function clearChecked() {
+  treeRef.value?.setCheckedKeys([])
+  checkedCount.value = 0
+}
+
+function handleBatchDelete() {
+  const items = collectBatchDeleteTargets()
+  if (items.length === 0) return
+  void props.onBatchDelete(items)
+}
+
 watch(searchKeyword, (val) => {
   treeRef.value?.filter(val)
+})
+
+watch(() => props.fileTree, async () => {
+  await nextTick()
+  clearChecked()
 })
 </script>
 
@@ -60,6 +99,7 @@ watch(searchKeyword, (val) => {
       <div class="sidebar-toolbar">
         <div class="sidebar-toolbar-label">
           <span class="label-main">脚本文件</span>
+          <span v-if="checkedCount > 0" class="label-count">已选 {{ checkedCount }}</span>
         </div>
         <div class="sidebar-toolbar-actions">
           <el-dropdown trigger="click" placement="bottom-end">
@@ -76,13 +116,21 @@ watch(searchKeyword, (val) => {
                 <el-dropdown-item @click="onOpenCreateDir">
                   <el-icon><FolderAdd /></el-icon>新建目录
                 </el-dropdown-item>
-                <el-dropdown-item divided @click="onOpenUpload">
+                <el-dropdown-item divided @click="onOpenUpload('file')">
                   <el-icon><Upload /></el-icon>上传文件
+                </el-dropdown-item>
+                <el-dropdown-item @click="onOpenUpload('folder')">
+                  <el-icon><FolderAdd /></el-icon>上传文件夹
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
 
+          <el-tooltip v-if="checkedCount > 0" content="批量删除" placement="bottom">
+            <button class="icon-btn danger" aria-label="批量删除" @click="handleBatchDelete">
+              <el-icon :size="15"><Delete /></el-icon>
+            </button>
+          </el-tooltip>
           <el-tooltip content="刷新" placement="bottom">
             <button class="icon-btn" aria-label="刷新" @click="onRefresh">
               <el-icon :size="15"><Refresh /></el-icon>
@@ -101,10 +149,13 @@ watch(searchKeyword, (val) => {
         :highlight-current="true"
         :expand-on-click-node="true"
         :filter-node-method="filterNode"
+        show-checkbox
+        :check-on-click-node="false"
         draggable
         :allow-drag="allowDrag"
         :allow-drop="allowDrop"
         empty-text="暂无脚本文件"
+        @check="syncCheckedCount"
         @node-drop="onNodeDrop"
         @node-click="onNodeClick"
       >
@@ -197,6 +248,12 @@ watch(searchKeyword, (val) => {
     text-transform: uppercase;
     color: var(--el-text-color-secondary);
   }
+
+  .label-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--el-color-danger);
+  }
 }
 
 .sidebar-toolbar-actions {
@@ -249,6 +306,17 @@ watch(searchKeyword, (val) => {
   &:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--el-color-primary) 50%, transparent);
     outline-offset: 1px;
+  }
+
+  &.danger {
+    color: var(--el-color-danger);
+    border-color: color-mix(in srgb, var(--el-color-danger) 35%, var(--el-border-color-lighter));
+
+    &:hover {
+      color: var(--el-color-danger);
+      border-color: color-mix(in srgb, var(--el-color-danger) 55%, var(--el-border-color-lighter));
+      background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+    }
   }
 }
 
@@ -319,6 +387,17 @@ watch(searchKeyword, (val) => {
   :deep(.el-tree-node__expand-icon) {
     color: var(--el-text-color-placeholder);
     font-size: 12px;
+  }
+
+  :deep(.el-checkbox) {
+    margin-right: 4px;
+    height: 16px;
+  }
+
+  :deep(.el-checkbox__inner) {
+    border-radius: 0;
+    width: 14px;
+    height: 14px;
   }
 }
 

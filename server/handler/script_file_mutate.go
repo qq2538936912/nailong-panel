@@ -133,6 +133,23 @@ func (h *ScriptHandler) SaveContent(c *gin.Context) {
 	response.Success(c, gin.H{"message": "保存成功", "version": newVersion})
 }
 
+func resolveUploadSourcePath(header *multipart.FileHeader, relativePath string) string {
+	candidate := strings.TrimSpace(relativePath)
+	if candidate == "" {
+		candidate = strings.TrimSpace(header.Filename)
+	}
+	return candidate
+}
+
+func isFolderUploadPaths(relativePaths []string) bool {
+	for _, relativePath := range relativePaths {
+		if strings.ContainsAny(relativePath, "/\\") {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *ScriptHandler) Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -147,16 +164,27 @@ func (h *ScriptHandler) Upload(c *gin.Context) {
 	}
 
 	dir := c.PostForm("dir")
+	relativePaths := form.Value["relative_path"]
+	folderUpload := isFolderUploadPaths(relativePaths)
 	targets := make([]scriptUploadTarget, 0, len(headers))
-	for _, header := range headers {
+	skippedCount := 0
+	for i, header := range headers {
 		if header.Size > maxUploadSize {
 			response.BadRequest(c, fmt.Sprintf("文件 %s 过大（最大 %dMB）", header.Filename, maxUploadSize/(1024*1024)))
 			return
 		}
 
-		filename := header.Filename
+		relativePath := ""
+		if i < len(relativePaths) {
+			relativePath = relativePaths[i]
+		}
+		filename := resolveUploadSourcePath(header, relativePath)
 		ext := strings.ToLower(filepath.Ext(filename))
 		if ext != "" && !allowedExtensions[ext] {
+			if folderUpload {
+				skippedCount++
+				continue
+			}
 			response.BadRequest(c, fmt.Sprintf("文件 %s 类型不支持", header.Filename))
 			return
 		}
@@ -168,6 +196,10 @@ func (h *ScriptHandler) Upload(c *gin.Context) {
 
 		normalizedTargetPath, full, err := resolveScriptUploadPath(targetPath)
 		if err != nil {
+			if folderUpload {
+				skippedCount++
+				continue
+			}
 			response.BadRequest(c, err.Error())
 			return
 		}
@@ -177,6 +209,11 @@ func (h *ScriptHandler) Upload(c *gin.Context) {
 			targetPath: normalizedTargetPath,
 			fullPath:   full,
 		})
+	}
+
+	if len(targets) == 0 {
+		response.BadRequest(c, "没有可上传的文件")
+		return
 	}
 
 	uploadedPaths := make([]string, 0, len(targets))
@@ -213,12 +250,16 @@ func (h *ScriptHandler) Upload(c *gin.Context) {
 	if len(uploadedPaths) > 1 {
 		message = fmt.Sprintf("成功上传 %d 个文件", len(uploadedPaths))
 	}
+	if skippedCount > 0 {
+		message = fmt.Sprintf("%s，已跳过 %d 个文件", message, skippedCount)
+	}
 
 	response.Created(c, gin.H{
 		"message":        message,
 		"path":           uploadedPaths[0],
 		"paths":          uploadedPaths,
 		"uploaded_count": len(uploadedPaths),
+		"skipped_count":  skippedCount,
 	})
 }
 
@@ -440,6 +481,10 @@ func (h *ScriptHandler) BatchDelete(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "请求参数错误")
+		return
+	}
+	if len(req.Paths) == 0 {
+		response.BadRequest(c, "请选择要删除的项目")
 		return
 	}
 

@@ -227,3 +227,171 @@ func TestScriptCopyRejectsInvalidTargetDir(t *testing.T) {
 		t.Fatalf("expected invalid target_dir not to create %s, stat err=%v", unexpectedPath, err)
 	}
 }
+
+func TestScriptUploadPreservesFolderRelativePaths(t *testing.T) {
+	testutil.SetupTestEnv(t)
+
+	engine := newProtectedRouter()
+	user := testutil.MustCreateUser(t, "script-folder-upload", "operator")
+	token := testutil.MustCreateAccessToken(t, user.Username, user.Role)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	if err := writer.WriteField("dir", "imported"); err != nil {
+		t.Fatalf("write dir field: %v", err)
+	}
+
+	fileCases := []struct {
+		name         string
+		relativePath string
+		content      string
+	}{
+		{name: "one.py", relativePath: "pack/one.py", content: "print('one')\n"},
+		{name: "two.sh", relativePath: "pack/utils/two.sh", content: "echo two\n"},
+		{name: "skip.js", relativePath: "pack/node_modules/skip.js", content: "module.exports = 1\n"},
+	}
+
+	for _, fileCase := range fileCases {
+		part, err := writer.CreateFormFile("file", fileCase.name)
+		if err != nil {
+			t.Fatalf("create form file %s: %v", fileCase.name, err)
+		}
+		if _, err := part.Write([]byte(fileCase.content)); err != nil {
+			t.Fatalf("write form file %s: %v", fileCase.name, err)
+		}
+		if err := writer.WriteField("relative_path", fileCase.relativePath); err != nil {
+			t.Fatalf("write relative_path %s: %v", fileCase.relativePath, err)
+		}
+	}
+
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/scripts/upload", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+
+	payload := decodeJSONMap(t, rec)
+	if got, _ := payload["uploaded_count"].(float64); got != 2 {
+		t.Fatalf("expected uploaded_count=2, got %v", payload["uploaded_count"])
+	}
+	if got, _ := payload["skipped_count"].(float64); got != 1 {
+		t.Fatalf("expected skipped_count=1, got %v", payload["skipped_count"])
+	}
+
+	keepPath := filepath.Join(config.C.Data.ScriptsDir, "imported", "pack", "utils", "two.sh")
+	content, err := os.ReadFile(keepPath)
+	if err != nil {
+		t.Fatalf("read uploaded nested file: %v", err)
+	}
+	if string(content) != "echo two\n" {
+		t.Fatalf("unexpected nested file content: %q", content)
+	}
+
+	hiddenPath := filepath.Join(config.C.Data.ScriptsDir, "imported", "pack", "node_modules", "skip.js")
+	if _, err := os.Stat(hiddenPath); !os.IsNotExist(err) {
+		t.Fatalf("expected hidden folder file to be skipped, stat err=%v", err)
+	}
+}
+
+func TestScriptBatchDeleteRemovesFilesAndDirectories(t *testing.T) {
+	testutil.SetupTestEnv(t)
+
+	engine := newProtectedRouter()
+	user := testutil.MustCreateUser(t, "script-batch-delete", "operator")
+	token := testutil.MustCreateAccessToken(t, user.Username, user.Role)
+
+	rootFile := filepath.Join(config.C.Data.ScriptsDir, "keep.py")
+	deleteFile := filepath.Join(config.C.Data.ScriptsDir, "gone.py")
+	nestedFile := filepath.Join(config.C.Data.ScriptsDir, "bundle", "child.sh")
+	if err := os.MkdirAll(filepath.Dir(nestedFile), 0o755); err != nil {
+		t.Fatalf("create nested dir: %v", err)
+	}
+	for path, content := range map[string]string{
+		rootFile:   "print('keep')\n",
+		deleteFile: "print('gone')\n",
+		nestedFile: "echo child\n",
+	} {
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	rec := performJSONRequest(
+		engine,
+		http.MethodDelete,
+		"/api/v1/scripts/batch",
+		`{"paths":[{"path":"gone.py","type":"file"},{"path":"bundle","type":"directory"}]}`,
+		map[string]string{"Authorization": "Bearer " + token},
+		"",
+	)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+
+	payload := decodeJSONMap(t, rec)
+	if got, _ := payload["success_count"].(float64); got != 2 {
+		t.Fatalf("expected success_count=2, got %v", payload["success_count"])
+	}
+
+	if _, err := os.Stat(deleteFile); !os.IsNotExist(err) {
+		t.Fatalf("expected gone.py to be deleted, stat err=%v", err)
+	}
+	if _, err := os.Stat(nestedFile); !os.IsNotExist(err) {
+		t.Fatalf("expected bundle/ to be deleted, stat err=%v", err)
+	}
+	if _, err := os.Stat(rootFile); err != nil {
+		t.Fatalf("expected keep.py to remain, stat err=%v", err)
+	}
+}
+
+func TestScriptBatchDeleteReportsPartialFailureWithoutDeletingRemainingFiles(t *testing.T) {
+	testutil.SetupTestEnv(t)
+
+	engine := newProtectedRouter()
+	user := testutil.MustCreateUser(t, "script-batch-partial", "operator")
+	token := testutil.MustCreateAccessToken(t, user.Username, user.Role)
+
+	keepFile := filepath.Join(config.C.Data.ScriptsDir, "keep.py")
+	if err := os.WriteFile(keepFile, []byte("print('keep')\n"), 0o644); err != nil {
+		t.Fatalf("write keep.py: %v", err)
+	}
+
+	rec := performJSONRequest(
+		engine,
+		http.MethodDelete,
+		"/api/v1/scripts/batch",
+		`{"paths":[{"path":"missing.py","type":"file"},{"path":"../outside.py","type":"file"}]}`,
+		map[string]string{"Authorization": "Bearer " + token},
+		"",
+	)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+
+	payload := decodeJSONMap(t, rec)
+	if got, _ := payload["success_count"].(float64); got != 0 {
+		t.Fatalf("expected success_count=0, got %v", payload["success_count"])
+	}
+	if got, _ := payload["failed_count"].(float64); got != 2 {
+		t.Fatalf("expected failed_count=2, got %v", payload["failed_count"])
+	}
+
+	failedItems, ok := payload["failed_items"].([]interface{})
+	if !ok || len(failedItems) != 2 {
+		t.Fatalf("expected 2 failed_items, got %#v", payload["failed_items"])
+	}
+
+	if _, err := os.Stat(keepFile); err != nil {
+		t.Fatalf("expected keep.py to remain after failed batch delete, stat err=%v", err)
+	}
+}

@@ -1355,13 +1355,30 @@ route('POST', '/scripts/copy', (ctx) => {
 route('POST', '/scripts/upload', () => blocked())
 
 route('DELETE', '/scripts/batch', (ctx) => {
-  const paths = bodyObject(ctx)['paths']
-  if (Array.isArray(paths)) {
-    const set = new Set(paths.map((item: unknown) => String(item).replace(/^\/+/, '')))
-    const current = db()
-    current.scriptFiles = current.scriptFiles.filter((file) => !set.has(file.path))
+  const raw = bodyObject(ctx)['paths']
+  const items = Array.isArray(raw)
+    ? raw.map((item: unknown) => {
+        if (typeof item === 'string') {
+          return { path: item.replace(/^\/+/, ''), type: 'file' }
+        }
+        const record = item && typeof item === 'object' ? item as { path?: unknown; type?: unknown } : {}
+        return {
+          path: String(record.path ?? '').replace(/^\/+/, ''),
+          type: String(record.type ?? 'file')
+        }
+      }).filter((item) => item.path)
+    : []
+
+  const current = db()
+  for (const item of items) {
+    if (item.type === 'directory') {
+      current.scriptDirs = current.scriptDirs.filter((dir) => dir !== item.path && !dir.startsWith(`${item.path}/`))
+      current.scriptFiles = current.scriptFiles.filter((file) => file.path !== item.path && !file.path.startsWith(`${item.path}/`))
+    } else {
+      current.scriptFiles = current.scriptFiles.filter((file) => file.path !== item.path)
+    }
   }
-  return { message: '删除成功' }
+  return { message: items.length > 1 ? `删除完成: 成功 ${items.length}, 失败 0` : '删除成功', success_count: items.length, failed_count: 0 }
 })
 
 // 版本历史在演示环境里不铺剧本：真正有价值的是「改了能存住」，

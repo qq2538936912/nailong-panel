@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { MAGISK_STOP_SUPPORTED_SHELL_VERSION, type PanelUpdateStatus } from '@/api/system'
 import UpdateProgressDialog from './UpdateProgressDialog.vue'
 
+const baseUrl = import.meta.env.BASE_URL
+
 const props = defineProps<{
   isAdmin: boolean
   currentVersion: string
@@ -62,10 +64,10 @@ const stopPanelDisabledTip = computed(
 
       <div class="hero-center">
         <div class="hero-logo">
-          <img src="/favicon-512.webp" alt="面板" class="hero-logo-img" />
+          <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" class="hero-logo-img" />
         </div>
-        <h2 class="hero-name">面板</h2>
-        <p class="hero-desc">轻量级定时任务管理面板</p>
+        <h2 class="hero-name">奶龙面板</h2>
+        <p class="hero-desc">奶龙轻量级定时任务管理面板</p>
 
         <div class="hero-version-row">
           <div class="hero-version-item">

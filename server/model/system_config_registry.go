@@ -163,7 +163,7 @@ var registeredSystemConfigSpecs = finalizeSystemConfigSpecs([]systemConfigSpec{
 		"network",
 		normalizeTrustedProxyCIDRs,
 	),
-	newTrimmedStringConfig("panel_title", "面板标题", "面板", "面板标题", "branding"),
+	newTrimmedStringConfig("panel_title", "面板标题", "奶龙面板", "面板标题", "branding"),
 	newValidatedStringConfig(PanelTimezoneConfigKey, "面板时区", DefaultPanelTimezone, "面板时区（影响日志、定时任务日期判断和脚本 TZ）", "branding", normalizeTimezoneValue),
 	newTrimmedStringConfig("panel_icon", "面板图标 (SVG)", "", "面板图标（SVG data URL）", "branding"),
 	newTrimmedStringConfig("editor_background_color", "编辑器背景颜色", "", "脚本编辑器背景颜色（留空使用默认样式）", "branding"),
