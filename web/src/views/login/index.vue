@@ -517,7 +517,7 @@ const themeIcon = computed(() => (themeStore.isDark ? Sunny : Moon));
         <template v-else>
           <div class="login-header">
             <div class="login-logo">
-              <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" width="48" height="48" />
+              <img :src="`${baseUrl}logo.svg`" alt="奶龙" width="48" height="48" />
             </div>
             <h2>{{ titleText }}</h2>
             <p>{{ subtitleText }}</p>

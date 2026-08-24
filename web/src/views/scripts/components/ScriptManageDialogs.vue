@@ -32,6 +32,7 @@ const props = defineProps<{
   versions: ScriptVersionRecord[]
   versionsLoading: boolean
   versionDiffLoading: boolean
+  uploading: boolean
   onCreateFile: () => void | Promise<void>
   onCreateDir: () => void | Promise<void>
   onRename: () => void | Promise<void>
@@ -364,8 +365,8 @@ watch(showVersionDiffDialog, (visible) => {
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showUploadDialog = false">取消</el-button>
-      <el-button type="primary" @click="onUploadSubmit">上传</el-button>
+      <el-button @click="showUploadDialog = false" :disabled="props.uploading">取消</el-button>
+      <el-button type="primary" :loading="props.uploading" @click="onUploadSubmit">上传</el-button>
     </template>
   </el-dialog>
 </template>

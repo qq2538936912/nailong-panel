@@ -25,6 +25,8 @@ const {
   loading,
   saving,
   treeLoading,
+  batchDeleting,
+  uploading,
   isEditing,
   editorAutoFocusTicket,
   showCreateFileDialog,
@@ -158,6 +160,7 @@ async function handleCancelEdit() {
         :is-mobile="isCompactLayout"
         :mobile-show-editor="mobileShowEditor"
         :tree-loading="treeLoading"
+        :batch-deleting="batchDeleting"
         :file-tree="fileTree"
         :allow-drag="allowDrag"
         :allow-drop="allowDrop"
@@ -226,6 +229,7 @@ async function handleCancelEdit() {
       :versions="versions"
       :versions-loading="versionsLoading"
       :version-diff-loading="versionDiffLoading"
+      :uploading="uploading"
       :on-create-file="handleCreateFile"
       :on-create-dir="handleCreateDir"
       :on-rename="handleRename"

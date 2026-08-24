@@ -12,6 +12,10 @@ export interface ScriptBatchDeleteTarget {
   isDir: boolean
 }
 
+export interface ScriptBatchDeleteOptions {
+  searchActive?: boolean
+}
+
 export interface ScriptVersionRecord {
   id: number
   version: number | string

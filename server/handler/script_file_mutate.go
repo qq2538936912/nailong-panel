@@ -170,6 +170,10 @@ func (h *ScriptHandler) Upload(c *gin.Context) {
 	skippedCount := 0
 	for i, header := range headers {
 		if header.Size > maxUploadSize {
+			if folderUpload {
+				skippedCount++
+				continue
+			}
 			response.BadRequest(c, fmt.Sprintf("文件 %s 过大（最大 %dMB）", header.Filename, maxUploadSize/(1024*1024)))
 			return
 		}
@@ -278,11 +282,13 @@ func (h *ScriptHandler) Delete(c *gin.Context) {
 			response.InternalError(c, "删除目录失败")
 			return
 		}
+		clearScriptVersions(path, true)
 	} else {
 		if err := os.Remove(full); err != nil {
 			response.InternalError(c, "删除文件失败")
 			return
 		}
+		clearScriptVersions(path, false)
 	}
 
 	response.Success(c, gin.H{"message": "删除成功"})
@@ -508,6 +514,7 @@ func (h *ScriptHandler) BatchDelete(c *gin.Context) {
 			failedCount++
 			failedItems = append(failedItems, item.Path)
 		} else {
+			clearScriptVersions(item.Path, item.Type == "directory")
 			successCount++
 		}
 	}

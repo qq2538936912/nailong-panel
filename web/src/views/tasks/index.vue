@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { taskApi } from '@/api/task'
 import { depsApi, type PythonRuntimeInfo } from '@/api/deps'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus'
 import TaskForm from './components/TaskForm.vue'
 import LogViewer from './components/LogViewer.vue'
 import TaskDetail from './components/TaskDetail.vue'
@@ -12,10 +12,12 @@ import LogFileBrowser from './components/LogFileBrowser.vue'
 import ViewManager from './components/ViewManager.vue'
 import TaskCronList from './components/TaskCronList.vue'
 import BatchAddLabelDialog from './components/BatchAddLabelDialog.vue'
+import TaskTableResizableHeader from './components/TaskTableResizableHeader.vue'
 import { getDisplayTaskLabels } from './taskLabels'
 import { splitTaskCommandDisplay } from './taskCommand'
 import { usePageActivity } from '@/composables/usePageActivity'
 import { useResponsive } from '@/composables/useResponsive'
+import { useTaskTableColumns } from './useTaskTableColumns'
 import { canOperate } from '@/utils/roles'
 import { formatDuration } from '@/utils/duration'
 import type { TaskViewFilter, TaskViewSortRule } from '@/api/taskView'
@@ -30,11 +32,27 @@ const { isMobile, width: viewportWidth } = useResponsive()
 // 命令/标签/定时规则接连换行，行高从 ~50px 涨到 100~190px（1280×720 下只剩 3~4 行可见）。
 // 典型受害者是 14 寸笔记本 1920×1080 + 150% 系统缩放 = 等效 1280×720。
 const isNarrowDesktop = computed(() => !isMobile.value && viewportWidth.value < 1600)
+const taskTableRef = ref<TableInstance>()
+const {
+  columnWidth,
+  columnClassName,
+  columnLabel,
+  startColumnResize,
+  autoFitColumn,
+  autoFitAllColumns,
+  resetColumnWidths,
+} = useTaskTableColumns({
+  tableRef: taskTableRef,
+  isNarrowDesktop,
+})
 const { isPageActive } = usePageActivity()
 let statusTimer: ReturnType<typeof setInterval> | null = null
 
 const TASK_PAGE_SIZE_STORAGE_KEY = 'dd:tasks:page_size'
+const TASK_PAGE_ZOOM_STORAGE_KEY = 'dd:tasks:page_zoom'
 const supportedTaskPageSizes = [10, 20, 50, 100]
+const supportedTaskPageZoomLevels = [80, 90, 100, 110, 120] as const
+type TaskPageZoomLevel = (typeof supportedTaskPageZoomLevels)[number]
 
 function readStoredTaskPageSize() {
   if (typeof window === 'undefined') {
@@ -53,10 +71,38 @@ function persistTaskPageSize(value: number) {
   window.localStorage.setItem(TASK_PAGE_SIZE_STORAGE_KEY, String(value))
 }
 
+function readStoredTaskPageZoom(): TaskPageZoomLevel {
+  if (typeof window === 'undefined') {
+    return 100
+  }
+
+  const parsed = Number(window.localStorage.getItem(TASK_PAGE_ZOOM_STORAGE_KEY))
+  return supportedTaskPageZoomLevels.includes(parsed as TaskPageZoomLevel)
+    ? (parsed as TaskPageZoomLevel)
+    : 100
+}
+
+function persistTaskPageZoom(value: TaskPageZoomLevel) {
+  if (typeof window === 'undefined') {
+    return
+  }
+  window.localStorage.setItem(TASK_PAGE_ZOOM_STORAGE_KEY, String(value))
+}
+
 const tasks = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(readStoredTaskPageSize())
+const pageZoom = ref<TaskPageZoomLevel>(readStoredTaskPageZoom())
+const pageZoomStyle = computed(() =>
+  isMobile.value
+    ? undefined
+    : {
+        zoom: pageZoom.value / 100,
+      },
+)
+const canZoomOut = computed(() => pageZoom.value > 80)
+const canZoomIn = computed(() => pageZoom.value < 120)
 const keyword = ref('')
 const statusFilter = ref<string>('')
 const loading = ref(false)
@@ -152,6 +198,28 @@ function handleQuickSortSelect(value: { field: string; direction: 'asc' | 'desc'
 watch(pageSize, (value) => {
   persistTaskPageSize(value)
 })
+
+watch(pageZoom, (value) => {
+  persistTaskPageZoom(value)
+})
+
+function zoomOutPage() {
+  const index = supportedTaskPageZoomLevels.indexOf(pageZoom.value)
+  if (index > 0) {
+    pageZoom.value = supportedTaskPageZoomLevels[index - 1]!
+  }
+}
+
+function zoomInPage() {
+  const index = supportedTaskPageZoomLevels.indexOf(pageZoom.value)
+  if (index >= 0 && index < supportedTaskPageZoomLevels.length - 1) {
+    pageZoom.value = supportedTaskPageZoomLevels[index + 1]!
+  }
+}
+
+function resetPageZoom() {
+  pageZoom.value = 100
+}
 
 watch(canPollTaskStatus, () => {
   syncStatusPolling()
@@ -710,6 +778,26 @@ async function handleImport(event: Event) {
         </el-input>
       </div>
       <div class="toolbar__right">
+        <el-tooltip content="按当前页内容自动适应各列宽度" placement="bottom">
+          <el-button v-if="!isMobile" size="small" @click="autoFitAllColumns">适应列宽</el-button>
+        </el-tooltip>
+        <el-button-group v-if="!isMobile" class="zoom-controls" aria-label="页面缩放">
+          <el-tooltip :content="`缩小 (${pageZoom > 80 ? pageZoom - 10 : pageZoom}%)`" placement="bottom">
+            <el-button size="small" :disabled="!canZoomOut" aria-label="缩小" @click="zoomOutPage">
+              <el-icon><ZoomOut /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tooltip :content="pageZoom === 100 ? '当前为默认缩放' : '重置为 100%'" placement="bottom">
+            <el-button size="small" class="zoom-controls__reset" aria-label="重置缩放" @click="resetPageZoom">
+              {{ pageZoom }}%
+            </el-button>
+          </el-tooltip>
+          <el-tooltip :content="`放大 (${pageZoom < 120 ? pageZoom + 10 : pageZoom}%)`" placement="bottom">
+            <el-button size="small" :disabled="!canZoomIn" aria-label="放大" @click="zoomInPage">
+              <el-icon><ZoomIn /></el-icon>
+            </el-button>
+          </el-tooltip>
+        </el-button-group>
         <el-dropdown trigger="click" class="sort-dropdown">
           <el-button :type="quickSort ? 'primary' : 'default'" :plain="!!quickSort">
             <el-icon><Sort /></el-icon>
@@ -741,6 +829,8 @@ async function handleImport(event: Event) {
             <el-dropdown-menu>
               <el-dropdown-item @click="handleExport">导出任务</el-dropdown-item>
               <el-dropdown-item v-if="canOperateTasks" @click="triggerImport">导入任务</el-dropdown-item>
+              <el-dropdown-item v-if="!isMobile" divided @click="autoFitAllColumns">适应列宽</el-dropdown-item>
+              <el-dropdown-item v-if="!isMobile" @click="resetColumnWidths">重置列宽</el-dropdown-item>
               <el-dropdown-item v-if="canOperateTasks" divided @click="handleCleanLogs">清理日志</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -761,6 +851,7 @@ async function handleImport(event: Event) {
       </div>
     </div>
 
+    <div class="tasks-page__body" :class="{ 'tasks-page__body--desktop': !isMobile }" :style="pageZoomStyle">
     <div v-if="isMobile" class="dd-mobile-list">
       <div
         v-for="row in tasks"
@@ -904,19 +995,29 @@ async function handleImport(event: Event) {
 
     <div v-else class="table-card" :class="{ 'is-compact': isNarrowDesktop }">
       <el-table
+        ref="taskTableRef"
         v-loading="loading"
         :data="tasks"
         :height="desktopTableHeight"
+        table-layout="fixed"
         @selection-change="handleSelectionChange"
         style="width: 100%"
         :header-cell-style="{ background: '#f8fafc', color: '#64748b', fontWeight: 600, fontSize: '13px' }"
         :row-style="{ cursor: 'pointer' }"
       >
         <el-table-column v-if="canOperateTasks" type="selection" width="40" />
-        <!-- 三个弹性列按 min-width 的比例瓜分剩余宽度（EP 的分配规则）。
-             窄桌面改成 90 : 70 : 95：cron 表达式长度固定且短，全显出来价值最高；
-             命令是长路径，任何窄宽度下都得省略，让它少分一点最划算。 -->
-        <el-table-column label="任务名称" :min-width="isNarrowDesktop ? 90 : 80">
+        <el-table-column
+          :width="columnWidth('name')"
+          :class-name="columnClassName('name')"
+          :label-class-name="columnClassName('name')"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('name')"
+              @resize-start="startColumnResize('name', $event)"
+              @auto-fit="autoFitColumn('name')"
+            />
+          </template>
           <template #default="{ row }">
             <div class="task-name-cell">
               <el-icon v-if="row.is_pinned" class="pin-icon" :class="{ 'is-readonly': !canOperateTasks }" @click.stop="canOperateTasks && handlePin(row)"><Star /></el-icon>
@@ -962,7 +1063,18 @@ async function handleImport(event: Event) {
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="命令 / 脚本" :min-width="isNarrowDesktop ? 70 : 80">
+        <el-table-column
+          :min-width="columnWidth('command')"
+          :class-name="columnClassName('command')"
+          :label-class-name="columnClassName('command')"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('command')"
+              @resize-start="startColumnResize('command', $event)"
+              @auto-fit="autoFitColumn('command')"
+            />
+          </template>
           <template #default="{ row }">
             <!-- 窄桌面下这一列会被压到 100px 出头，不省略就要换 5 行；title 挂全文兜底 -->
             <code class="command-text" :title="row.command">
@@ -975,7 +1087,18 @@ async function handleImport(event: Event) {
             </code>
           </template>
         </el-table-column>
-        <el-table-column label="定时规则" :min-width="isNarrowDesktop ? 95 : 70">
+        <el-table-column
+          :width="columnWidth('cron')"
+          :class-name="columnClassName('cron')"
+          :label-class-name="columnClassName('cron')"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('cron')"
+              @resize-start="startColumnResize('cron', $event)"
+              @auto-fit="autoFitColumn('cron')"
+            />
+          </template>
           <template #default="{ row }">
             <template v-if="row.task_type === 'cron'">
               <TaskCronList
@@ -986,9 +1109,19 @@ async function handleImport(event: Event) {
             <span v-else class="text-muted">{{ getTaskTypeLabel(row.task_type) }}</span>
           </template>
         </el-table-column>
-        <!-- 窄桌面把「状态」「上次结果」收到刚好装下标签的宽度，省出的 36px 还给
-             名称/命令/定时规则三个弹性列，让 cron 表达式尽量不被省略号截断 -->
-        <el-table-column label="状态" :width="isNarrowDesktop ? 90 : 110" align="center">
+        <el-table-column
+          :width="columnWidth('status')"
+          :class-name="columnClassName('status')"
+          :label-class-name="columnClassName('status')"
+          align="center"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('status')"
+              @resize-start="startColumnResize('status', $event)"
+              @auto-fit="autoFitColumn('status')"
+            />
+          </template>
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small" :class="row.status === 2 ? 'tag-with-dot' : ''">
               <span v-if="row.status === 2" class="pulse-dot"></span>
@@ -996,21 +1129,56 @@ async function handleImport(event: Event) {
             </el-tag>
           </template>
         </el-table-column>
-        <!-- 窄桌面隐藏「最后运行」「耗时」：这两列固定占 250px，是把弹性列压到下限的主因。
-             信息没丢——任务详情弹窗里都有，「下次运行」「上次结果」这两个更常看的仍然保留。 -->
-        <el-table-column v-if="!isNarrowDesktop" label="最后运行" width="160" align="center">
+        <el-table-column
+          v-if="!isNarrowDesktop"
+          :width="columnWidth('lastRun')"
+          :class-name="columnClassName('lastRun')"
+          :label-class-name="columnClassName('lastRun')"
+          align="center"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('lastRun')"
+              @resize-start="startColumnResize('lastRun', $event)"
+              @auto-fit="autoFitColumn('lastRun')"
+            />
+          </template>
           <template #default="{ row }">
             <span v-if="row.last_run_at" class="time-text">{{ formatTime(row.last_run_at) }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="下次运行" width="160" align="center">
+        <el-table-column
+          :width="columnWidth('nextRun')"
+          :class-name="columnClassName('nextRun')"
+          :label-class-name="columnClassName('nextRun')"
+          align="center"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('nextRun')"
+              @resize-start="startColumnResize('nextRun', $event)"
+              @auto-fit="autoFitColumn('nextRun')"
+            />
+          </template>
           <template #default="{ row }">
             <span v-if="row.next_run_at" class="time-text">{{ formatTime(row.next_run_at) }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="上次结果" :width="isNarrowDesktop ? 84 : 100" align="center">
+        <el-table-column
+          :width="columnWidth('lastResult')"
+          :class-name="columnClassName('lastResult')"
+          :label-class-name="columnClassName('lastResult')"
+          align="center"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('lastResult')"
+              @resize-start="startColumnResize('lastResult', $event)"
+              @auto-fit="autoFitColumn('lastResult')"
+            />
+          </template>
           <template #default="{ row }">
             <div class="last-run-result">
               <el-tag :type="getRunStatusType(row.last_run_status)" size="small">
@@ -1019,18 +1187,31 @@ async function handleImport(event: Event) {
             </div>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isNarrowDesktop" label="耗时" width="90" align="center">
+        <el-table-column
+          v-if="!isNarrowDesktop"
+          :width="columnWidth('duration')"
+          :class-name="columnClassName('duration')"
+          :label-class-name="columnClassName('duration')"
+          align="center"
+        >
+          <template #header>
+            <TaskTableResizableHeader
+              :label="columnLabel('duration')"
+              @resize-start="startColumnResize('duration', $event)"
+              @auto-fit="autoFitColumn('duration')"
+            />
+          </template>
           <template #default="{ row }">
             <span v-if="row.last_running_time != null" class="time-text">{{ formatDuration(row.last_running_time) }}</span>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
         <!--
-          列宽 270：EP 的 .el-table .cell 是 padding:0 12px + overflow:hidden，可用内容宽 = 列宽 - 24。
-          清掉 EP 的按钮外边距后这五个按钮实测需要 228px，270 留出 18px 余量（旧的 260 只剩 8px，太紧）。
+          列宽 240：EP 的 .el-table .cell 是 padding:0 12px + overflow:hidden，可用内容宽 = 列宽 - 24。
+          清掉 EP 的按钮外边距后这五个按钮实测需要 228px，240 留出 12px 余量（旧的 270 右侧空白过大）。
           按钮组一旦超出可用宽，.cell 就会变成可滚动容器，点 ⋯ 时整行按钮会被滚偏，详见下方 .action-btns 注释。
         -->
-        <el-table-column label="操作" width="270" fixed="right" align="center">
+        <el-table-column label="操作" width="240" fixed="right" align="center" class-name="task-col-actions">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button v-if="canOperateTasks && row.status !== 2" type="primary" text size="small" @click="handleRun(row)">运行</el-button>
@@ -1076,6 +1257,7 @@ async function handleImport(event: Event) {
         @current-change="loadTasks"
         @size-change="handlePageSizeChange"
       />
+    </div>
     </div>
 
     <TaskForm
@@ -1222,6 +1404,17 @@ async function handleImport(event: Event) {
   gap: 8px;
 }
 
+.zoom-controls {
+  flex-shrink: 0;
+}
+
+.zoom-controls__reset {
+  min-width: 52px;
+  padding-inline: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 // 快捷排序触发按钮：图标与文案留出间距，文案过长时不撑破工具栏
 .sort-dropdown__text {
   margin-left: 4px;
@@ -1234,12 +1427,47 @@ async function handleImport(event: Event) {
   gap: 5px;
 }
 
+.tasks-page__body--desktop {
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  > .table-card {
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  > .pagination-bar {
+    flex-shrink: 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .tasks-page__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
 // 表格卡：直角无阴影，仅靠 1px 边框与页面底色区分（dd-fixed-page 下的 flex:1 + 内部滚动由全局规则接管）
 .table-card {
   background: var(--el-bg-color);
   border-radius: 0;
   border: 1px solid var(--el-border-color-lighter);
   overflow: hidden;
+
+  :deep(th[class*='task-col-'] .cell) {
+    position: relative;
+    overflow: visible;
+  }
 }
 
 .task-name-cell {
@@ -1352,8 +1580,8 @@ async function handleImport(event: Event) {
 .action-btns {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 2px;
 
   // EP 自带 `.el-button + .el-button { margin-left: 12px }`，它会叠加在上面的 flex gap 上：
   // 连续四个按钮凭空多吃 36px，按钮组总宽超过「操作」列的可用内容宽（列宽 - .cell 的 24px 内边距），
@@ -1365,8 +1593,13 @@ async function handleImport(event: Event) {
   }
 
   :deep(.el-button) {
-    padding: 4px 8px;
+    padding: 4px 6px;
   }
+}
+
+:deep(.task-col-actions .cell) {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 // 分页条：与表格卡视觉衔接，间距/字号收敛

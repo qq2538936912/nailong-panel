@@ -8,9 +8,10 @@ import {
   Download,
   InfoFilled,
   Loading,
-  Operation,
   Switch,
   Warning,
+  ZoomIn,
+  ZoomOut,
 } from '@element-plus/icons-vue'
 import { taskApi } from '@/api/task'
 import { openAuthorizedEventStream, type EventStreamConnection } from '@/utils/sse'
@@ -41,7 +42,20 @@ const emptyMessage = ref<string | null>(null)
 const loading = ref(false)
 const logContainerRef = ref<HTMLElement>()
 const autoScroll = ref(false)
-const fontSize = ref<'sm' | 'md' | 'lg'>('md')
+const LOG_FONT_SIZE_STORAGE_KEY = 'dd:tasks:log_font_size'
+const logFontSizeLevels = ['sm', 'md', 'lg'] as const
+type LogFontSizeLevel = (typeof logFontSizeLevels)[number]
+
+function readStoredLogFontSize(): LogFontSizeLevel {
+  if (typeof window === 'undefined') {
+    return 'md'
+  }
+
+  const raw = window.localStorage.getItem(LOG_FONT_SIZE_STORAGE_KEY)
+  return logFontSizeLevels.includes(raw as LogFontSizeLevel) ? (raw as LogFontSizeLevel) : 'md'
+}
+
+const fontSize = ref<LogFontSizeLevel>(readStoredLogFontSize())
 const wrap = ref(true)
 // 渲染窗口封顶：默认只渲染最后 5000 行，避免超长日志把 DOM 撑到几十万节点，
 // 让每次滚动/布局都变慢。用户可以点顶部提示展开完整日志。
@@ -97,6 +111,13 @@ const byteLabel = computed(() => {
 })
 
 const fontSizeClass = computed(() => `log-font-${fontSize.value}`)
+const logFontSizeLabel = computed(() => {
+  if (fontSize.value === 'sm') return '小'
+  if (fontSize.value === 'lg') return '大'
+  return '中'
+})
+const canDecreaseLogFontSize = computed(() => fontSize.value !== logFontSizeLevels[0])
+const canIncreaseLogFontSize = computed(() => fontSize.value !== logFontSizeLevels[logFontSizeLevels.length - 1])
 
 function expandRenderWindow() {
   const container = logContainerRef.value
@@ -398,10 +419,32 @@ function handleVisibilityChange() {
   }
 }
 
-function cycleFontSize() {
-  if (fontSize.value === 'sm') fontSize.value = 'md'
-  else if (fontSize.value === 'md') fontSize.value = 'lg'
-  else fontSize.value = 'sm'
+function persistLogFontSize(value: LogFontSizeLevel) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(LOG_FONT_SIZE_STORAGE_KEY, value)
+  }
+}
+
+watch(fontSize, (value) => {
+  persistLogFontSize(value)
+})
+
+function decreaseLogFontSize() {
+  const index = logFontSizeLevels.indexOf(fontSize.value)
+  if (index > 0) {
+    fontSize.value = logFontSizeLevels[index - 1]!
+  }
+}
+
+function increaseLogFontSize() {
+  const index = logFontSizeLevels.indexOf(fontSize.value)
+  if (index >= 0 && index < logFontSizeLevels.length - 1) {
+    fontSize.value = logFontSizeLevels[index + 1]!
+  }
+}
+
+function resetLogFontSize() {
+  fontSize.value = 'md'
 }
 
 async function handleCopy() {
@@ -520,12 +563,36 @@ function handleClose() {
         </div>
 
         <div class="viewer-hero-actions">
-          <el-tooltip content="切换字号" placement="bottom">
-            <button class="tool-btn" @click="cycleFontSize" aria-label="切换字号">
-              <el-icon :size="15"><Operation /></el-icon>
-              <span class="tool-btn-label">{{ fontSize.toUpperCase() }}</span>
+          <div class="zoom-controls" role="group" aria-label="日志字号">
+            <el-tooltip content="缩小字号" placement="bottom">
+              <button
+                class="tool-btn"
+                :disabled="!canDecreaseLogFontSize"
+                aria-label="缩小字号"
+                @click="decreaseLogFontSize"
+              >
+                <el-icon :size="15"><ZoomOut /></el-icon>
+              </button>
+            </el-tooltip>
+            <button
+              type="button"
+              class="tool-btn tool-btn--label"
+              :title="fontSize === 'md' ? '当前为默认字号' : '点击重置为默认字号'"
+              @click="resetLogFontSize"
+            >
+              {{ logFontSizeLabel }}
             </button>
-          </el-tooltip>
+            <el-tooltip content="放大字号" placement="bottom">
+              <button
+                class="tool-btn"
+                :disabled="!canIncreaseLogFontSize"
+                aria-label="放大字号"
+                @click="increaseLogFontSize"
+              >
+                <el-icon :size="15"><ZoomIn /></el-icon>
+              </button>
+            </el-tooltip>
+          </div>
           <el-tooltip :content="wrap ? '关闭自动换行' : '开启自动换行'" placement="bottom">
             <button
               class="tool-btn"
@@ -760,6 +827,30 @@ function handleClose() {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--viewer-border-soft, var(--el-border-color-light));
+  background: var(--el-bg-color);
+
+  .tool-btn {
+    border: none;
+    border-radius: 0;
+  }
+
+  .tool-btn + .tool-btn {
+    border-left: 1px solid var(--viewer-border-soft, var(--el-border-color-light));
+  }
+}
+
+.tool-btn--label {
+  min-width: 34px;
+  justify-content: center;
+  padding: 0 8px;
+  font-weight: 700;
 }
 
 .tool-btn {

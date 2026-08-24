@@ -303,6 +303,91 @@ func TestScriptUploadPreservesFolderRelativePaths(t *testing.T) {
 	}
 }
 
+func TestScriptFolderUploadSkipsOversizedFiles(t *testing.T) {
+	testutil.SetupTestEnv(t)
+
+	engine := newProtectedRouter()
+	user := testutil.MustCreateUser(t, "script-folder-oversized", "operator")
+	token := testutil.MustCreateAccessToken(t, user.Username, user.Role)
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+
+	if err := writer.WriteField("dir", "imported"); err != nil {
+		t.Fatalf("write dir field: %v", err)
+	}
+
+	fileCases := []struct {
+		name         string
+		relativePath string
+		content      string
+	}{
+		{name: "keep.py", relativePath: "pack/keep.py", content: "print('keep')\n"},
+		{name: "huge.py", relativePath: "pack/huge.py", content: ""},
+	}
+
+	for _, fileCase := range fileCases {
+		part, err := writer.CreateFormFile("file", fileCase.name)
+		if err != nil {
+			t.Fatalf("create form file %s: %v", fileCase.name, err)
+		}
+		if fileCase.name == "huge.py" {
+			chunk := make([]byte, 1024*1024)
+			for i := range chunk {
+				chunk[i] = 'x'
+			}
+			remaining := 100*1024*1024 + 1
+			for remaining > 0 {
+				n := remaining
+				if n > len(chunk) {
+					n = len(chunk)
+				}
+				if _, err := part.Write(chunk[:n]); err != nil {
+					t.Fatalf("write oversized form file: %v", err)
+				}
+				remaining -= n
+			}
+		} else if _, err := part.Write([]byte(fileCase.content)); err != nil {
+			t.Fatalf("write form file %s: %v", fileCase.name, err)
+		}
+		if err := writer.WriteField("relative_path", fileCase.relativePath); err != nil {
+			t.Fatalf("write relative_path %s: %v", fileCase.relativePath, err)
+		}
+	}
+
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/scripts/upload", &body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d, body=%s", rec.Code, rec.Body.String())
+	}
+
+	payload := decodeJSONMap(t, rec)
+	if got, _ := payload["uploaded_count"].(float64); got != 1 {
+		t.Fatalf("expected uploaded_count=1, got %v", payload["uploaded_count"])
+	}
+	if got, _ := payload["skipped_count"].(float64); got != 1 {
+		t.Fatalf("expected skipped_count=1, got %v", payload["skipped_count"])
+	}
+
+	keepPath := filepath.Join(config.C.Data.ScriptsDir, "imported", "pack", "keep.py")
+	if _, err := os.Stat(keepPath); err != nil {
+		t.Fatalf("expected keep.py to be uploaded, stat err=%v", err)
+	}
+	hugePath := filepath.Join(config.C.Data.ScriptsDir, "imported", "pack", "huge.py")
+	if _, err := os.Stat(hugePath); !os.IsNotExist(err) {
+		t.Fatalf("expected oversized file to be skipped, stat err=%v", err)
+	}
+}
+
 func TestScriptBatchDeleteRemovesFilesAndDirectories(t *testing.T) {
 	testutil.SetupTestEnv(t)
 

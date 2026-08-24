@@ -60,6 +60,8 @@ import {
   VideoPause,
   VideoPlay,
   View,
+  ZoomIn,
+  ZoomOut,
 } from "@element-plus/icons-vue";
 import App from "./App.vue";
 import LoadingMotion from "./components/LoadingMotion.vue";
@@ -146,6 +148,8 @@ const globalIcons = {
   VideoPause,
   VideoPlay,
   View,
+  ZoomIn,
+  ZoomOut,
 };
 
 // 整个启动流程必须是异步的，唯一原因是：演示环境的 mock 层要抢在

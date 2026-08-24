@@ -11,12 +11,13 @@ import {
   VideoPlay
 } from '@element-plus/icons-vue'
 import ScriptTreeNode from './ScriptTreeNode.vue'
-import type { ScriptBatchDeleteTarget, ScriptUploadMode, TreeNode } from '../types'
+import type { ScriptBatchDeleteOptions, ScriptBatchDeleteTarget, ScriptUploadMode, TreeNode } from '../types'
 
 const props = defineProps<{
   isMobile: boolean
   mobileShowEditor: boolean
   treeLoading: boolean
+  batchDeleting: boolean
   fileTree: TreeNode[]
   allowDrag: (draggingNode: any) => boolean
   allowDrop: (draggingNode: any, dropNode: any, type: string) => boolean
@@ -29,7 +30,7 @@ const props = defineProps<{
   onNodeDrop: (draggingNode: any, dropNode: any, dropType: string) => void | Promise<void>
   onOpenRename: (path: string) => void
   onDelete: (path: string, isDir: boolean) => void | Promise<void>
-  onBatchDelete: (items: ScriptBatchDeleteTarget[]) => void | Promise<void>
+  onBatchDelete: (items: ScriptBatchDeleteTarget[], options?: ScriptBatchDeleteOptions) => void | Promise<void>
   onMoveToRoot?: (path: string, isDir: boolean) => void | Promise<void>
 }>()
 
@@ -68,9 +69,10 @@ function clearChecked() {
 }
 
 function handleBatchDelete() {
+  if (props.batchDeleting) return
   const items = collectBatchDeleteTargets()
   if (items.length === 0) return
-  void props.onBatchDelete(items)
+  void props.onBatchDelete(items, { searchActive: Boolean(searchKeyword.value.trim()) })
 }
 
 watch(searchKeyword, (val) => {
@@ -127,7 +129,12 @@ watch(() => props.fileTree, async () => {
           </el-dropdown>
 
           <el-tooltip v-if="checkedCount > 0" content="批量删除" placement="bottom">
-            <button class="icon-btn danger" aria-label="批量删除" @click="handleBatchDelete">
+            <button
+              class="icon-btn danger"
+              aria-label="批量删除"
+              :disabled="batchDeleting"
+              @click="handleBatchDelete"
+            >
               <el-icon :size="15"><Delete /></el-icon>
             </button>
           </el-tooltip>
@@ -140,7 +147,7 @@ watch(() => props.fileTree, async () => {
       </div>
     </header>
 
-    <div class="sidebar-tree" v-loading="treeLoading">
+    <div class="sidebar-tree" v-loading="treeLoading || batchDeleting">
       <el-tree
         ref="treeRef"
         :data="fileTree"
@@ -312,10 +319,15 @@ watch(() => props.fileTree, async () => {
     color: var(--el-color-danger);
     border-color: color-mix(in srgb, var(--el-color-danger) 35%, var(--el-border-color-lighter));
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: var(--el-color-danger);
       border-color: color-mix(in srgb, var(--el-color-danger) 55%, var(--el-border-color-lighter));
       background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
   }
 }

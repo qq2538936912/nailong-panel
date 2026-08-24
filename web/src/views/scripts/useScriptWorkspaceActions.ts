@@ -2,7 +2,7 @@ import { ref, type ComputedRef, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { scriptApi } from '@/api/script'
-import type { ScriptBatchDeleteTarget, ScriptUploadMode, ScriptVersionDetail, ScriptVersionRecord } from './types'
+import type { ScriptBatchDeleteOptions, ScriptBatchDeleteTarget, ScriptUploadMode, ScriptVersionDetail, ScriptVersionRecord } from './types'
 
 interface ScriptWorkspaceActionsOptions {
   selectedFile: Ref<string>
@@ -35,6 +35,8 @@ export function useScriptWorkspaceActions({
 
   const saving = ref(false)
   const formatting = ref(false)
+  const batchDeleting = ref(false)
+  const uploading = ref(false)
 
   const showCreateFileDialog = ref(false)
   const showCreateDirDialog = ref(false)
@@ -213,24 +215,34 @@ export function useScriptWorkspaceActions({
     }
   }
 
-  async function handleBatchDelete(items: ScriptBatchDeleteTarget[]) {
-    if (items.length === 0) return
+  async function handleBatchDelete(items: ScriptBatchDeleteTarget[], options: ScriptBatchDeleteOptions = {}) {
+    if (items.length === 0 || batchDeleting.value) return
 
     const preview = items.slice(0, 8).map((item) => item.path).join('\n')
     const extra = items.length > 8 ? `\n… 等 ${items.length} 项` : ''
+    const searchHint = options.searchActive
+      ? '\n\n当前处于搜索筛选状态，列表中不可见的已勾选项也会被删除。'
+      : ''
     try {
       await ElMessageBox.confirm(
-        `确定要删除选中的 ${items.length} 项吗？\n注意：删除文件夹将同时删除其中所有文件！\n\n${preview}${extra}`,
+        `确定要删除选中的 ${items.length} 项吗？\n注意：删除文件夹将同时删除其中所有文件！${searchHint}\n\n${preview}${extra}`,
         '批量删除',
         { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' }
       )
+      batchDeleting.value = true
       const res = await scriptApi.batchDelete(
         items.map((item) => ({ path: item.path, type: item.isDir ? 'directory' : 'file' }))
       )
       const failedItems = new Set(Array.isArray(res.failed_items) ? res.failed_items : [])
       const failedCount = Number(res.failed_count ?? failedItems.size)
       if (failedCount > 0) {
-        ElMessage.warning(res.message || `删除完成，失败 ${failedCount} 项`)
+        const failedPreview = [...failedItems].slice(0, 8).join('\n')
+        const failedExtra = failedItems.size > 8 ? `\n… 等 ${failedItems.size} 项` : ''
+        ElMessage.warning({
+          message: `${res.message || `删除完成，失败 ${failedCount} 项`}\n失败项：\n${failedPreview}${failedExtra}`,
+          duration: 8000,
+          showClose: true
+        })
       } else {
         ElMessage.success(res.message || '删除成功')
       }
@@ -242,6 +254,8 @@ export function useScriptWorkspaceActions({
     } catch (err: any) {
       if (isActionCancelled(err)) return
       ElMessage.error(err?.response?.data?.error || err?.message || '批量删除失败')
+    } finally {
+      batchDeleting.value = false
     }
   }
 
@@ -302,6 +316,7 @@ export function useScriptWorkspaceActions({
       formData.append('dir', uploadDir.value)
     }
     try {
+      uploading.value = true
       const res = await scriptApi.upload(formData)
       const uploadedPaths = Array.isArray(res.paths) && res.paths.length > 0
         ? res.paths
@@ -336,6 +351,8 @@ export function useScriptWorkspaceActions({
       }
     } catch (err: any) {
       ElMessage.error(err?.response?.data?.error || err?.message || '上传失败')
+    } finally {
+      uploading.value = false
     }
     return false
   }
@@ -347,6 +364,7 @@ export function useScriptWorkspaceActions({
   }
 
   async function handleUploadSubmit() {
+    if (uploading.value) return
     if (uploadFileList.value.length === 0) {
       ElMessage.warning('请至少选择一个文件')
       return
@@ -527,6 +545,8 @@ export function useScriptWorkspaceActions({
   return {
     saving,
     formatting,
+    batchDeleting,
+    uploading,
     showCreateFileDialog,
     showCreateDirDialog,
     showRenameDialog,

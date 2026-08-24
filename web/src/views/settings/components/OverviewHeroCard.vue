@@ -7,6 +7,7 @@ const baseUrl = import.meta.env.BASE_URL
 
 const props = defineProps<{
   isAdmin: boolean
+  panelTitle: string
   currentVersion: string
   updateInfo: any
   updateStatus: PanelUpdateStatus | null
@@ -64,10 +65,10 @@ const stopPanelDisabledTip = computed(
 
       <div class="hero-center">
         <div class="hero-logo">
-          <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" class="hero-logo-img" />
+          <img :src="`${baseUrl}logo.svg`" alt="奶龙" class="hero-logo-img" />
         </div>
-        <h2 class="hero-name">奶龙面板</h2>
-        <p class="hero-desc">奶龙轻量级定时任务管理面板</p>
+        <h2 class="hero-name">{{ panelTitle }}</h2>
+        <p class="hero-desc">{{ panelTitle }} · 轻量级定时任务管理</p>
 
         <div class="hero-version-row">
           <div class="hero-version-item">

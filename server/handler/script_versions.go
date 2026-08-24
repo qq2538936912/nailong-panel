@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"panel/database"
 	"panel/model"
@@ -72,6 +73,21 @@ func (h *ScriptHandler) ClearVersions(c *gin.Context) {
 		"message":       "版本历史已清空",
 		"cleared_count": result.RowsAffected,
 	})
+}
+
+func clearScriptVersions(scriptPath string, isDirectory bool) {
+	scriptPath = strings.TrimSpace(scriptPath)
+	if scriptPath == "" {
+		return
+	}
+
+	if isDirectory {
+		_ = database.DB.Where("script_path = ? OR script_path LIKE ?", scriptPath, scriptPath+"/%").
+			Delete(&model.ScriptVersion{}).Error
+		return
+	}
+
+	_ = database.DB.Where("script_path = ?", scriptPath).Delete(&model.ScriptVersion{}).Error
 }
 
 func (h *ScriptHandler) GetVersion(c *gin.Context) {

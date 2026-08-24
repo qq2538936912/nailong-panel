@@ -22,6 +22,7 @@ import { useSettingsConfig } from './useSettingsConfig'
 import { useSettingsOverview } from './useSettingsOverview'
 import { usePanelLogViewer } from './usePanelLogViewer'
 import { useSettingsSecurity } from './useSettingsSecurity'
+import { getCachedPanelTitle } from '@/utils/panelSettings'
 import { Bell, Connection, Document, Lock, Monitor, Refresh } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
@@ -88,6 +89,8 @@ const {
   handleSaveSessionConfig,
   handleSaveBackupSchedule
 } = config
+
+const overviewPanelTitle = computed(() => configForm.value.panel_title?.trim() || getCachedPanelTitle())
 
 const {
   loading: panelLogLoading,
@@ -266,6 +269,7 @@ watch(
         <div class="overview-grid">
           <OverviewHeroCard
             :is-admin="isAdmin"
+            :panel-title="overviewPanelTitle"
             :current-version="currentVersion"
             :update-info="updateInfo"
             :update-status="updateStatus"

@@ -642,7 +642,7 @@ function rerunLog(log: any) {
     <section class="dash-welcome animate-fade-in-up">
       <!-- 左侧：问候语 + 日期/副标题元信息 -->
       <div class="dash-welcome__greet">
-        <img :src="`${baseUrl}favicon-512.webp`" alt="奶龙" class="dash-welcome__logo" />
+        <img :src="`${baseUrl}logo.svg`" alt="奶龙" class="dash-welcome__logo" />
         <div class="dash-welcome__copy">
           <h2 class="dash-welcome__title">
             {{ greeting }}，{{ authStore.user?.username || "User" }} 👋
