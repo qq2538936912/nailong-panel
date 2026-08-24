@@ -56,24 +56,6 @@ const canStopPanel = computed(() => isMagiskDeployment.value && magiskShellVersi
 const stopPanelDisabledTip = computed(
   () => `此功能需重新刷入一次模块 ZIP（当前外壳版本 ${magiskShellVersion.value}，需要 ${MAGISK_STOP_SUPPORTED_SHELL_VERSION}）。在线升级只更新面板程序与前端，覆盖不到模块脚本。`
 )
-
-const creditProjects = [
-  {
-    name: '白虎面板',
-    url: 'https://github.com/engigu/baihu-panel',
-    note: '后端框架架构参考',
-  },
-  {
-    name: '青龙面板',
-    url: 'https://github.com/whyour/qinglong',
-    note: '定时任务与订阅等功能设计参考',
-  },
-  {
-    name: '呆呆面板',
-    url: 'https://github.com/linzixuanzz/daidai-panel',
-    note: '功能与体验参考',
-  },
-] as const
 </script>
 
 <template>
@@ -184,19 +166,6 @@ const creditProjects = [
         >
           <p>{{ updateStatus.message }}</p>
         </el-alert>
-      </div>
-
-      <div class="hero-credits">
-        <div class="hero-credits__title">致谢</div>
-        <p class="hero-credits__desc">开发过程中参考了以下开源项目：</p>
-        <ul class="hero-credits__list">
-          <li v-for="item in creditProjects" :key="item.url" class="hero-credits__item">
-            <a :href="item.url" target="_blank" rel="noopener noreferrer" class="hero-credits__link">
-              {{ item.name }}
-            </a>
-            <span class="hero-credits__note">{{ item.note }}</span>
-          </li>
-        </ul>
       </div>
     </div>
   </el-card>
@@ -370,58 +339,6 @@ const creditProjects = [
 .hero-meta {
   color: var(--el-text-color-secondary);
   font-size: 12px;
-}
-
-.hero-credits {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--el-border-color-lighter);
-  text-align: left;
-}
-
-.hero-credits__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-  margin-bottom: 6px;
-}
-
-.hero-credits__desc {
-  margin: 0 0 10px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.hero-credits__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hero-credits__item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.hero-credits__link {
-  color: var(--el-color-primary);
-  font-weight: 600;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.hero-credits__note {
-  color: var(--el-text-color-secondary);
 }
 
 .release-notes-shell {

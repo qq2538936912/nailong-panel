@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -14,9 +13,7 @@ import (
 	"panel/pkg/response"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-
-	"panel/config"
+	"gorm.io/gorm"
 )
 
 type OpenAPIHandler struct{}
@@ -171,8 +168,13 @@ func (h *OpenAPIHandler) Update(c *gin.Context) {
 	response.Success(c, gin.H{"message": "更新成功", "data": buildOpenAppResponse(&app, loadOpenAppDailyCount(app.ID), false)})
 }
 
+func bumpOpenAppTokenEpoch(appID uint64) {
+	database.DB.Model(&model.OpenApp{}).Where("id = ?", appID).UpdateColumn("token_epoch", gorm.Expr("token_epoch + 1"))
+}
+
 func (h *OpenAPIHandler) Delete(c *gin.Context) {
 	appID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
+	bumpOpenAppTokenEpoch(appID)
 	database.DB.Where("id = ?", appID).Delete(&model.OpenApp{})
 	response.Success(c, gin.H{"message": "删除成功"})
 }
@@ -185,7 +187,10 @@ func (h *OpenAPIHandler) Enable(c *gin.Context) {
 
 func (h *OpenAPIHandler) Disable(c *gin.Context) {
 	appID, _ := strconv.ParseUint(c.Param("id"), 10, 32)
-	database.DB.Model(&model.OpenApp{}).Where("id = ?", appID).Update("enabled", false)
+	database.DB.Model(&model.OpenApp{}).Where("id = ?", appID).Updates(map[string]interface{}{
+		"enabled":     false,
+		"token_epoch": gorm.Expr("token_epoch + 1"),
+	})
 	response.Success(c, gin.H{"message": "已禁用"})
 }
 
@@ -199,8 +204,11 @@ func (h *OpenAPIHandler) ResetSecret(c *gin.Context) {
 	}
 
 	newSecret := generateRandomKey(32)
-	database.DB.Model(&app).Update("app_secret", newSecret)
-	app.AppSecret = newSecret
+	database.DB.Model(&app).Updates(map[string]interface{}{
+		"app_secret":  newSecret,
+		"token_epoch": gorm.Expr("token_epoch + 1"),
+	})
+	database.DB.First(&app, appID)
 
 	response.Success(c, gin.H{"message": "密钥已重置", "data": buildOpenAppResponse(&app, loadOpenAppDailyCount(app.ID), true)})
 }
@@ -263,18 +271,7 @@ func (h *OpenAPIHandler) Token(c *gin.Context) {
 		return
 	}
 
-	claims := &middleware.Claims{
-		Username:  fmt.Sprintf("app:%s", app.AppKey),
-		Role:      fmt.Sprintf("app:%s", app.Scopes),
-		TokenType: "access",
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte(config.C.JWT.Secret))
+	tokenInfo, err := middleware.GenerateOpenAppAccessToken(app.AppKey, app.Scopes, app.TokenEpoch, 24*time.Hour)
 	if err != nil {
 		response.InternalError(c, "生成令牌失败")
 		return
@@ -282,7 +279,7 @@ func (h *OpenAPIHandler) Token(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"data": gin.H{
-			"access_token": tokenStr,
+			"access_token": tokenInfo.Token,
 			"token_type":   "Bearer",
 			"expires_in":   86400,
 		},
@@ -321,7 +318,8 @@ func (h *OpenAPIHandler) CallLogs(c *gin.Context) {
 func (h *OpenAPIHandler) RegisterRoutes(r *gin.RouterGroup) {
 	openapi := r.Group("/open-api")
 	{
-		openapi.POST("/token", h.Token)
+		// 与登录接口同级限流，防止用 app_key/app_secret 暴力换票。
+		openapi.POST("/token", middleware.RateLimit(5, time.Minute), h.Token)
 
 		mgmt := openapi.Group("", middleware.JWTAuth(), middleware.RequireAdmin())
 		{

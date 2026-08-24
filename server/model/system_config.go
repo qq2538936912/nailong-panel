@@ -139,6 +139,10 @@ func InitDefaultConfigs() {
 		if def.Key == "repo_file_extensions" && strings.TrimSpace(existing.Value) == LegacyRepoFileExtensions {
 			normalizedValue = def.DefaultValue
 		}
+		// 旧默认标题「面板」→「奶龙面板」：仅当库里仍是未改过的旧默认时迁移，自定义标题保留。
+		if def.Key == "panel_title" && strings.TrimSpace(existing.Value) == LegacyPanelTitle {
+			normalizedValue = def.DefaultValue
+		}
 		if normalizedValue != existing.Value {
 			updates["value"] = normalizedValue
 		}

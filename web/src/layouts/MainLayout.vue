@@ -44,10 +44,27 @@ const routeCacheMax = 14
 // 侧边栏 logo 的兜底图标。
 // 这里不能写死 '/logo.svg'：:src 是 v-bind 表达式，不经过 Vite 的 transformAssetUrls，
 // 构建产物里会原样保留裸绝对路径。面板挂在反代子路径或 GitHub Pages 项目站下时，
-// 这个路径会指到站点根而 404，侧边栏 logo 变破图（这两处 <img> 没有 @error 兜底）。
+// 这个路径会指到站点根而 404，侧边栏 logo 变破图；自定义图标加载失败时回退到默认 logo。
 // import.meta.env.BASE_URL 结尾恒带 '/'，根路径部署时就是 '/'，行为与改动前一致。
 const defaultPanelIcon = `${import.meta.env.BASE_URL}logo.svg`
-const panelIconSrc = computed(() => panelIcon.value || defaultPanelIcon)
+const panelIconSrc = ref(defaultPanelIcon)
+
+watch(panelIcon, (value) => {
+  panelIconSrc.value = value || defaultPanelIcon
+}, { immediate: true })
+
+function onPanelIconError() {
+  if (panelIconSrc.value !== defaultPanelIcon) {
+    panelIconSrc.value = defaultPanelIcon
+  }
+}
+
+const roleLabel = computed(() => {
+  const role = authStore.user?.role
+  if (role === 'admin') return '管理员'
+  if (role === 'operator') return '运维用户'
+  return '只读用户'
+})
 
 const roleLevel: Record<string, number> = {
   viewer: 1,
@@ -184,7 +201,7 @@ async function loadVersion() {
       <div class="sidebar-logo" :class="{ 'is-collapsed': isCollapsed }">
         <div class="logo-inner">
           <div class="logo-icon-wrap">
-            <img :src="panelIconSrc" alt="logo" class="logo-icon" />
+            <img :src="panelIconSrc" alt="logo" class="logo-icon" @error="onPanelIconError" />
           </div>
           <template v-if="!isCollapsed">
             <span class="logo-title">{{ panelTitle }}</span>
@@ -254,7 +271,7 @@ async function loadVersion() {
           <template v-if="!isCollapsed">
             <div class="user-info">
               <span class="user-name">{{ authStore.user?.username || 'User' }}</span>
-              <span class="user-role">{{ authStore.user?.role === 'admin' ? '管理员' : '用户' }}</span>
+              <span class="user-role">{{ roleLabel }}</span>
             </div>
           </template>
         </div>
@@ -279,7 +296,7 @@ async function loadVersion() {
       <div class="sidebar-logo mobile-logo">
         <div class="logo-inner">
           <div class="logo-icon-wrap">
-            <img :src="panelIconSrc" alt="logo" class="logo-icon" />
+            <img :src="panelIconSrc" alt="logo" class="logo-icon" @error="onPanelIconError" />
           </div>
           <span class="logo-title">{{ panelTitle }}</span>
           <span v-if="panelVersion" class="logo-version">v{{ panelVersion }}</span>
@@ -338,7 +355,7 @@ async function loadVersion() {
           </div>
           <div class="user-info">
             <span class="user-name">{{ authStore.user?.username || 'User' }}</span>
-            <span class="user-role">{{ authStore.user?.role === 'admin' ? '管理员' : '用户' }}</span>
+            <span class="user-role">{{ roleLabel }}</span>
           </div>
         </div>
       </div>

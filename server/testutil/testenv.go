@@ -199,6 +199,10 @@ func MustCreateOpenApp(t *testing.T, appKey, scopes string) *model.OpenApp {
 func MustCreateAppToken(t *testing.T, appKey, scopes string) string {
 	t.Helper()
 
-	MustCreateOpenApp(t, appKey, scopes)
-	return MustCreateAccessToken(t, "app:"+appKey, "app:"+scopes)
+	app := MustCreateOpenApp(t, appKey, scopes)
+	info, err := middleware.GenerateOpenAppAccessToken(app.AppKey, app.Scopes, app.TokenEpoch, 0)
+	if err != nil {
+		t.Fatalf("generate open app token: %v", err)
+	}
+	return info.Token
 }

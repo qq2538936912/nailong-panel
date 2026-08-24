@@ -18,6 +18,8 @@ type Claims struct {
 	Username  string `json:"username"`
 	Role      string `json:"role"`
 	TokenType string `json:"token_type"`
+	// AppEpoch 仅 Open API 应用令牌使用：禁用应用或重置密钥时会抬升世代，旧 token 立刻失效。
+	AppEpoch int `json:"app_epoch,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -52,6 +54,34 @@ func GenerateTemporaryAccessToken(username, role string, ttl time.Duration) (str
 // 否则临时 token 只能等自然过期，面板自己都不知道它是谁。
 func GenerateTemporaryAccessTokenInfo(username, role string, ttl time.Duration) (*TokenInfo, error) {
 	return generateAccessTokenInfoWithTTL(username, role, ttl)
+}
+
+// GenerateOpenAppAccessToken 签发带 jti + app_epoch 的应用访问令牌。
+// epoch 必须与 open_apps.token_epoch 一致，否则 JWTAuth 会拒绝。
+func GenerateOpenAppAccessToken(appKey, scopes string, epoch int, ttl time.Duration) (*TokenInfo, error) {
+	if ttl <= 0 {
+		ttl = 24 * time.Hour
+	}
+
+	jti := generateJTI()
+	expiresAt := time.Now().Add(ttl)
+	claims := Claims{
+		Username:  "app:" + appKey,
+		Role:      "app:" + scopes,
+		TokenType: "access",
+		AppEpoch:  epoch,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ID:        jti,
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString([]byte(config.C.JWT.Secret))
+	if err != nil {
+		return nil, err
+	}
+	return &TokenInfo{Token: tokenStr, JTI: jti, ExpiresAt: expiresAt}, nil
 }
 
 func generateAccessTokenInfoWithTTL(username, role string, ttl time.Duration) (*TokenInfo, error) {
@@ -164,14 +194,27 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("username", claims.Username)
-		c.Set("role", claims.Role)
-		c.Set("jti", claims.ID)
 		if isAppToken(claims.Username, claims.Role) {
+			app, err := loadOpenAppByUsername(claims.Username)
+			if err != nil || !app.Enabled {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "应用不存在或已被禁用"})
+				c.Abort()
+				return
+			}
+			if claims.AppEpoch != app.TokenEpoch {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌已被撤销"})
+				c.Abort()
+				return
+			}
 			c.Set("token_kind", "app")
+			c.Set("open_app_id", app.ID)
 		} else {
 			c.Set("token_kind", "user")
 		}
+
+		c.Set("username", claims.Username)
+		c.Set("role", claims.Role)
+		c.Set("jti", claims.ID)
 		c.Next()
 	}
 }

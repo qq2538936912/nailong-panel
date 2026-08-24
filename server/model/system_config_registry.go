@@ -73,6 +73,9 @@ const (
 	// 只有这种情况才把它抬到新默认，用户自己填过的值一律不动。
 	DefaultRepoFileExtensions = "py js mjs ts sh"
 	LegacyRepoFileExtensions  = "py js sh ts"
+
+	// LegacyPanelTitle 是品牌更名前的默认标题；存量库若仍是该值则迁移到「奶龙面板」。
+	LegacyPanelTitle = "面板"
 )
 
 // defaultBackupScheduleSelection 同时给注册表默认值和 normalizeBackupScheduleSelectionValue 使用。

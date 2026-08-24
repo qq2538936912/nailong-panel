@@ -52,8 +52,6 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   '/logs': routeComponents.logs,
   '/deps': routeComponents.deps,
   '/terminal': routeComponents.terminal,
-  '/notifications': routeComponents.notifications,
-  '/users': routeComponents.users,
   '/profile': routeComponents.profile,
   '/docs/api': routeComponents.apiDocs,
   '/admin/settings': routeComponents.settings,
@@ -196,18 +194,6 @@ const router = createRouter({
           name: 'Deps',
           component: routeComponents.deps,
           meta: { title: '依赖管理', icon: 'Box', minRole: 'admin' }
-        },
-        {
-          path: 'notifications',
-          name: 'Notifications',
-          component: routeComponents.notifications,
-          meta: { title: '通知渠道', icon: 'Bell', minRole: 'admin' }
-        },
-        {
-          path: 'users',
-          name: 'Users',
-          component: routeComponents.users,
-          meta: { title: '用户管理', icon: 'UserFilled', minRole: 'admin' }
         },
         {
           path: 'profile',

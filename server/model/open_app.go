@@ -5,16 +5,17 @@ import (
 )
 
 type OpenApp struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
-	Name      string    `gorm:"size:128;not null" json:"name"`
-	AppKey    string    `gorm:"size:64;uniqueIndex;not null" json:"app_key"`
-	AppSecret string    `gorm:"size:128;not null" json:"-"`
-	Scopes    string    `gorm:"size:512;default:''" json:"scopes"`
-	Enabled   bool      `gorm:"default:true" json:"enabled"`
-	RateLimit int       `gorm:"default:0" json:"rate_limit"`
-	CallCount int64     `gorm:"default:0" json:"call_count"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         uint      `gorm:"primarykey" json:"id"`
+	Name       string    `gorm:"size:128;not null" json:"name"`
+	AppKey     string    `gorm:"size:64;uniqueIndex;not null" json:"app_key"`
+	AppSecret  string    `gorm:"size:128;not null" json:"-"`
+	Scopes     string    `gorm:"size:512;default:''" json:"scopes"`
+	Enabled    bool      `gorm:"default:true" json:"enabled"`
+	RateLimit  int       `gorm:"default:0" json:"rate_limit"`
+	CallCount  int64     `gorm:"default:0" json:"call_count"`
+	TokenEpoch int       `gorm:"default:0" json:"token_epoch"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 func (OpenApp) TableName() string {
