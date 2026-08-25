@@ -145,7 +145,7 @@ const router = createRouter({
           path: 'dashboard',
           name: 'Dashboard',
           component: routeComponents.dashboard,
-          meta: { title: '仪表板', icon: 'Odometer', minRole: 'viewer' }
+          meta: { title: '仪表信息', icon: 'Odometer', minRole: 'viewer' }
         },
         {
           path: 'tasks',

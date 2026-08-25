@@ -495,7 +495,7 @@ async function handleRun(task: any) {
   try {
     await ElMessageBox.confirm(`确认运行定时任务「${task.name}」吗？`, '运行确认', { type: 'info' })
     await taskApi.run(task.id)
-    ElMessage.success('任务已启动，正在打开实时日志')
+    ElMessage.success('任务已启动，正在打开日志')
     task.status = 2
     openLogViewer(task)
     syncStatusPolling()
@@ -967,7 +967,7 @@ async function handleImport(event: Event) {
             <el-button v-if="canOperateTasks" :type="row.status === 0 ? 'success' : 'danger'" size="small" plain @click="handleToggle(row)">
               {{ row.status === 0 ? '启用' : '禁用' }}
             </el-button>
-            <el-button size="small" @click="openLogViewer(row)">实时日志</el-button>
+            <el-button size="small" @click="openLogViewer(row)">日志</el-button>
             <el-button v-if="canOperateTasks" size="small" @click="openEdit(row)">编辑</el-button>
             <el-dropdown trigger="click" placement="bottom-end">
               <el-button size="small">
@@ -1219,7 +1219,7 @@ async function handleImport(event: Event) {
               <el-button v-if="canOperateTasks" :type="row.status === 0 ? 'success' : 'danger'" text size="small" @click="handleToggle(row)">
                 {{ row.status === 0 ? '启用' : '禁用' }}
               </el-button>
-              <el-button text size="small" @click="openLogViewer(row)">实时日志</el-button>
+              <el-button text size="small" @click="openLogViewer(row)">日志</el-button>
               <el-button v-if="canOperateTasks" text size="small" @click="openEdit(row)">编辑</el-button>
               <!-- 触发器贴在表格最右侧，默认的 bottom 是居中对齐，菜单右半边会探出表格。
                    bottom-end 让菜单右对齐触发器，正常情况下整块都落在表格内。
