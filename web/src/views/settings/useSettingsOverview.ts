@@ -520,7 +520,7 @@ export function useSettingsOverview() {
   function openGitHub() {
     const url = updateInfo.value?.has_update && updateInfo.value?.release_url
       ? updateInfo.value.release_url
-      : 'https://gitee.com/xiaofeilong2/panel/releases'
+      : 'https://github.com/qq2538936912/nailong-panel/releases'
     window.open(url, '_blank')
   }
 

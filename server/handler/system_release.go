@@ -3,13 +3,15 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	"panel/service"
 )
 
-const latestPanelReleaseAPI = "https://api.github.com/repos/xiaofeilong2/panel/releases/latest"
+const panelGitHubRepo = "qq2538936912/nailong-panel"
+const latestPanelReleaseAPI = "https://api.github.com/repos/" + panelGitHubRepo + "/releases/latest"
 
 type panelReleaseInfo struct {
 	TagName     string              `json:"tag_name"`
@@ -53,6 +55,9 @@ func fetchLatestPanelRelease() (*panelReleaseInfo, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("当前 GitHub 仓库还没有 Release")
+		}
 		return nil, fmt.Errorf("GitHub API 返回异常状态")
 	}
 
