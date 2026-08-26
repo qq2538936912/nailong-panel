@@ -301,6 +301,23 @@ Debian 的旧固定版本格式也保留兼容别名：`3.0.7-debian3.10`、`3.0
 
 #### 切换标签与本地构建
 
+改过前端/后端源码后，在项目根目录本地构建镜像（`VERSION=dev` 避免面板显示过期默认版本号）：
+
+```bash
+# Alpine 运行时（默认 Python 3.12 精简版）
+docker build --build-arg VERSION=dev -t panel:local .
+
+# Debian 运行时
+docker build --build-arg VERSION=dev -f Dockerfile.debian -t panel:debian-local .
+```
+
+构建完成后可指定本地镜像启动 Compose：
+
+```bash
+PANEL_IMAGE=panel:local docker compose up -d
+PANEL_IMAGE=panel:debian-local docker compose -f docker-compose.debian.yml up -d
+```
+
 仓库里的两份基础 Compose 都只需要设置一次镜像变量。例如切换到 Alpine 完整版：
 
 ```bash
@@ -312,11 +329,7 @@ PANEL_IMAGE=xiaofeilong2/panel:latest-full docker compose up -d
 切到 Debian 运行时：
 
 ```bash
-# 仓库里有现成的 compose
 docker compose -f docker-compose.debian.yml up -d
-
-# 或基于源码本地构建
-docker build --build-arg VERSION=dev -f Dockerfile.debian -t panel:debian-local .
 ```
 
 本地构建时，`PYTHON_RUNTIME_MODE` 决定单版本或三版本，`PYTHON_RUNTIME_VERSION` 决定单版本镜像的 Python 版本，`INSTALL_FULL_TOOLS=true` 决定是否安装完整开发工具。下面的命令可以直接运行：
@@ -621,9 +634,10 @@ docker compose -f docker-compose.debian.yml up -d panel
 
 也可以把 `.env` 中的 `PANEL_IMAGE` 改成对应正式标签，例如 `latest-full`、`latest-3.10`、`latest-3.11`、`latest-all`、`debian-full`、`debian-3.10`、`debian-3.11` 或 `debian-all`。
 
-本地基于源码自己构建的镜像，重新 build 即可：
+本地基于源码自己构建的镜像，重新 build 即可（见上文「切换标签与本地构建」）：
 
 ```bash
+docker build --build-arg VERSION=dev -t panel:local .
 docker build --build-arg VERSION=dev -f Dockerfile.debian -t panel:debian-local .
 ```
 
