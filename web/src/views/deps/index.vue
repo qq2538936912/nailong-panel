@@ -218,6 +218,13 @@
           <el-icon><Refresh /></el-icon> 刷新
         </el-button>
         <el-button
+          v-if="activeTab !== 'linux'"
+          :loading="scanningMissing"
+          @click="handleScanMissing"
+        >
+          <el-icon><Search /></el-icon> 扫描缺失依赖
+        </el-button>
+        <el-button
           type="warning"
           plain
           @click="handleBatchReinstall"
@@ -834,6 +841,8 @@ import {
   depsApi,
   type MirrorsResponse,
   type PythonRuntimeInfo,
+  type ScanMissingDependenciesResult,
+  type ScannedDependencyItem,
 } from "@/api/deps";
 import {
   androidRuntimeApi,
@@ -989,6 +998,7 @@ const pythonRuntimeInstallSummary = computed(() => {
 });
 const depsList = ref<any[]>([]);
 const loading = ref(false);
+const scanningMissing = ref(false);
 const showCreateDialog = ref(false);
 const showLogDialog = ref(false);
 const logContent = ref("");
@@ -1381,6 +1391,122 @@ async function handleCreate() {
     ElMessage.error("提交安装失败");
   } finally {
     creating.value = false;
+  }
+}
+
+function formatScanSources(sources: string[]): string {
+  if (!sources.length) return "";
+  const preview = sources.slice(0, 2).join("、");
+  return sources.length > 2 ? `${preview} 等 ${sources.length} 处` : preview;
+}
+
+function buildScanMissingMessage(result: ScanMissingDependenciesResult): string {
+  const missingPython = result.python.filter((item) => !item.installed);
+  const missingNode = result.nodejs.filter((item) => !item.installed);
+  const lines: string[] = [
+    `已扫描 ${result.scanned_files} 个脚本/清单文件，发现以下缺失依赖：`,
+    "",
+  ];
+
+  const appendSection = (
+    title: string,
+    items: ScannedDependencyItem[],
+  ) => {
+    if (items.length === 0) return;
+    lines.push(title);
+    for (const item of items) {
+      const sourceHint = formatScanSources(item.sources);
+      lines.push(
+        sourceHint ? `  · ${item.name}（${sourceHint}）` : `  · ${item.name}`,
+      );
+    }
+    lines.push("");
+  };
+
+  appendSection(`Python ${result.python_version}`, missingPython);
+  appendSection("Node.js", missingNode);
+
+  if (result.local_modules.length > 0) {
+    lines.push("本地模块引用（无需 pip/npm 安装）：");
+    for (const item of result.local_modules.slice(0, 8)) {
+      const sourceHint = formatScanSources(item.sources);
+      lines.push(
+        sourceHint ? `  · ${item.path}（${sourceHint}）` : `  · ${item.path}`,
+      );
+    }
+    if (result.local_modules.length > 8) {
+      lines.push(`  · … 另有 ${result.local_modules.length - 8} 个`);
+    }
+    lines.push("");
+  }
+
+  lines.push("是否立即安装上述 pip/npm 依赖？");
+  return lines.join("\n");
+}
+
+async function installScannedMissingDeps(result: ScanMissingDependenciesResult) {
+  const missingPython = result.python
+    .filter((item) => !item.installed)
+    .map((item) => item.name);
+  const missingNode = result.nodejs
+    .filter((item) => !item.installed)
+    .map((item) => item.name);
+  const pythonVer = result.python_version || pythonVersion.value;
+  let installedCount = 0;
+
+  if (missingPython.length > 0) {
+    await depsApi.create("python", missingPython, pythonVer);
+    installedCount += missingPython.length;
+  }
+  if (missingNode.length > 0) {
+    await depsApi.create("nodejs", missingNode);
+    installedCount += missingNode.length;
+  }
+
+  if (installedCount === 0) return;
+
+  ElMessage.success(`已提交 ${installedCount} 个缺失依赖安装`);
+  if (missingPython.length > 0) {
+    activeTab.value = "python";
+    pythonVersion.value = pythonVer;
+    createPythonVersion.value = pythonVer;
+  } else if (missingNode.length > 0) {
+    activeTab.value = "nodejs";
+  }
+  await loadData();
+}
+
+async function handleScanMissing() {
+  if (scanningMissing.value) return;
+  scanningMissing.value = true;
+  try {
+    const res = await depsApi.scanMissing();
+    const result = res.data;
+    const missingPython = result.python.filter((item) => !item.installed);
+    const missingNode = result.nodejs.filter((item) => !item.installed);
+
+    if (missingPython.length === 0 && missingNode.length === 0) {
+      const hint =
+        result.scanned_files > 0
+          ? `（已扫描 ${result.scanned_files} 个文件）`
+          : "";
+      ElMessage.success(`所有脚本依赖均已就绪${hint}`);
+      return;
+    }
+
+    await ElMessageBox.confirm(buildScanMissingMessage(result), "扫描缺失依赖", {
+      confirmButtonText: "立即安装",
+      cancelButtonText: "取消",
+      type: "info",
+      customClass: "deps-scan-missing-box",
+    });
+    await installScannedMissingDeps(result);
+  } catch (err: any) {
+    if (err !== "cancel" && err?.toString?.() !== "cancel") {
+      ElMessage.error(err?.response?.data?.error || "扫描缺失依赖失败");
+    }
+  } finally {
+    scanningMissing.value = false;
   }
 }
 
@@ -2286,5 +2412,14 @@ onBeforeUnmount(() => {
 .table-card,
 .dd-mobile-list {
   animation-delay: 60ms;
+}
+</style>
+
+<style lang="scss">
+.deps-scan-missing-box .el-message-box__message {
+  white-space: pre-line;
+  text-align: left;
+  max-height: 50vh;
+  overflow-y: auto;
 }
 </style>

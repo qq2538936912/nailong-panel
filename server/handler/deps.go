@@ -1105,6 +1105,7 @@ func (h *DepsHandler) RegisterRoutes(r *gin.RouterGroup) {
 	{
 		deps.GET("", h.List)
 		deps.POST("", h.Create)
+		deps.POST("/scan-missing", h.ScanMissing)
 		deps.POST("/batch-reinstall", h.BatchReinstall)
 		deps.POST("/batch-delete", h.BatchDelete)
 		deps.DELETE("/:id", h.Delete)

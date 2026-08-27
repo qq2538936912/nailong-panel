@@ -24,6 +24,25 @@ export interface PythonRuntimeInfo {
   message: string
 }
 
+export interface ScannedDependencyItem {
+  name: string
+  installed: boolean
+  sources: string[]
+}
+
+export interface ScannedLocalModuleItem {
+  path: string
+  sources: string[]
+}
+
+export interface ScanMissingDependenciesResult {
+  python_version: string
+  scanned_files: number
+  python: ScannedDependencyItem[]
+  nodejs: ScannedDependencyItem[]
+  local_modules: ScannedLocalModuleItem[]
+}
+
 export const depsApi = {
   list(type: string, pythonVersion?: string) {
     return request.get('/deps', { params: { type, python_version: pythonVersion } }) as Promise<{ data: any[]; total: number }>
@@ -31,6 +50,10 @@ export const depsApi = {
 
   create(type: string, names: string[], pythonVersion?: string) {
     return request.post('/deps', { type, names, python_version: pythonVersion }) as Promise<{ message: string; data: any[] }>
+  },
+
+  scanMissing() {
+    return request.post('/deps/scan-missing') as Promise<{ data: ScanMissingDependenciesResult }>
   },
 
   delete(id: number, force?: boolean) {
