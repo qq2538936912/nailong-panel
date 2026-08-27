@@ -332,6 +332,8 @@ PANEL_IMAGE=xiaofeilong2/panel:latest-full docker compose up -d
 docker compose -f docker-compose.debian.yml up -d
 ```
 
+若你**总是**用 Debian 版，可复制 `.env.example` 为 `.env` 并保留其中的 `COMPOSE_FILE=docker-compose.debian.yml`。之后在同一目录直接执行 `docker compose up -d --build` 即可，Compose 会自动读 `.env`，不必每次加 `-f`。
+
 本地构建时，`PYTHON_RUNTIME_MODE` 决定单版本或三版本，`PYTHON_RUNTIME_VERSION` 决定单版本镜像的 Python 版本，`INSTALL_FULL_TOOLS=true` 决定是否安装完整开发工具。下面的命令可以直接运行：
 
 ```bash
