@@ -1,6 +1,6 @@
 {
-  "version": "v3.0.7",
-  "versionCode": 30007,
-  "zipUrl": "https://gitee.com/xiaofeilong2/panel/releases/download/v3.0.7/panel-magisk-v3.0.7.zip",
-  "changelog": "https://raw.githubusercontent.com/xiaofeilong2/panel/main/docs/release-notes/v3.0.7.md"
+  "version": "v1.0.1",
+  "versionCode": 10001,
+  "zipUrl": "https://github.com/qq2538936912/nailong-panel/releases/download/v1.0.1/panel-magisk-v1.0.1.zip",
+  "changelog": "https://raw.githubusercontent.com/qq2538936912/nailong-panel/main/docs/release-notes/v1.0.1.md"
 }
