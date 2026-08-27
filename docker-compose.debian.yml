@@ -7,6 +7,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.debian
+      args:
+        VERSION: ${PANEL_VERSION:-1.0.1}
     image: ${PANEL_IMAGE:-xiaofeilong2/panel:debian}
     container_name: panel
     restart: unless-stopped
