@@ -1,7 +1,7 @@
 id=panel
 name=面板 (Panel)
-version=v1.0.1
-versionCode=10001
+version=v1.0.2
+versionCode=10002
 author=xiaofeilong2
 description=在 Android 设备上以 root 权限运行面板，开机自启，默认监听 http://127.0.0.1:5700
 updateJson=https://github.com/qq2538936912/nailong-panel/releases/latest/download/update.json

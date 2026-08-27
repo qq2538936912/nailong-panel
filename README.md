@@ -20,8 +20,8 @@
 
 奶龙面板是一款轻量级定时任务管理平台，采用 Go (Gin) + Vue3 (Element Plus) + SQLite 架构，专注于脚本托管与自动化任务调度。支持 Python、Node.js（含 `.js` / `.mjs`）、Shell、TypeScript、Go 等多语言脚本的定时执行与可视化管理，内置 18 种消息推送渠道、订阅管理、环境变量、依赖管理、Open API 等功能。Docker 一键部署，开箱即用。
 
-> 最新稳定版：`v1.0.1` · [更新日志](./docs/release-notes/v1.0.1.md)<br>
-> 本次重点：新增 `.env.example`，复制为 `.env` 后 Debian 版 Docker 可直接 `docker compose up -d --build`，不必每次加 `-f docker-compose.debian.yml`。<br>
+> 最新稳定版：`v1.0.2` · [更新日志](./docs/release-notes/v1.0.2.md)<br>
+> 本次重点：修复 Docker 本地构建仍嵌入 `v2.2.18`、检查更新误判「已是最新版」；Compose 可通过 `PANEL_VERSION` 传入正确版本号。<br>
 > APP 客户端：[xiaofeilong2/panel-app](https://gitee.com/xiaofeilong2/panel-app)
 
 ## 功能特性
